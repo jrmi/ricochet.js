@@ -1,5 +1,5 @@
-import { nanoid } from "nanoid";
-import Datastore from "nedb";
+import { nanoid } from 'nanoid';
+import Datastore from 'nedb';
 
 const throwError = (message, code = 400) => {
   const errorObject = new Error(message);
@@ -13,7 +13,7 @@ export const memoryBackend = () => {
   const security = {};
 
   const getOrCreateBox = (boxId) => {
-    if (typeof data[boxId] !== "object") {
+    if (typeof data[boxId] !== 'object') {
       data[boxId] = {};
     }
     return data[boxId];
@@ -38,7 +38,7 @@ export const memoryBackend = () => {
           security[boxId] = {};
 
           if (id) {
-            // Id -> it's ressource security
+            // Id -> it's resource security
             security[boxId][id] = key;
           } else {
             // No id -> it's box security
@@ -62,7 +62,14 @@ export const memoryBackend = () => {
     },
     async list(
       boxId,
-      { limit = 50, sort = "_id", asc = true, skip = 0, onlyFields = [], q }
+      {
+        limit = 50,
+        sort = '_id',
+        asc = true,
+        skip = 0,
+        onlyFields = [],
+        q,
+      } = {}
     ) {
       if (data[boxId] === undefined) {
         return [];
@@ -98,17 +105,17 @@ export const memoryBackend = () => {
       return data[boxId][id];
     },
     async create(boxId, data) {
-      const newRessource = { ...data, _id: nanoid(), _createdOn: new Date() };
+      const newRessource = { ...data, _id: nanoid(), _createdOn: Date.now() };
       getOrCreateBox(boxId)[newRessource._id] = newRessource;
       return newRessource;
     },
     async update(boxId, id, body) {
       // To prevent created modification
       if (!data[boxId]) {
-        throwError("Box not found", 404);
+        throwError('Box not found', 404);
       }
       if (!data[boxId][id]) {
-        throwError("Ressource not found", 404);
+        throwError('Ressource not found', 404);
       }
       const { created } = data[boxId][id];
       const updatedItem = {
@@ -116,7 +123,7 @@ export const memoryBackend = () => {
         ...body,
         _id: id,
         created,
-        _updatedOn: new Date(),
+        _updatedOn: Date.now(),
       };
       data[boxId][id] = updatedItem;
       return updatedItem;
@@ -134,9 +141,10 @@ export const memoryBackend = () => {
 // Nedb backend for proof of concept
 export const NeDBBackend = (options) => {
   const db = {};
+
   db.boxes = new Datastore({
-    ...options,
     filename: `${options.dirname}/boxes.json`,
+    ...options,
     autoload: true,
   });
 
@@ -179,7 +187,14 @@ export const NeDBBackend = (options) => {
     },
     async list(
       boxId,
-      { limit = 50, sort = "_id", asc = true, skip = 0, onlyFields = [], q }
+      {
+        limit = 50,
+        sort = '_id',
+        asc = true,
+        skip = 0,
+        onlyFields = [],
+        q,
+      } = {}
     ) {
       const boxRecord = await getBoxRecord(boxId);
       if (!boxRecord) {
@@ -230,7 +245,7 @@ export const NeDBBackend = (options) => {
       }
       const boxDB = getBoxDB(boxId);
       return new Promise((resolve, reject) => {
-        boxDB.insert(data, (err, doc) => {
+        boxDB.insert({ ...data, _createdOn: Date.now() }, (err, doc) => {
           if (err) {
             reject(err);
           }
@@ -241,7 +256,7 @@ export const NeDBBackend = (options) => {
     async update(boxId, id, body) {
       const boxRecord = await getBoxRecord(boxId);
       if (!boxRecord) {
-        throwError("Box not found", 404);
+        throwError('Box not found', 404);
       }
       const boxDB = getBoxDB(boxId);
       return new Promise((resolve, reject) => {
@@ -251,7 +266,7 @@ export const NeDBBackend = (options) => {
           { returnUpdatedDocs: true },
           (err, numAffected, affectedDoc) => {
             if (!numAffected) {
-              throwError("Ressource not found", 404);
+              throwError('Ressource not found', 404);
             }
             if (err) {
               reject(err);
@@ -264,7 +279,7 @@ export const NeDBBackend = (options) => {
     async delete(boxId, id) {
       const boxRecord = await getBoxRecord(boxId);
       if (!boxRecord) {
-        throwError("Box not found", 404);
+        throwError('Box not found', 404);
       }
       const boxDB = getBoxDB(boxId);
       return new Promise((resolve, reject) => {

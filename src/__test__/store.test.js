@@ -1,10 +1,115 @@
-import request from "supertest";
-import app from "../index.js";
+import request from 'supertest';
+import express from 'express';
+import store from '../store';
 
-describe("Store Test", () => {
-  it("should test get status code is 200", async (done) => {
-    const res = await request(app).get("/store/myboxid/");
-    expect(res.statusCode).toEqual(200);
-    done();
+jest.mock('nanoid', () => {
+  let count = 0;
+  return {
+    nanoid: jest.fn(() => {
+      return 'nanoid_' + count++;
+    }),
+  };
+});
+
+let delta = 0;
+
+// Fake date
+jest.spyOn(global.Date, 'now').mockImplementation(() => {
+  delta += 1;
+  const second = delta < 10 ? '0' + delta : '' + delta;
+  return new Date(`2020-03-14T11:01:${second}.135Z`).valueOf();
+});
+
+describe('Store Test', () => {
+  let app;
+  let query;
+
+  beforeAll(() => {
+    app = express();
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: true }));
+    app.use(store());
+    query = request(app);
+  });
+
+  it('should get empty box', async () => {
+    const res = await query
+      .get('/store/myboxid_test1/')
+      .expect(200, [])
+      .expect('Content-Type', /json/);
+  });
+
+  it('should add resource', async () => {
+    const res = await query
+      .post('/store/myboxid_test2/')
+      .send({ test: true, value: 42 })
+      .expect(200);
+
+    expect(res.body).toEqual(
+      expect.objectContaining({ test: true, value: 42 })
+    );
+    expect(res.body._id).toEqual(expect.stringContaining('nanoid'));
+    expect(res.body._createdOn).toBeGreaterThanOrEqual(1584183661135);
+
+    const res2 = await query
+      .get('/store/myboxid_test2/')
+      .expect(200)
+      .expect('Content-Type', /json/);
+
+    expect(res.body).toEqual(res2.body[0]);
+  });
+
+  it('should get a resource', async () => {
+    const res = await query
+      .post('/store/myboxid_test3/')
+      .send({ test: true, value: 42 })
+      .expect(200);
+
+    let resourceId = res.body._id;
+
+    const res2 = await query
+      .get(`/store/myboxid_test3/${resourceId}`)
+      .expect(200)
+      .expect('Content-Type', /json/);
+
+    expect(res.body).toEqual(res2.body);
+  });
+
+  it('should update a resource', async () => {
+    const res = await query
+      .post('/store/myboxid_test4/')
+      .send({ test: true, value: 40 })
+      .expect(200);
+
+    let resourceId = res.body._id;
+
+    const res2 = await query
+      .put(`/store/myboxid_test4/${resourceId}`)
+      .send({ value: 42 })
+      .expect(200)
+      .expect('Content-Type', /json/);
+
+    const res3 = await query
+      .get(`/store/myboxid_test4/${resourceId}`)
+      .expect(200)
+      .expect('Content-Type', /json/);
+
+    expect(res3.body.value).toEqual(42);
+  });
+
+  it('should delete a resource', async () => {
+    const res = await query
+      .post('/store/myboxid_test5/')
+      .send({ test: true, value: 40 })
+      .expect(200);
+
+    let resourceId = res.body._id;
+
+    const res2 = await query
+      .del(`/store/myboxid_test5/${resourceId}`)
+      .expect(200)
+      .expect('Content-Type', /json/);
+
+    const res3 = await query.get(`/store/myboxid_test5/`).expect(200, []);
   });
 });

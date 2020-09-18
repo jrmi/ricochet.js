@@ -13,7 +13,7 @@ const errorGuard = (func) => async (req, res, next) => {
 
 const SCRIPT_URL = `http://localhost:3000/exec`;
 
-// Store Middleware
+// Exec Middleware
 export const exec = ({ prefix = "/execution", context = {} } = {}) => {
   const cache = {};
 
