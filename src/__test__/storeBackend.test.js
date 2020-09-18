@@ -148,4 +148,14 @@ describe.each(backends)('Store backend <%s> tests', (backendName, backend) => {
       expect.objectContaining({ test: false })
     );
   });
+
+  it('should check security', async () => {
+    const box = 'boxId51';
+    const first = await backend.create(box, { value: 40, test: false });
+    const second = await backend.create(box, { value: 44, test: true });
+    const third = await backend.create(box, { value: 42 });
+
+    const result = await backend.checkSecurity(box, first._id, 'nokey');
+    // FIXME
+  });
 });
