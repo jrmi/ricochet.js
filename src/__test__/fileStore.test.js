@@ -25,17 +25,22 @@ jest.mock('nanoid', () => {
 const fileStores = [
   ['memory', { url: '' }],
   ['disk', { url: '', destination: tempy.directory({ prefix: 'test__' }) }],
-  [
+];
+
+const S3_BUCKET_TEST = process.env.S3_BUCKET_TEST;
+
+if (S3_BUCKET_TEST) {
+  fileStores.push([
     's3',
     {
       url: '',
-      bucket: S3_BUCKET,
+      bucket: process.env.S3_BUCKET_TEST,
       secretKey: S3_SECRET_KEY,
       accessKey: S3_ACCESS_KEY,
       endpoint: S3_ENDPOINT,
     },
-  ],
-];
+  ]);
+}
 
 describe.each(fileStores)('Backend <%s> file store', (backendType, options) => {
   let app;
