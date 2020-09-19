@@ -9,7 +9,7 @@ import { defineSocket } from './socket.js';
 
 import { NeDBBackend, memoryBackend } from './storeBackends.js';
 
-import exec from './exec.js';
+import exec from './execute.js';
 
 import {
   HOST,

@@ -1,6 +1,6 @@
 import request from 'supertest';
 import express from 'express';
-import exec from '../exec';
+import exec from '../execute';
 
 jest.mock('nanoid', () => {
   let count = 0;
