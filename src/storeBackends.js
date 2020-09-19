@@ -96,11 +96,11 @@ export const memoryBackend = () => {
       return result;
     },
     async get(boxId, id) {
-      if (data[boxId] === undefined) {
-        return null;
+      if (!data[boxId]) {
+        throwError('Box not found', 404);
       }
       if (!data[boxId][id]) {
-        return null;
+        throwError('Resource not found', 404);
       }
       return data[boxId][id];
     },
@@ -129,6 +129,9 @@ export const memoryBackend = () => {
       return updatedItem;
     },
     async delete(boxId, id) {
+      if (!data[boxId]) {
+        return 0;
+      }
       if (data[boxId][id] !== undefined) {
         delete data[boxId][id];
         return 1;
@@ -152,6 +155,7 @@ export const NeDBBackend = (options) => {
     return new Promise((resolve, reject) => {
       db.boxes.insert({ box: boxId }, (err, doc) => {
         if (err) {
+          /* istanbul ignore next */
           reject(err);
         }
         resolve(doc);
@@ -163,6 +167,7 @@ export const NeDBBackend = (options) => {
     return new Promise((resolve, reject) => {
       db.boxes.findOne({ box: boxId }, (err, doc) => {
         if (err) {
+          /* istanbul ignore next */
           reject(err);
         }
         resolve(doc);
@@ -217,6 +222,7 @@ export const NeDBBackend = (options) => {
           .sort({ [sort]: asc ? 1 : -1 })
           .exec((err, docs) => {
             if (err) {
+              /* istanbul ignore next */
               reject(err);
             }
             resolve(docs);
@@ -226,13 +232,17 @@ export const NeDBBackend = (options) => {
     async get(boxId, id) {
       const boxRecord = await getBoxRecord(boxId);
       if (!boxRecord) {
-        return [];
+        throwError('Box not found', 404);
       }
       const boxDB = getBoxDB(boxId);
       return new Promise((resolve, reject) => {
         boxDB.findOne({ _id: id }, (err, doc) => {
           if (err) {
+            /* istanbul ignore next */
             reject(err);
+          }
+          if (!doc) {
+            reject(new Error('Resource not found'));
           }
           resolve(doc);
         });
@@ -247,6 +257,7 @@ export const NeDBBackend = (options) => {
       return new Promise((resolve, reject) => {
         boxDB.insert({ ...data, _createdOn: Date.now() }, (err, doc) => {
           if (err) {
+            /* istanbul ignore next */
             reject(err);
           }
           resolve(doc);
@@ -266,9 +277,10 @@ export const NeDBBackend = (options) => {
           { returnUpdatedDocs: true },
           (err, numAffected, affectedDoc) => {
             if (!numAffected) {
-              throwError('Ressource not found', 404);
+              reject(new Error('Resource not found'));
             }
             if (err) {
+              /* istanbul ignore next */
               reject(err);
             }
             resolve(affectedDoc);
@@ -279,12 +291,13 @@ export const NeDBBackend = (options) => {
     async delete(boxId, id) {
       const boxRecord = await getBoxRecord(boxId);
       if (!boxRecord) {
-        throwError('Box not found', 404);
+        return 0;
       }
       const boxDB = getBoxDB(boxId);
       return new Promise((resolve, reject) => {
         boxDB.remove({ _id: id }, {}, (err, numRemoved) => {
           if (err) {
+            /* istanbul ignore next */
             reject(err);
           }
           resolve(numRemoved);

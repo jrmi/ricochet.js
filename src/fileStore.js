@@ -17,8 +17,6 @@ const DEFAULT_PREFIX = 'file';
 export const fileStorage = (type = 'memory', config = {}) => {
   const app = express.Router();
 
-  // app.use(bodyParser.json());
-
   // Memory storage
   if (type === 'memory') {
     const { url = '', prefix = DEFAULT_PREFIX } = config;
@@ -139,7 +137,8 @@ export const fileStorage = (type = 'memory', config = {}) => {
 
       fs.readdir(dir, (err, files) => {
         if (err) {
-          res.json([]);
+          /* istanbul ignore next */
+          throw err;
         } else {
           res.json(
             files.map((filename) => `${url}/${prefix}/${namespace}/${filename}`)
@@ -171,6 +170,7 @@ export const fileStorage = (type = 'memory', config = {}) => {
 
       fs.unlink(filePath, (err) => {
         if (err) {
+          /* istanbul ignore next */
           throw err;
         }
 
@@ -239,8 +239,17 @@ export const fileStorage = (type = 'memory', config = {}) => {
         Key: `${namespace}/${filename}`,
       };
       s3.getObject(params, (err, fileData) => {
-        res.set('Content-type', fileData.ContentType);
-        res.send(fileData.Body);
+        if (err) {
+          if (err.code === 'NoSuchKey') {
+            res.status(404).send('Not found');
+          } else {
+            /* istanbul ignore next */
+            throw err;
+          }
+        } else {
+          res.set('Content-type', fileData.ContentType);
+          res.send(fileData.Body);
+        }
       });
     });
 
@@ -258,7 +267,8 @@ export const fileStorage = (type = 'memory', config = {}) => {
 
       s3.listObjects(params, (err, data) => {
         if (err) {
-          return [];
+          /* istanbul ignore next */
+          throw error;
         }
 
         res.send(data.Contents.map(({ Key }) => `/${prefix}/${Key}`));
@@ -285,8 +295,10 @@ export const fileStorage = (type = 'memory', config = {}) => {
       } catch (headErr) {
         if (headErr.code === 'NotFound') {
           res.status(404).send('Not found');
+        } else {
+          /* istanbul ignore next */
+          throw headErr;
         }
-        throw headErr;
       }
     });
   }

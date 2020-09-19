@@ -21,7 +21,7 @@ const errorGuard = (func) => async (req, res, next) => {
   try {
     return await func(req, res, next);
   } catch (error) {
-    console.log(error);
+    //console.log(error);
     next(error);
   }
 };
@@ -78,9 +78,6 @@ export const store = ({
     errorGuard(async (req, res) => {
       const { boxId, id } = req.params;
       const result = await backend.get(boxId, id);
-      if (!result) {
-        throwError('Box or resource not found', 404);
-      }
       res.json(result);
     })
   );
@@ -137,7 +134,7 @@ export const store = ({
   // Middleware to handle errors
   // eslint-disable-next-line no-unused-vars
   router.use((err, req, res, _next) => {
-    console.error(err);
+    //console.error(err);
     res.status(err.statusCode || 500).json({ message: err.message });
   });
 

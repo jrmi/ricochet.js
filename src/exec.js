@@ -1,42 +1,54 @@
-import express from "express";
-import http from "http";
-import vm from "vm";
+import express from 'express';
+import http from 'http';
+import vm from 'vm';
 
 const errorGuard = (func) => async (req, res, next) => {
   try {
     return await func(req, res, next);
   } catch (error) {
-    console.log(error);
     next(error);
   }
 };
 
-const SCRIPT_URL = `http://localhost:3000/exec`;
-
 // Exec Middleware
-export const exec = ({ prefix = "/execution", context = {} } = {}) => {
-  const cache = {};
+export const exec = ({
+  prefix = 'execute',
+  context = {},
+  remote,
+  setup = 'setup',
+} = {}) => {
+  const functionCache = {};
 
-  const cacheOrFetch = async (functionName, extraCommands = "") => {
-    if (cache[functionName]) {
-      return cache[functionName];
+  const cacheOrFetch = async (functionName, extraCommands = '') => {
+    if (functionCache[functionName]) {
+      return functionCache[functionName];
     } else {
       return new Promise((resolve, reject) => {
-        const filename = `${SCRIPT_URL}/${functionName}.js`;
+        const functionUrl = `${remote}/${functionName}.js`;
+
         http
-          .get(filename, (resp) => {
-            let data = "";
-            resp.on("data", (chunk) => {
+          .get(functionUrl, (resp) => {
+            if (resp.statusCode === 404) {
+              resolve(null);
+              return;
+            }
+
+            let data = '';
+            resp.on('data', (chunk) => {
               data += chunk;
             });
-            resp.on("end", () => {
+            resp.on('end', () => {
               data += extraCommands;
-              const script = new vm.Script(data, { filename });
-              cache[functionName] = script;
-              resolve(script);
+              try {
+                const script = new vm.Script(data, { filename: functionUrl });
+                functionCache[functionName] = script;
+                resolve(script);
+              } catch (e) {
+                reject(e);
+              }
             });
           })
-          .on("error", (err) => {
+          .on('error', (err) => {
             reject(err);
           });
       });
@@ -46,32 +58,50 @@ export const exec = ({ prefix = "/execution", context = {} } = {}) => {
   let config = {};
 
   // Load config
-  cacheOrFetch("setup", "\nmain();").then((toRun) => {
-    config = toRun.runInNewContext();
+  cacheOrFetch(setup, '\nmain();').then((toRun) => {
+    if (toRun) {
+      config = toRun.runInNewContext();
+    }
   });
 
   const router = express.Router();
   // One object
-  router.get(
-    `${prefix}/:functionName/`,
+  router.all(
+    `/${prefix}/:functionName/:id?`,
     errorGuard(async (req, res) => {
       const {
         body,
-        params: { functionName },
+        params: { functionName, id },
         query,
+        method,
       } = req;
-      const toRun = await cacheOrFetch(functionName, "\nmain();");
+
+      const toRun = await cacheOrFetch(functionName, '\nmain();');
+      if (!toRun) {
+        res.status(404).send('Not found');
+        return;
+      }
+
       const fullContext = {
         console,
         query,
         body,
+        method,
+        id,
         ...context,
         ...config,
       };
+
       const result = await toRun.runInNewContext(fullContext);
-      res.send("" + result);
+      res.json(result);
     })
   );
+
+  router.use((err, req, res, _next) => {
+    res
+      .status(err.statusCode || 500)
+      .json({ message: err.message, stackTrace: err.stack });
+  });
 
   return router;
 };

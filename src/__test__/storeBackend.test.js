@@ -82,6 +82,9 @@ describe.each(backends)('Store backend <%s> tests', (backendName, backend) => {
   });
 
   it('should delete resource', async () => {
+    const predel = await backend.delete('boxid4', 'noid');
+    expect(predel).toBe(0);
+
     const res = await backend.create('boxid4', { value: 42, test: true });
 
     const allResources = await backend.list('boxid4');
@@ -92,6 +95,9 @@ describe.each(backends)('Store backend <%s> tests', (backendName, backend) => {
 
     const allResourcesAfterDelete = await backend.list('boxid4');
     expect(allResourcesAfterDelete.length).toBe(0);
+
+    const nodel = await backend.delete('boxid4', res._id);
+    expect(nodel).toBe(0);
   });
 
   it('should list resources', async () => {
@@ -99,6 +105,7 @@ describe.each(backends)('Store backend <%s> tests', (backendName, backend) => {
     const first = await backend.create(box, { value: 40, test: false });
     const second = await backend.create(box, { value: 44, test: true });
     const third = await backend.create(box, { value: 42 });
+    const last = await backend.create(box, { value: 42 });
 
     // Is sort working
     const allResources = await backend.list(box, {
@@ -112,14 +119,14 @@ describe.each(backends)('Store backend <%s> tests', (backendName, backend) => {
       sort: '_createdOn',
       asc: false,
     });
-    expect(allResourcesReverse[2]).toEqual(first);
-    expect(allResourcesReverse[0]).toEqual(third);
+    expect(allResourcesReverse[3]).toEqual(first);
+    expect(allResourcesReverse[0]).toEqual(last);
 
     const allResourcesReverse2 = await backend.list(box, {
       sort: 'value',
       asc: false,
     });
-    expect(allResourcesReverse2[2]).toEqual(first);
+    expect(allResourcesReverse2[3]).toEqual(first);
     expect(allResourcesReverse2[0]).toEqual(second);
 
     // Is limit working
@@ -157,5 +164,22 @@ describe.each(backends)('Store backend <%s> tests', (backendName, backend) => {
 
     const result = await backend.checkSecurity(box, first._id, 'nokey');
     // FIXME
+  });
+
+  it('should throw error', async () => {
+    const box = 'boxId60';
+
+    await expect(backend.get(box, 'noid')).rejects.toThrow();
+    await expect(
+      backend.update(box, 'noid', { value: 'titi' })
+    ).rejects.toThrow();
+
+    // Create box
+    await backend.create(box, { value: 40, test: false });
+
+    await expect(backend.get(box, 'noid')).rejects.toThrow();
+    await expect(
+      backend.update(box, 'noid', { value: 'titi' })
+    ).rejects.toThrow();
   });
 });

@@ -1,0 +1,60 @@
+import request from 'supertest';
+import express from 'express';
+import exec from '../exec';
+
+jest.mock('nanoid', () => {
+  let count = 0;
+  return {
+    nanoid: jest.fn(() => {
+      return 'nanoid_' + count++;
+    }),
+  };
+});
+
+let delta = 0;
+
+// Fake date
+jest.spyOn(global.Date, 'now').mockImplementation(() => {
+  delta += 1;
+  const second = delta < 10 ? '0' + delta : '' + delta;
+  return new Date(`2020-03-14T11:01:${second}.135Z`).valueOf();
+});
+
+describe('Store Test', () => {
+  let app;
+  let query;
+
+  beforeAll(() => {
+    app = express();
+    app.use(express.json());
+    app.use(exec({ remote: 'http://localhost:5000' }));
+    query = request(app);
+  });
+
+  it('should run remote function', async () => {
+    await query.get(`/execute/missingfunction`).expect(404);
+
+    const result = await query.get(`/execute/mytestfunction/`).expect(200);
+    expect(result.body).toEqual(expect.objectContaining({ hello: true }));
+    expect(result.body.method).toBe('GET');
+
+    const result2 = await query
+      .post(`/execute/mytestfunction`)
+      .send({ test: 42 })
+      .expect(200);
+    expect(result2.body.method).toBe('POST');
+    expect(result2.body.body).toEqual(expect.objectContaining({ test: 42 }));
+  });
+
+  it('should run remote function with id', async () => {
+    const result = await query.get(`/execute/mytestfunction/42`).expect(200);
+    expect(result.body).toEqual(expect.objectContaining({ id: '42' }));
+  });
+
+  it('should fails to parse', async () => {
+    const result = await query.get(`/execute/bad`).expect(500);
+    expect(result.body.stackTrace).toEqual(
+      expect.stringContaining('no js here !!!')
+    );
+  });
+});

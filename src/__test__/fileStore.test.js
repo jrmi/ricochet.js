@@ -11,6 +11,7 @@ import {
   S3_ENDPOINT,
   S3_BUCKET,
 } from '../settings';
+import { DocumentClient } from 'aws-sdk/clients/dynamodb';
 
 jest.mock('nanoid', () => {
   let count = 0;
@@ -21,7 +22,7 @@ jest.mock('nanoid', () => {
   };
 });
 
-describe.each([
+const fileStores = [
   ['memory', { url: '' }],
   ['disk', { url: '', destination: tempy.directory({ prefix: 'test__' }) }],
   [
@@ -34,7 +35,9 @@ describe.each([
       endpoint: S3_ENDPOINT,
     },
   ],
-])('Backend <%s> file store', (backendType, options) => {
+];
+
+describe.each(fileStores)('Backend <%s> file store', (backendType, options) => {
   let app;
   let query;
 
@@ -45,7 +48,7 @@ describe.each([
     query = request(app);
   });
 
-  afterAll(() => {
+  afterAll((done) => {
     // Clean files
     if (options.destination) {
       try {
@@ -53,6 +56,8 @@ describe.each([
       } catch (e) {
         console.log(e);
       }
+      done();
+      return;
     }
     // Clean bucket
     if (options.bucket) {
@@ -75,9 +80,13 @@ describe.each([
           Bucket: bucket,
           Delete: { Objects: data.Contents.map(({ Key }) => ({ Key })) },
         };
-        s3.deleteObjects(deleteParams, (err, deleteData) => {});
+        s3.deleteObjects(deleteParams, (err, deleteData) => {
+          done();
+        });
       });
+      return;
     }
+    done();
   });
 
   it('should store file', async () => {
@@ -155,5 +164,21 @@ describe.each([
 
     const fileList = await query.get(`/file/${boxId}/`).expect(200);
     expect(fileList.body.length).toBe(0);
+  });
+
+  it('should return 404', async () => {
+    const boxId = 'box050';
+
+    await query.get(`/file/${boxId}/nofile`).expect(404);
+    await query.delete(`/file/${boxId}/nofile`).expect(404);
+
+    // To create box
+    await query
+      .post(`/file/${boxId}/`)
+      .attach('file', path.resolve(__dirname, 'test.png'))
+      .expect(200);
+
+    await query.get(`/file/${boxId}/nofile2`).expect(404);
+    await query.delete(`/file/${boxId}/nofile2`).expect(404);
   });
 });

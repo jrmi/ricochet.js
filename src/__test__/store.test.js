@@ -86,13 +86,11 @@ describe('Store Test', () => {
     const res2 = await query
       .put(`/store/myboxid_test4/${resourceId}`)
       .send({ value: 42 })
-      .expect(200)
-      .expect('Content-Type', /json/);
+      .expect(200);
 
     const res3 = await query
       .get(`/store/myboxid_test4/${resourceId}`)
-      .expect(200)
-      .expect('Content-Type', /json/);
+      .expect(200);
 
     expect(res3.body.value).toEqual(42);
   });
@@ -111,5 +109,13 @@ describe('Store Test', () => {
       .expect('Content-Type', /json/);
 
     const res3 = await query.get(`/store/myboxid_test5/`).expect(200, []);
+  });
+
+  it('should return 404', async () => {
+    const boxId = 'boxId_400';
+
+    await query.get(`/store/${boxId}/noresource`).expect(404);
+
+    await query.delete(`/store/${boxId}/noresource`).expect(404);
   });
 });
