@@ -36,6 +36,7 @@
     "jest": "^26.4.2",
     "nodemon": "^2.0.4",
     "prettier": "^2.1.2",
-    "supertest": "^4.0.2"
+    "supertest": "^4.0.2",
+    "tempy": "^0.7.0"
   }
 }
