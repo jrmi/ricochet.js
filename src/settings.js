@@ -19,3 +19,6 @@ export const S3_BUCKET = process.env.S3_BUCKET;
 export const STORE_BACKEND = process.env.STORE_BACKEND || 'memory';
 export const STORE_PREFIX = process.env.STORE_PREFIX || '/store';
 export const NEDB_BACKEND_DIRNAME = process.env.NEDB_BACKEND_DIRNAME || '/tmp/';
+
+export const EXECUTE_SCRIPT_HOST =
+  process.env.EXECUTE_SCRIPT_HOST || 'http://localhost:3000';

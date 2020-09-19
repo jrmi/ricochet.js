@@ -1,6 +1,6 @@
 import request from 'supertest';
 import express from 'express';
-import exec from '../execute';
+import execute from '../execute';
 
 jest.mock('nanoid', () => {
   let count = 0;
@@ -27,7 +27,7 @@ describe('Store Test', () => {
   beforeAll(() => {
     app = express();
     app.use(express.json());
-    app.use(exec({ remote: 'http://localhost:5000' }));
+    app.use(execute({ remote: 'http://localhost:5000' }));
     query = request(app);
   });
 
@@ -56,5 +56,17 @@ describe('Store Test', () => {
     expect(result.body.stackTrace).toEqual(
       expect.stringContaining('no js here !!!')
     );
+  });
+
+  it('should load setup', async () => {
+    const app2 = express();
+    app2.use(express.json());
+    app2.use(execute({ remote: 'http://localhost:5000', setup: 'mysetup' }));
+
+    const result = await request(app2)
+      .get(`/execute/mytestfunction/`)
+      .expect(200);
+
+    expect(result.body).toEqual(expect.objectContaining({ response: 42 }));
   });
 });

@@ -6,6 +6,7 @@ const errorGuard = (func) => async (req, res, next) => {
   try {
     return await func(req, res, next);
   } catch (error) {
+    // console.log(error);
     next(error);
   }
 };
@@ -19,6 +20,11 @@ export const exec = ({
 } = {}) => {
   const functionCache = {};
 
+  /**
+   * Get and cache the script designed by name from remote
+   * @param {string} functionName script name.
+   * @param {string} extraCommands to be concatened at the end of script.
+   */
   const cacheOrFetch = async (functionName, extraCommands = '') => {
     if (functionCache[functionName]) {
       return functionCache[functionName];
@@ -49,23 +55,28 @@ export const exec = ({
             });
           })
           .on('error', (err) => {
+            /* istanbul ignore next */
             reject(err);
           });
       });
     }
   };
 
-  let config = {};
-
-  // Load config
-  cacheOrFetch(setup, '\nmain();').then((toRun) => {
-    if (toRun) {
-      config = toRun.runInNewContext();
+  let _config = null;
+  const getConfig = async () => {
+    if (!_config) {
+      const toRun = await cacheOrFetch(setup, '\nmain();');
+      if (toRun) {
+        _config = toRun.runInNewContext();
+      } else {
+        _config = {};
+      }
     }
-  });
+    return _config;
+  };
 
   const router = express.Router();
-  // One object
+
   router.all(
     `/${prefix}/:functionName/:id?`,
     errorGuard(async (req, res) => {
@@ -89,7 +100,7 @@ export const exec = ({
         method,
         id,
         ...context,
-        ...config,
+        ...(await getConfig()),
       };
 
       const result = await toRun.runInNewContext(fullContext);

@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
 import { createServer } from 'http';
 
 import fileStore from './fileStore.js';
@@ -9,7 +8,7 @@ import { defineSocket } from './socket.js';
 
 import { NeDBBackend, memoryBackend } from './storeBackends.js';
 
-import exec from './execute.js';
+import execute from './execute.js';
 
 import {
   HOST,
@@ -24,6 +23,7 @@ import {
   STORE_BACKEND,
   STORE_PREFIX,
   NEDB_BACKEND_DIRNAME,
+  EXECUTE_SCRIPT_HOST,
 } from './settings.js';
 
 const app = express();
@@ -60,19 +60,11 @@ switch (STORE_BACKEND) {
     app.use(store({ prefix: STORE_PREFIX, backend: storeBackend }));
 }
 
-app.use(exec({ context: { store: storeBackend } }));
+app.use(
+  execute({ context: { store: storeBackend }, remote: EXECUTE_SCRIPT_HOST })
+);
 
 defineSocket(httpServer);
-
-const __dirname = path.resolve();
-
-// Serve statice file from frontend
-app.use(express.static(path.join(__dirname, './build')));
-
-// Handles any requests that don't match the ones above
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, './build/index.html'));
-});
 
 httpServer.listen(PORT, HOST, () => {
   console.log(`listening on ${HOST}:${PORT}`);
