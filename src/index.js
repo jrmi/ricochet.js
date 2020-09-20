@@ -32,8 +32,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-console.log(FILE_STORE_TYPE);
-
 app.use(
   fileStore(FILE_STORE_TYPE, {
     url: API_URL,
