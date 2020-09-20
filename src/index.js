@@ -14,7 +14,7 @@ import {
   HOST,
   PORT,
   API_URL,
-  FILE_STORAGE,
+  FILE_STORE_TYPE,
   DISK_DESTINATION,
   S3_SECRET_KEY,
   S3_ACCESS_KEY,
@@ -32,8 +32,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+console.log(FILE_STORE_TYPE);
+
 app.use(
-  fileStore(FILE_STORAGE, {
+  fileStore(FILE_STORE_TYPE, {
     url: API_URL,
     destination: DISK_DESTINATION,
     bucket: S3_BUCKET,
