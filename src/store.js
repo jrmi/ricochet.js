@@ -6,10 +6,14 @@ import { memoryBackend } from './storeBackends.js';
 // ROADMAP
 // - Add bulk operations with atomicity
 // - Handle more permissions types (Read, Delete, …)
-// - Allow to send encrypted code block
 // - Add Queries
 // - Add relationship
 // - Add http2 relationship ?
+// - Add multiple strategies
+//   - Read / Write
+//   - Read / Write with key
+//   - Read only
+//   - No access (only from execute)
 
 const throwError = (message, code = 400) => {
   const errorObject = new Error(message);
@@ -82,24 +86,24 @@ export const store = ({
     })
   );
 
-  // Create object
+  // Create / replace object
   router.post(
-    `${prefix}/:boxId/`,
+    `${prefix}/:boxId/:id?`,
     errorGuard(async (req, res) => {
       const {
-        params: { boxId },
+        params: { boxId, id },
         body,
       } = req;
       /*const { key } = req.query;
       if (!backend.checkSecurity(boxId, null, key)) {
         throwError("You need write access for this box", 403);
       }*/
-      const result = await backend.create(boxId, body);
+      const result = await backend.save(boxId, id, body);
       return res.json(result);
     })
   );
 
-  // Update object
+  // Update existing object
   router.put(
     `${prefix}/:boxId/:id`,
     errorGuard(async (req, res) => {

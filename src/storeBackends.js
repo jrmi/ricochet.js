@@ -9,14 +9,14 @@ const throwError = (message, code = 400) => {
 
 // Memory backend for proof of concept
 export const memoryBackend = () => {
-  const data = {};
+  const dataMemoryStore = {};
   const security = {};
 
   const getOrCreateBox = (boxId) => {
-    if (typeof data[boxId] !== 'object') {
-      data[boxId] = {};
+    if (typeof dataMemoryStore[boxId] !== 'object') {
+      dataMemoryStore[boxId] = {};
     }
-    return data[boxId];
+    return dataMemoryStore[boxId];
   };
 
   const filterObjectProperties = (obj, propArr) => {
@@ -60,6 +60,7 @@ export const memoryBackend = () => {
         );
       }
     },
+
     async list(
       boxId,
       {
@@ -71,10 +72,10 @@ export const memoryBackend = () => {
         q,
       } = {}
     ) {
-      if (data[boxId] === undefined) {
+      if (dataMemoryStore[boxId] === undefined) {
         return [];
       }
-      let result = Object.values(data[boxId]);
+      let result = Object.values(dataMemoryStore[boxId]);
 
       result.sort((resource1, resource2) => {
         if (resource1[sort] < resource2[sort]) {
@@ -95,45 +96,76 @@ export const memoryBackend = () => {
       }
       return result;
     },
+
     async get(boxId, id) {
-      if (!data[boxId]) {
+      if (!dataMemoryStore[boxId]) {
         throwError('Box not found', 404);
       }
-      if (!data[boxId][id]) {
+      if (!dataMemoryStore[boxId][id]) {
         throwError('Resource not found', 404);
       }
-      return data[boxId][id];
+      return dataMemoryStore[boxId][id];
     },
-    async create(boxId, data) {
-      const newRessource = { ...data, _id: nanoid(), _createdOn: Date.now() };
-      getOrCreateBox(boxId)[newRessource._id] = newRessource;
+
+    async save(boxId, id, data) {
+      const cleanedData = data;
+      delete cleanedData._createdOn;
+      delete cleanedData._modifiedOn;
+
+      const actualId = id || nanoid();
+      const box = getOrCreateBox(boxId);
+
+      let newRessource = null;
+      if (box[actualId]) {
+        // Update
+        newRessource = {
+          ...cleanedData,
+          _id: actualId,
+          _createdOn: box[actualId]._createdOn,
+          _updatedOn: Date.now(),
+        };
+        box[actualId] = newRessource;
+      } else {
+        newRessource = {
+          ...cleanedData,
+          _id: actualId,
+          _createdOn: Date.now(),
+        };
+        box[actualId] = newRessource;
+      }
       return newRessource;
     },
-    async update(boxId, id, body) {
-      // To prevent created modification
-      if (!data[boxId]) {
+
+    async update(boxId, id, data) {
+      if (!dataMemoryStore[boxId]) {
         throwError('Box not found', 404);
       }
-      if (!data[boxId][id]) {
+      if (!dataMemoryStore[boxId][id]) {
         throwError('Ressource not found', 404);
       }
-      const { created } = data[boxId][id];
+
+      const cleanedData = data;
+      delete cleanedData._createdOn;
+      delete cleanedData._modifiedOn;
+
+      // To prevent created modification
+      const currentData = dataMemoryStore[boxId][id];
       const updatedItem = {
-        ...data[boxId][id],
-        ...body,
+        ...currentData,
+        ...cleanedData,
         _id: id,
-        created,
         _updatedOn: Date.now(),
       };
-      data[boxId][id] = updatedItem;
+      dataMemoryStore[boxId][id] = updatedItem;
       return updatedItem;
     },
+
     async delete(boxId, id) {
-      if (!data[boxId]) {
+      if (!dataMemoryStore[boxId]) {
         return 0;
       }
-      if (data[boxId][id] !== undefined) {
-        delete data[boxId][id];
+      if (dataMemoryStore[boxId][id] !== undefined) {
+        delete dataMemoryStore[boxId][id];
         return 1;
       }
       return 0;
@@ -248,32 +280,85 @@ export const NeDBBackend = (options) => {
         });
       });
     },
-    async create(boxId, data) {
+
+    async save(boxId, id, data) {
       const boxRecord = await getBoxRecord(boxId);
       if (!boxRecord) {
         createBoxRecord(boxId);
       }
       const boxDB = getBoxDB(boxId);
+      const actualId = id || nanoid();
+
+      const cleanedData = data;
+      delete cleanedData._createdOn;
+      delete cleanedData._modifiedOn;
+
       return new Promise((resolve, reject) => {
-        boxDB.insert({ ...data, _createdOn: Date.now() }, (err, doc) => {
+        // Creation with id or update with id
+        boxDB.findOne({ _id: actualId }, (err, doc) => {
           if (err) {
             /* istanbul ignore next */
             reject(err);
           }
-          resolve(doc);
+          if (!doc) {
+            // Creation
+            boxDB.insert(
+              { ...cleanedData, _createdOn: Date.now(), _id: actualId },
+              (err, doc) => {
+                if (err) {
+                  /* istanbul ignore next */
+                  reject(err);
+                }
+                resolve(doc);
+              }
+            );
+          } else {
+            // Update
+            boxDB.update(
+              { _id: actualId },
+              {
+                ...cleanedData,
+                _updatedOn: Date.now(),
+                _createdOn: doc._createdOn,
+                _id: actualId,
+              },
+              { returnUpdatedDocs: true },
+              (err, numAffected, affectedDoc) => {
+                if (!numAffected) {
+                  reject(new Error('Resource not found'));
+                }
+                if (err) {
+                  /* istanbul ignore next */
+                  reject(err);
+                }
+                resolve(affectedDoc);
+              }
+            );
+          }
         });
       });
     },
-    async update(boxId, id, body) {
+    async update(boxId, id, data) {
       const boxRecord = await getBoxRecord(boxId);
       if (!boxRecord) {
         throwError('Box not found', 404);
       }
       const boxDB = getBoxDB(boxId);
+
+      const cleanedData = data;
+      delete cleanedData._createdOn;
+      delete cleanedData._modifiedOn;
+
       return new Promise((resolve, reject) => {
         boxDB.update(
           { _id: id },
-          body,
+          {
+            $set: {
+              ...cleanedData,
+              _updatedOn: Date.now(),
+              _id: id,
+            },
+          },
           { returnUpdatedDocs: true },
           (err, numAffected, affectedDoc) => {
             if (!numAffected) {
@@ -288,6 +373,7 @@ export const NeDBBackend = (options) => {
         );
       });
     },
+
     async delete(boxId, id) {
       const boxRecord = await getBoxRecord(boxId);
       if (!boxRecord) {
