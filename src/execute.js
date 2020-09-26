@@ -2,6 +2,13 @@ import express from 'express';
 import http from 'http';
 import vm from 'vm';
 
+/* Roadmap
+- Encrypt setyp.js
+- Allow to register new site
+  - Return public key if no key pair is given
+- Allow to sign code
+*/
+
 const errorGuard = (func) => async (req, res, next) => {
   try {
     return await func(req, res, next);
@@ -18,6 +25,7 @@ export const exec = ({
   remote,
   setup = 'setup',
 } = {}) => {
+  const router = express.Router();
   const functionCache = {};
 
   /**
@@ -62,21 +70,26 @@ export const exec = ({
     }
   };
 
-  let _config = null;
+  let config = null;
   const getConfig = async () => {
-    if (!_config) {
+    if (!config) {
       const toRun = await cacheOrFetch(setup, '\nmain();');
       if (toRun) {
-        _config = toRun.runInNewContext();
+        const setupContext = {
+          console,
+          ...context,
+        };
+        config = toRun.runInNewContext(setupContext);
       } else {
-        _config = {};
+        config = {};
       }
     }
-    return _config;
+    return config;
   };
 
-  const router = express.Router();
+  let configPromise = getConfig();
 
+  // Route all query to correct script
   router.all(
     `/${prefix}/:functionName/:id?`,
     errorGuard(async (req, res) => {
@@ -93,6 +106,9 @@ export const exec = ({
         return;
       }
 
+      // Wait to be sure config is resolved
+      await configPromise;
+
       const fullContext = {
         console,
         query,
@@ -100,7 +116,7 @@ export const exec = ({
         method,
         id,
         ...context,
-        ...(await getConfig()),
+        ...config,
       };
 
       const result = await toRun.runInNewContext(fullContext);
