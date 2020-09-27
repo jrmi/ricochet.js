@@ -9,6 +9,9 @@ import { defineSocket } from './socket.js';
 import { NeDBBackend, memoryBackend } from './storeBackends.js';
 
 import execute from './execute.js';
+import auth from './authentication.js';
+
+import cookieSession from 'cookie-session';
 
 import {
   HOST,
@@ -31,6 +34,42 @@ const httpServer = createServer(app);
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+const onSendToken = (userEmail, userHash, token) => {
+  console.log(`/auth/${token}/?userHash=${userHash}`);
+};
+const onLogin = (userHash, req) => {
+  req.session.userHash = userHash;
+};
+
+const onLogout = (req) => {
+  req.session = null;
+};
+
+const SECRET = 'mysecret';
+
+app.use(
+  cookieSession({
+    name: 'session',
+    keys: [SECRET],
+
+    // Cookie Options
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  })
+);
+
+app.use(auth({ onSendToken, onLogin, onLogout, secret: SECRET }));
+
+app.use((req, res, next) => {
+  if (req.session.userHash) {
+    console.log('Authenticated');
+    req.authenticatedUser = req.session.userHash;
+  } else {
+    console.log('Not authenticated');
+    req.authenticatedUser = null;
+  }
+  next();
+});
 
 app.use(
   fileStore(FILE_STORE_TYPE, {
