@@ -11,7 +11,6 @@ import { memoryBackend } from './storeBackends.js';
 // - Add http2 relationship ?
 // - Add multiple strategies
 //   - Read / Write
-//   - Read / Write with key
 //   - Read only
 //   - No access (only from execute)
 

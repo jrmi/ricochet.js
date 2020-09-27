@@ -57,6 +57,14 @@ describe('Store Test', () => {
       .expect('Content-Type', /json/);
 
     expect(res.body).toEqual(res2.body[0]);
+
+    // Test object creation with id
+    const resWithId = await query
+      .post('/store/myboxid_test2/myid')
+      .send({ foo: 'bar', bar: 'foo' })
+      .expect(200);
+
+    expect(resWithId.body._id).toBe('myid');
   });
 
   it('should get a resource', async () => {
@@ -93,6 +101,15 @@ describe('Store Test', () => {
       .expect(200);
 
     expect(res3.body.value).toEqual(42);
+
+    const replaceWithId = await query
+      .post(`/store/myboxid_test4/${resourceId}`)
+      .send({ value: 52 })
+      .expect(200);
+
+    expect(replaceWithId.body).not.toEqual(
+      expect.objectContaining({ test: true })
+    );
   });
 
   it('should delete a resource', async () => {
