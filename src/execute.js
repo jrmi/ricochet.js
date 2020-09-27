@@ -18,7 +18,7 @@ const errorGuard = (func) => async (req, res, next) => {
   }
 };
 
-// Exec Middleware
+// Execute Middleware
 export const exec = ({
   prefix = 'execute',
   context = {},

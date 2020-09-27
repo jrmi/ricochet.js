@@ -49,6 +49,10 @@ export const store = ({
         fields,
       } = req.query;
 
+      if (!(await backend.checkSecurity(boxId, null))) {
+        throwError('You need read access for this box', 403);
+      }
+
       const onlyFields = fields ? fields.split(',') : [];
 
       const parsedLimit = parseInt(limit, 10);
@@ -80,6 +84,18 @@ export const store = ({
     `${prefix}/:boxId/:id`,
     errorGuard(async (req, res) => {
       const { boxId, id } = req.params;
+
+      if (boxId[0] === '_') {
+        throwError(
+          "'_' char is forbidden for first letter of a box id parameter",
+          400
+        );
+      }
+
+      if (!(await backend.checkSecurity(boxId, id))) {
+        throwError('You need read access for this box', 403);
+      }
+
       const result = await backend.get(boxId, id);
       res.json(result);
     })
@@ -93,10 +109,17 @@ export const store = ({
         params: { boxId, id },
         body,
       } = req;
-      /*const { key } = req.query;
-      if (!backend.checkSecurity(boxId, null, key)) {
-        throwError("You need write access for this box", 403);
-      }*/
+
+      if (boxId[0] === '_') {
+        throwError(
+          "'_' char is forbidden for first letter of a box id parameter",
+          400
+        );
+      }
+
+      if (!(await backend.checkSecurity(boxId, id, true))) {
+        throwError('You need write access for this box', 403);
+      }
       const result = await backend.save(boxId, id, body);
       return res.json(result);
     })
@@ -107,8 +130,15 @@ export const store = ({
     `${prefix}/:boxId/:id`,
     errorGuard(async (req, res) => {
       const { boxId, id } = req.params;
-      const { key } = req.query;
-      if (!(await backend.checkSecurity(boxId, id, key))) {
+
+      if (boxId[0] === '_') {
+        throwError(
+          "'_' char is forbidden for first letter of a letter of a box id parameter",
+          400
+        );
+      }
+
+      if (!(await backend.checkSecurity(boxId, id, true))) {
         throwError('You need write access for this resource', 403);
       }
       const result = await backend.update(boxId, id, req.body);
@@ -121,8 +151,15 @@ export const store = ({
     `${prefix}/:boxId/:id`,
     errorGuard(async (req, res) => {
       const { boxId, id } = req.params;
-      const { key } = req.query;
-      if (!(await backend.checkSecurity(boxId, id, key))) {
+
+      if (boxId[0] === '_') {
+        throwError(
+          "'_' char is forbidden for first letter of a box id parameter",
+          400
+        );
+      }
+
+      if (!(await backend.checkSecurity(boxId, id, true))) {
         throwError('You need write access for this resource', 403);
       }
       const result = await backend.delete(boxId, id);

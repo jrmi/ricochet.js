@@ -7,6 +7,8 @@ const throwError = (message, code = 400) => {
   throw errorObject;
 };
 
+const DEFAULT_BOX_OPTIONS = { security: 'private', personal: false };
+
 // Memory backend for proof of concept
 export const memoryBackend = () => {
   const dataMemoryStore = {};
@@ -30,38 +32,21 @@ export const memoryBackend = () => {
   };
 
   return {
-    async checkSecurity(boxId, id, key) {
-      if (!boxOptions[boxId]) {
-        // Not secured
-        if (key) {
-          // Set security
-          boxOptions[boxId] = {};
-
-          if (id) {
-            // Id -> it's resource security
-            boxOptions[boxId][id] = key;
-          } else {
-            // No id -> it's box security
-            boxOptions[boxId]._box = key;
-          }
-        }
-        return true;
-      }
-
-      if (id) {
-        if (boxOptions[boxId][id] === undefined) {
-          boxOptions[boxId][id] = key;
+    async checkSecurity(boxId, id, write = false) {
+      const { security = 'private' } = boxOptions[boxId];
+      switch (security) {
+        case 'private':
+          return false;
+        case 'public':
           return true;
-        }
-        return boxOptions[boxId][id] === key;
-      } else {
-        return (
-          boxOptions[boxId]._box !== undefined && boxOptions[boxId]._box === id
-        );
+        case 'readOnly':
+          return !write;
+        default:
+          return false;
       }
     },
 
-    async createOrUpdateBox(boxId, options = {}) {
+    async createOrUpdateBox(boxId, options = { ...DEFAULT_BOX_OPTIONS }) {
       getOrCreateBox(boxId);
       boxOptions[boxId] = options;
       return { box: boxId, ...options };
@@ -194,8 +179,6 @@ export const NeDBBackend = (options) => {
     autoload: true,
   });
 
-  // const createOrUpdateBoxRecord = (boxId, options = {}) => {};
-
   const getBoxRecord = (boxId) => {
     return new Promise((resolve, reject) => {
       db.boxes.findOne({ box: boxId }, (err, doc) => {
@@ -220,9 +203,37 @@ export const NeDBBackend = (options) => {
   };
 
   return {
-    async checkSecurity(boxId, id, key) {
-      return true;
+    async checkSecurity(boxId, id, write = false) {
+      const { security = 'private' } = await getBoxRecord(boxId);
+      switch (security) {
+        case 'private':
+          return false;
+        case 'public':
+          return true;
+        case 'readOnly':
+          return !write;
+        default:
+          return false;
+      }
     },
+
+    async createOrUpdateBox(boxId, options = { ...DEFAULT_BOX_OPTIONS }) {
+      return new Promise((resolve, reject) => {
+        db.boxes.update(
+          { box: boxId },
+          { ...options, box: boxId },
+          { upsert: true },
+          (err, doc) => {
+            if (err) {
+              /* istanbul ignore next */
+              reject(err);
+            }
+            resolve(doc);
+          }
+        );
+      });
+    },
+
     async list(
       boxId,
       {
@@ -235,12 +246,11 @@ export const NeDBBackend = (options) => {
       } = {}
     ) {
       const boxRecord = await getBoxRecord(boxId);
-      /*if (!boxRecord) {
-        return [];
-      }*/
+
       if (!boxRecord) {
         throwError('Box not found', 404);
       }
+
       const boxDB = getBoxDB(boxId);
       return new Promise((resolve, reject) => {
         boxDB
@@ -266,28 +276,13 @@ export const NeDBBackend = (options) => {
       });
     },
 
-    async createOrUpdateBox(boxId, options) {
-      return new Promise((resolve, reject) => {
-        db.boxes.update(
-          { box: boxId },
-          { ...options, box: boxId },
-          { upsert: true },
-          (err, doc) => {
-            if (err) {
-              /* istanbul ignore next */
-              reject(err);
-            }
-            resolve(doc);
-          }
-        );
-      });
-    },
-
     async get(boxId, id) {
       const boxRecord = await getBoxRecord(boxId);
+
       if (!boxRecord) {
         throwError('Box not found', 404);
       }
+
       const boxDB = getBoxDB(boxId);
       return new Promise((resolve, reject) => {
         boxDB.findOne({ _id: id }, (err, doc) => {
@@ -305,12 +300,11 @@ export const NeDBBackend = (options) => {
 
     async save(boxId, id, data) {
       const boxRecord = await getBoxRecord(boxId);
+
       if (!boxRecord) {
         throwError('Box not found', 404);
       }
-      /*if (!boxRecord) {
-        createOrUpdateBoxRecord(boxId);
-      }*/
+
       const boxDB = getBoxDB(boxId);
       const actualId = id || nanoid();
 
@@ -363,6 +357,7 @@ export const NeDBBackend = (options) => {
         });
       });
     },
+
     async update(boxId, id, data) {
       const boxRecord = await getBoxRecord(boxId);
       if (!boxRecord) {
@@ -422,6 +417,7 @@ export const NeDBBackend = (options) => {
 /*export const Backend = () => {
   return {
     async checkSecurity(boxId, id, key) {},
+    async createOrUpdateBox(boxId, options = { ...DEFAULT_BOX_OPTIONS }) {},
     async list(boxId, { limit, sort, skip, onlyFields, q }) {},
     async get(boxId, id) {},
     async create(boxId, data) {},

@@ -36,7 +36,7 @@ describe('Store Test', () => {
 
   it('should get empty box', async () => {
     const box = 'myboxid_test1';
-    await backend.createOrUpdateBox(box);
+    await backend.createOrUpdateBox(box, { security: 'public' });
 
     const res = await query
       .get(`/store/${box}/`)
@@ -46,7 +46,7 @@ describe('Store Test', () => {
 
   it('should add resource', async () => {
     const box = 'myboxid_test2';
-    await backend.createOrUpdateBox(box);
+    await backend.createOrUpdateBox(box, { security: 'public' });
 
     const res = await query
       .post(`/store/${box}/`)
@@ -77,7 +77,7 @@ describe('Store Test', () => {
 
   it('should get a resource', async () => {
     const box = 'myboxid_test3';
-    await backend.createOrUpdateBox(box);
+    await backend.createOrUpdateBox(box, { security: 'public' });
 
     const res = await query
       .post(`/store/${box}/`)
@@ -96,7 +96,7 @@ describe('Store Test', () => {
 
   it('should update a resource', async () => {
     const box = 'myboxid_test4';
-    await backend.createOrUpdateBox(box);
+    await backend.createOrUpdateBox(box, { security: 'public' });
 
     const res = await query
       .post(`/store/${box}/`)
@@ -126,7 +126,7 @@ describe('Store Test', () => {
 
   it('should delete a resource', async () => {
     const box = 'myboxid_test5';
-    await backend.createOrUpdateBox(box);
+    await backend.createOrUpdateBox(box, { security: 'public' });
 
     const res = await query
       .post(`/store/${box}/`)
@@ -145,10 +145,27 @@ describe('Store Test', () => {
 
   it('should return 404', async () => {
     const box = 'boxId_400';
-    await backend.createOrUpdateBox(box);
+    await backend.createOrUpdateBox(box, { security: 'public' });
 
     await query.get(`/store/${box}/noresource`).expect(404);
 
     await query.delete(`/store/${box}/noresource`).expect(404);
+  });
+
+  it('should return 403', async () => {
+    let box = 'boxId_500';
+    await backend.createOrUpdateBox(box, { security: 'readOnly' });
+
+    await query.get(`/store/${box}/`).expect(200);
+
+    await query
+      .post(`/store/${box}/`)
+      .send({ test: true, value: 40 })
+      .expect(403);
+
+    box = 'boxId_550';
+    await backend.createOrUpdateBox(box);
+
+    await query.get(`/store/${box}/`).expect(403);
   });
 });

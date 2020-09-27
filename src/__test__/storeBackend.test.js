@@ -265,4 +265,26 @@ describe.each(backends)('Store backend <%s> tests', (backendName, backend) => {
       backend.update(box, 'noid', { value: 'titi' })
     ).rejects.toThrow();
   });
+
+  it('should check security', async () => {
+    const box = 'boxId70';
+
+    // Create box
+    await backend.createOrUpdateBox(box, { security: 'private' });
+
+    await expect(backend.checkSecurity(box, null)).resolves.toBe(false);
+    await expect(backend.checkSecurity(box, null, true)).resolves.toBe(false);
+
+    // Create box
+    await backend.createOrUpdateBox(box, { security: 'readOnly' });
+
+    await expect(backend.checkSecurity(box, null)).resolves.toBe(true);
+    await expect(backend.checkSecurity(box, null, true)).resolves.toBe(false);
+
+    // Create box
+    await backend.createOrUpdateBox(box, { security: 'public' });
+
+    await expect(backend.checkSecurity(box, null)).resolves.toBe(true);
+    await expect(backend.checkSecurity(box, null, true)).resolves.toBe(true);
+  });
 });
