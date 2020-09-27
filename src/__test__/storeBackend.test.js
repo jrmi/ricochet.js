@@ -25,12 +25,22 @@ const backends = [
 
 describe.each(backends)('Store backend <%s> tests', (backendName, backend) => {
   it('should get empty box', async () => {
-    const res = await backend.list('boxid1', {});
+    const box = 'boxid1';
+    await expect(backend.list(box, {})).rejects.toThrow();
+
+    // Create box
+    await backend.createOrUpdateBox(box, { option: 1 });
+
+    const res = await backend.list(box, {});
     expect(res).toEqual([]);
   });
 
   it('should add resource', async () => {
-    const res = await backend.save('boxid2', null, { value: 42, test: true });
+    const box = 'boxid2';
+    // Create box
+    await backend.createOrUpdateBox(box, { option: 1 });
+
+    const res = await backend.save(box, null, { value: 42, test: true });
     expect(res).toEqual(expect.objectContaining({ test: true, value: 42 }));
 
     // Is return value ok
@@ -38,16 +48,19 @@ describe.each(backends)('Store backend <%s> tests', (backendName, backend) => {
     expect(res._createdOn).toBeGreaterThanOrEqual(1584183661135);
 
     // Is get working
-    const res2 = await backend.get('boxid2', res._id);
+    const res2 = await backend.get(box, res._id);
     expect(res2).toEqual(res);
 
     // Is list updated
-    const res3 = await backend.list('boxid2');
+    const res3 = await backend.list(box);
     expect(res3[0]).toEqual(res);
   });
 
   it('should add resource with specified id', async () => {
     const box = 'boxId10';
+    // Create box
+    await backend.createOrUpdateBox(box, { option: 1 });
+
     const res = await backend.save(box, 'myid', {
       value: 42,
       test: true,
@@ -66,6 +79,10 @@ describe.each(backends)('Store backend <%s> tests', (backendName, backend) => {
 
   it('should save resource with specified id', async () => {
     const box = 'boxId15';
+
+    // Create box
+    await backend.createOrUpdateBox(box, { option: 1 });
+
     const res = await backend.save(box, 'myid', { value: 42, test: true });
     expect(res).toEqual(expect.objectContaining({ test: true, value: 42 }));
 
@@ -86,29 +103,33 @@ describe.each(backends)('Store backend <%s> tests', (backendName, backend) => {
   });
 
   it('should add tree resources', async () => {
-    const first = await backend.save('boxid20', null, {
+    const box = 'boxid20';
+    // Create box
+    await backend.createOrUpdateBox(box, { option: 1 });
+
+    const first = await backend.save(box, null, {
       value: 40,
       test: false,
     });
     expect(first).toEqual(expect.objectContaining({ test: false, value: 40 }));
 
-    const second = await backend.save('boxid20', null, {
+    const second = await backend.save(box, null, {
       value: 42,
       test: true,
     });
     expect(second).toEqual(expect.objectContaining({ test: true, value: 42 }));
 
-    const third = await backend.save('boxid20', null, { value: 44 });
+    const third = await backend.save(box, null, { value: 44 });
     expect(third).toEqual(expect.objectContaining({ value: 44 }));
 
     // Is get working
-    const firstGet = await backend.get('boxid20', first._id);
+    const firstGet = await backend.get(box, first._id);
     expect(firstGet).toEqual(first);
-    const secondGet = await backend.get('boxid20', second._id);
+    const secondGet = await backend.get(box, second._id);
     expect(secondGet).toEqual(second);
 
     // Is list updated
-    const allResources = await backend.list('boxid20', { sort: '_createdOn' });
+    const allResources = await backend.list(box, { sort: '_createdOn' });
     expect(allResources[0]).toEqual(first);
     expect(allResources[1]).toEqual(second);
     expect(allResources[2]).toEqual(third);
@@ -116,12 +137,16 @@ describe.each(backends)('Store backend <%s> tests', (backendName, backend) => {
   });
 
   it('should update resource', async () => {
-    const res = await backend.save('boxid3', null, { value: 40, test: true });
+    const box = 'boxid3';
+    // Create box
+    await backend.createOrUpdateBox(box, { option: 1 });
+
+    const res = await backend.save(box, null, { value: 40, test: true });
     expect(res.value).toBe(40);
 
-    const modified = await backend.update('boxid3', res._id, { value: 42 });
+    const modified = await backend.update(box, res._id, { value: 42 });
 
-    const afterModification = await backend.get('boxid3', res._id);
+    const afterModification = await backend.get(box, res._id);
     expect(afterModification).toEqual(modified);
     expect(afterModification.value).toBe(42);
 
@@ -130,26 +155,33 @@ describe.each(backends)('Store backend <%s> tests', (backendName, backend) => {
   });
 
   it('should delete resource', async () => {
-    const predel = await backend.delete('boxid4', 'noid');
+    const box = 'boxid4';
+    // Create box
+    await backend.createOrUpdateBox(box, { option: 1 });
+
+    const predel = await backend.delete(box, 'noid');
     expect(predel).toBe(0);
 
-    const res = await backend.save('boxid4', null, { value: 42, test: true });
+    const res = await backend.save(box, null, { value: 42, test: true });
 
-    const allResources = await backend.list('boxid4');
+    const allResources = await backend.list(box);
     expect(allResources.length).toBe(1);
 
-    const del = await backend.delete('boxid4', res._id);
+    const del = await backend.delete(box, res._id);
     expect(del).toBe(1);
 
-    const allResourcesAfterDelete = await backend.list('boxid4');
+    const allResourcesAfterDelete = await backend.list(box);
     expect(allResourcesAfterDelete.length).toBe(0);
 
-    const nodel = await backend.delete('boxid4', res._id);
+    const nodel = await backend.delete(box, res._id);
     expect(nodel).toBe(0);
   });
 
   it('should list resources', async () => {
     const box = 'boxId50';
+    // Create box
+    await backend.createOrUpdateBox(box, { option: 1 });
+
     const first = await backend.save(box, null, { value: 40, test: false });
     const second = await backend.save(box, null, { value: 44, test: true });
     const third = await backend.save(box, null, { value: 42 });
@@ -206,6 +238,9 @@ describe.each(backends)('Store backend <%s> tests', (backendName, backend) => {
 
   it('should check security', async () => {
     const box = 'boxId51';
+    // Create box
+    await backend.createOrUpdateBox(box, { option: 1 });
+
     const first = await backend.save(box, null, { value: 40, test: false });
     const second = await backend.save(box, null, { value: 44, test: true });
     const third = await backend.save(box, null, { value: 42 });
@@ -223,7 +258,7 @@ describe.each(backends)('Store backend <%s> tests', (backendName, backend) => {
     ).rejects.toThrow();
 
     // Create box
-    await backend.save(box, null, { value: 40, test: false });
+    await backend.createOrUpdateBox(box, { option: 1 });
 
     await expect(backend.get(box, 'noid')).rejects.toThrow();
     await expect(

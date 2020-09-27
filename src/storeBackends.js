@@ -10,7 +10,7 @@ const throwError = (message, code = 400) => {
 // Memory backend for proof of concept
 export const memoryBackend = () => {
   const dataMemoryStore = {};
-  const security = {};
+  const boxOptions = {};
 
   const getOrCreateBox = (boxId) => {
     if (typeof dataMemoryStore[boxId] !== 'object') {
@@ -31,34 +31,40 @@ export const memoryBackend = () => {
 
   return {
     async checkSecurity(boxId, id, key) {
-      if (!security[boxId]) {
+      if (!boxOptions[boxId]) {
         // Not secured
         if (key) {
           // Set security
-          security[boxId] = {};
+          boxOptions[boxId] = {};
 
           if (id) {
             // Id -> it's resource security
-            security[boxId][id] = key;
+            boxOptions[boxId][id] = key;
           } else {
             // No id -> it's box security
-            security[boxId]._box = key;
+            boxOptions[boxId]._box = key;
           }
         }
         return true;
       }
 
       if (id) {
-        if (security[boxId][id] === undefined) {
-          security[boxId][id] = key;
+        if (boxOptions[boxId][id] === undefined) {
+          boxOptions[boxId][id] = key;
           return true;
         }
-        return security[boxId][id] === key;
+        return boxOptions[boxId][id] === key;
       } else {
         return (
-          security[boxId]._box !== undefined && security[boxId]._box === id
+          boxOptions[boxId]._box !== undefined && boxOptions[boxId]._box === id
         );
       }
+    },
+
+    async createOrUpdateBox(boxId, options = {}) {
+      getOrCreateBox(boxId);
+      boxOptions[boxId] = options;
+      return { box: boxId, ...options };
     },
 
     async list(
@@ -73,8 +79,9 @@ export const memoryBackend = () => {
       } = {}
     ) {
       if (dataMemoryStore[boxId] === undefined) {
-        return [];
+        throwError('Box not found', 404);
       }
+
       let result = Object.values(dataMemoryStore[boxId]);
 
       result.sort((resource1, resource2) => {
@@ -108,12 +115,16 @@ export const memoryBackend = () => {
     },
 
     async save(boxId, id, data) {
+      if (dataMemoryStore[boxId] === undefined) {
+        throwError('Box not found', 404);
+      }
+
       const cleanedData = data;
       delete cleanedData._createdOn;
       delete cleanedData._modifiedOn;
 
       const actualId = id || nanoid();
-      const box = getOrCreateBox(boxId);
+      const box = dataMemoryStore[boxId];
 
       let newRessource = null;
       if (box[actualId]) {
@@ -183,17 +194,7 @@ export const NeDBBackend = (options) => {
     autoload: true,
   });
 
-  const createBoxRecord = (boxId) => {
-    return new Promise((resolve, reject) => {
-      db.boxes.insert({ box: boxId }, (err, doc) => {
-        if (err) {
-          /* istanbul ignore next */
-          reject(err);
-        }
-        resolve(doc);
-      });
-    });
-  };
+  // const createOrUpdateBoxRecord = (boxId, options = {}) => {};
 
   const getBoxRecord = (boxId) => {
     return new Promise((resolve, reject) => {
@@ -234,8 +235,11 @@ export const NeDBBackend = (options) => {
       } = {}
     ) {
       const boxRecord = await getBoxRecord(boxId);
-      if (!boxRecord) {
+      /*if (!boxRecord) {
         return [];
+      }*/
+      if (!boxRecord) {
+        throwError('Box not found', 404);
       }
       const boxDB = getBoxDB(boxId);
       return new Promise((resolve, reject) => {
@@ -261,6 +265,24 @@ export const NeDBBackend = (options) => {
           });
       });
     },
+
+    async createOrUpdateBox(boxId, options) {
+      return new Promise((resolve, reject) => {
+        db.boxes.update(
+          { box: boxId },
+          { ...options, box: boxId },
+          { upsert: true },
+          (err, doc) => {
+            if (err) {
+              /* istanbul ignore next */
+              reject(err);
+            }
+            resolve(doc);
+          }
+        );
+      });
+    },
+
     async get(boxId, id) {
       const boxRecord = await getBoxRecord(boxId);
       if (!boxRecord) {
@@ -284,8 +306,11 @@ export const NeDBBackend = (options) => {
     async save(boxId, id, data) {
       const boxRecord = await getBoxRecord(boxId);
       if (!boxRecord) {
-        createBoxRecord(boxId);
+        throwError('Box not found', 404);
       }
+      /*if (!boxRecord) {
+        createOrUpdateBoxRecord(boxId);
+      }*/
       const boxDB = getBoxDB(boxId);
       const actualId = id || nanoid();
 
