@@ -26,17 +26,25 @@ import {
   STORE_BACKEND,
   STORE_PREFIX,
   NEDB_BACKEND_DIRNAME,
-  EXECUTE_SCRIPT_HOST,
+  REMOTE_HOST,
+  REMOTE_EXECUTE_URL,
+  SECRET,
 } from './settings.js';
 
 const app = express();
 const httpServer = createServer(app);
-app.use(cors());
+
+const corsOption = {
+  credentials: true,
+  origin: [REMOTE_HOST],
+};
+
+app.use(cors(corsOption));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const onSendToken = (userEmail, userHash, token) => {
-  console.log(`/auth/${token}/?userHash=${userHash}`);
+  console.log(`${REMOTE_HOST}/login/${userHash}/${token}`);
 };
 const onLogin = (userHash, req) => {
   req.session.userHash = userHash;
@@ -46,8 +54,7 @@ const onLogout = (req) => {
   req.session = null;
 };
 
-const SECRET = 'mysecret';
-
+// Session middleware
 app.use(
   cookieSession({
     name: 'session',
@@ -58,8 +65,7 @@ app.use(
   })
 );
 
-app.use(auth({ onSendToken, onLogin, onLogout, secret: SECRET }));
-
+// authenticate middleware
 app.use((req, res, next) => {
   if (req.session.userHash) {
     console.log('Authenticated');
@@ -71,6 +77,10 @@ app.use((req, res, next) => {
   next();
 });
 
+// Auth middleware
+app.use(auth({ onSendToken, onLogin, onLogout, secret: SECRET }));
+
+// File store
 app.use(
   fileStore(FILE_STORE_TYPE, {
     url: API_URL,
@@ -82,8 +92,8 @@ app.use(
   })
 );
 
+// JSON store
 let storeBackend;
-
 switch (STORE_BACKEND) {
   case 'nedb':
     storeBackend = NeDBBackend({ dirname: NEDB_BACKEND_DIRNAME });
@@ -99,8 +109,9 @@ switch (STORE_BACKEND) {
     app.use(store({ prefix: STORE_PREFIX, backend: storeBackend }));
 }
 
+// Execute middleware
 app.use(
-  execute({ context: { store: storeBackend }, remote: EXECUTE_SCRIPT_HOST })
+  execute({ context: { store: storeBackend }, remote: REMOTE_EXECUTE_URL })
 );
 
 defineSocket(httpServer);

@@ -64,6 +64,10 @@ export const authentication = ({
         body: { userEmail },
       } = req;
 
+      if (!userEmail) {
+        throwError("Missing mandatory 'email' parameter", 400);
+      }
+
       const userHash = sha256(userEmail);
 
       enp.createToken(userHash, (err, token) => {

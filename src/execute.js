@@ -79,7 +79,7 @@ export const exec = ({
           console,
           ...context,
         };
-        config = toRun.runInNewContext(setupContext);
+        config = await toRun.runInNewContext(setupContext);
       } else {
         config = {};
       }

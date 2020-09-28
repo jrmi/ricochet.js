@@ -1,6 +1,8 @@
 @api_url = http://localhost:3001/store
 @exec_url = http://localhost:3001/execution
 
+@auth_url = http://localhost:3001/auth
+
 ### LIST
 
 GET {{api_url}}/boxId/ HTTP/1.1
@@ -105,3 +107,14 @@ DELETE {{api_url}}/boxId/{{elemIdWithKey}}?key=testkey HTTP/1.1
 ### just get test
 
 GET {{exec_url}}/test/?param1=toto HTTP/1.1
+
+# Auth module
+
+### Get token
+
+POST {{auth_url}}/ HTTP/1.1
+
+{
+    "userId": "test@yopmail.com"
+}
+
