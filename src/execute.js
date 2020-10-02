@@ -24,6 +24,7 @@ export const exec = ({
   context = {},
   remote,
   setup = 'setup',
+  disableCache = false,
 } = {}) => {
   const router = express.Router();
   const functionCache = {};
@@ -55,7 +56,7 @@ export const exec = ({
               data += extraCommands;
               try {
                 const script = new vm.Script(data, { filename: functionUrl });
-                functionCache[functionName] = script;
+                if (!disableCache) functionCache[functionName] = script;
                 resolve(script);
               } catch (e) {
                 reject(e);
@@ -73,11 +74,11 @@ export const exec = ({
   let config = null;
   const getConfig = async () => {
     if (!config) {
-      const toRun = await cacheOrFetch(setup, '\nmain();');
+      const toRun = await cacheOrFetch(setup, '\nmain(__params);');
       if (toRun) {
         const setupContext = {
           console,
-          ...context,
+          __params: { ...context },
         };
         config = await toRun.runInNewContext(setupContext);
       } else {
@@ -98,9 +99,10 @@ export const exec = ({
         params: { functionName, id },
         query,
         method,
+        authenticatedUser = null,
       } = req;
 
-      const toRun = await cacheOrFetch(functionName, '\nmain();');
+      const toRun = await cacheOrFetch(functionName, '\nmain(__params);');
       if (!toRun) {
         res.status(404).send('Not found');
         return;
@@ -111,12 +113,15 @@ export const exec = ({
 
       const fullContext = {
         console,
-        query,
-        body,
-        method,
-        id,
-        ...context,
-        ...config,
+        __params: {
+          query,
+          body,
+          method,
+          id,
+          userId: authenticatedUser,
+          ...context,
+          ...config,
+        },
       };
 
       const result = await toRun.runInNewContext(fullContext);

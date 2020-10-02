@@ -27,3 +27,5 @@ const REMOTE_EXECUTE_PATH = process.env.REMOTE_EXECUTE_PATH || '/exec';
 export const REMOTE_EXECUTE_URL = `${REMOTE_HOST}/${REMOTE_EXECUTE_PATH}`;
 
 export const SECRET = process.env.SECRET;
+
+export const DISABLE_CACHE = process.env.DISABLE_CACHE === '1';

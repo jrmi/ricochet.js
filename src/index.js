@@ -29,6 +29,7 @@ import {
   REMOTE_HOST,
   REMOTE_EXECUTE_URL,
   SECRET,
+  DISABLE_CACHE,
 } from './settings.js';
 
 const app = express();
@@ -111,7 +112,11 @@ switch (STORE_BACKEND) {
 
 // Execute middleware
 app.use(
-  execute({ context: { store: storeBackend }, remote: REMOTE_EXECUTE_URL })
+  execute({
+    context: { store: storeBackend },
+    remote: REMOTE_EXECUTE_URL,
+    disableCache: DISABLE_CACHE,
+  })
 );
 
 defineSocket(httpServer);
