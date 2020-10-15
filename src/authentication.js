@@ -25,8 +25,8 @@ const sha256 = (data) => {
 export const authentication = ({
   prefix = 'auth',
   secret,
-  onSendToken = (userEmail, userHash, token) => {},
-  onLogin = (req, userHash) => {},
+  onSendToken = (userEmail, userId, token) => {},
+  onLogin = (req, userId) => {},
   onLogout = (req) => {},
 } = {}) => {
   const router = express.Router();
@@ -35,14 +35,14 @@ export const authentication = ({
 
   // Verify token
   router.get(
-    `/${prefix}/verify/:userHash/:token`,
+    `/${prefix}/verify/:userId/:token`,
     errorGuard(async (req, res) => {
       const {
-        params: { token, userHash },
+        params: { token, userId },
       } = req;
 
       const isValid = await new Promise((resolve, reject) => {
-        enp.isValid(token, userHash, (err, isValid) => {
+        enp.isValid(token, userId, (err, isValid) => {
           resolve(isValid);
         });
       });
@@ -50,7 +50,7 @@ export const authentication = ({
       if (!isValid) {
         throwError('Token invalid or has expired', 403);
       } else {
-        onLogin(userHash, req);
+        onLogin(userId, req);
         res.json({ message: 'success' });
       }
     })
@@ -68,13 +68,13 @@ export const authentication = ({
         throwError("Missing mandatory 'email' parameter", 400);
       }
 
-      const userHash = sha256(userEmail);
+      const userId = sha256(userEmail);
 
-      enp.createToken(userHash, (err, token) => {
+      enp.createToken(userId, (err, token) => {
         if (err) {
           throwError('Unknown error', 500);
         }
-        onSendToken(userEmail, userHash, token);
+        onSendToken(userEmail, userId, token);
 
         res.json({ message: 'Token sent' });
       });

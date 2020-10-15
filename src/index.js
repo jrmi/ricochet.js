@@ -44,11 +44,11 @@ app.use(cors(corsOption));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const onSendToken = (userEmail, userHash, token) => {
-  console.log(`${REMOTE_HOST}/login/${userHash}/${token}`);
+const onSendToken = (userEmail, userId, token) => {
+  console.log(`${REMOTE_HOST}/login/${userId}/${token}`);
 };
-const onLogin = (userHash, req) => {
-  req.session.userHash = userHash;
+const onLogin = (userId, req) => {
+  req.session.userId = userId;
 };
 
 const onLogout = (req) => {
@@ -68,9 +68,9 @@ app.use(
 
 // authenticate middleware
 app.use((req, res, next) => {
-  if (req.session.userHash) {
+  if (req.session.userId) {
     console.log('Authenticated');
-    req.authenticatedUser = req.session.userHash;
+    req.authenticatedUser = req.session.userId;
   } else {
     console.log('Not authenticated');
     req.authenticatedUser = null;

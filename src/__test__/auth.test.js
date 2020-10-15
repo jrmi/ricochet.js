@@ -28,18 +28,18 @@ describe('Authentication test', () => {
   it('should get and verify token', async () => {
     await query.post('/auth/').send({ userEmail: 'test@yopmail' }).expect(200);
 
-    const userHash = onSendToken.mock.calls[0][1];
+    const userId = onSendToken.mock.calls[0][1];
     const token = onSendToken.mock.calls[0][2];
 
     const result = await query
-      .get(`/auth/verify/${userHash}/${token}`)
+      .get(`/auth/verify/${userId}/${token}`)
       .expect(200);
 
     expect(onLogin).toHaveBeenCalled();
   });
 
   it('should failed verify token', async () => {
-    await query.get(`/auth/verify/fakeuserhash/badtoken`).expect(403);
+    await query.get(`/auth/verify/fakeuserid/badtoken`).expect(403);
 
     expect(onLogin).not.toHaveBeenCalled();
   });
@@ -48,9 +48,9 @@ describe('Authentication test', () => {
     await query.post('/auth/').send({ userEmail: 'test@yopmail' }).expect(200);
 
     const token = onSendToken.mock.calls[0][2];
-    const userHash = onSendToken.mock.calls[0][1];
+    const userId = onSendToken.mock.calls[0][1];
 
-    await query.get(`/auth/verify/${userHash}/${token}`).expect(200);
+    await query.get(`/auth/verify/${userId}/${token}`).expect(200);
 
     await query.get(`/auth/logout/`).expect(200);
 
