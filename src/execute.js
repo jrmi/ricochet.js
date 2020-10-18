@@ -71,21 +71,17 @@ export const exec = ({
     }
   };
 
-  let config = null;
   const getConfig = async () => {
-    if (!config) {
-      const toRun = await cacheOrFetch(setup, '\nmain(__params);');
-      if (toRun) {
-        const setupContext = {
-          console,
-          __params: { ...context },
-        };
-        config = await toRun.runInNewContext(setupContext);
-      } else {
-        config = {};
-      }
+    const toRun = await cacheOrFetch(setup, '\nmain(__params);');
+    if (toRun) {
+      const setupContext = {
+        console,
+        __params: { ...context },
+      };
+      return await toRun.runInNewContext(setupContext);
+    } else {
+      return {};
     }
-    return config;
   };
 
   let configPromise = getConfig();
@@ -108,8 +104,12 @@ export const exec = ({
         return;
       }
 
+      if (!configPromise || disableCache) {
+        configPromise = getConfig();
+      }
+
       // Wait to be sure config is resolved
-      await configPromise;
+      const config = await configPromise;
 
       const fullContext = {
         console,
