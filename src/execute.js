@@ -72,14 +72,19 @@ export const exec = ({
   };
 
   const getConfig = async () => {
-    const toRun = await cacheOrFetch(setup, '\nmain(__params);');
-    if (toRun) {
-      const setupContext = {
-        console,
-        __params: { ...context },
-      };
-      return await toRun.runInNewContext(setupContext);
-    } else {
+    try {
+      const toRun = await cacheOrFetch(setup, '\nmain(__params);');
+      if (toRun) {
+        const setupContext = {
+          console,
+          __params: { ...context },
+        };
+        return await toRun.runInNewContext(setupContext);
+      } else {
+        return {};
+      }
+    } catch (e) {
+      console.log(`Can't get config from remote ${remote}`, e);
       return {};
     }
   };
