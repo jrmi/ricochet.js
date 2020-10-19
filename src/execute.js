@@ -1,5 +1,6 @@
 import express from 'express';
 import http from 'http';
+import https from 'https';
 import vm from 'vm';
 
 /* Roadmap
@@ -26,6 +27,7 @@ export const exec = ({
   setup = 'setup',
   disableCache = false,
 } = {}) => {
+  const httpClient = remote.startsWith('https') ? https : http;
   const router = express.Router();
   const functionCache = {};
 
@@ -41,7 +43,7 @@ export const exec = ({
       return new Promise((resolve, reject) => {
         const functionUrl = `${remote}/${functionName}.js`;
 
-        http
+        httpClient
           .get(functionUrl, (resp) => {
             if (resp.statusCode === 404) {
               resolve(null);
