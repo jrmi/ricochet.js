@@ -179,7 +179,7 @@ export const NeDBBackend = (options) => {
     autoload: true,
   });
 
-  const getBoxRecord = (boxId) => {
+  const getBoxOption = (boxId) => {
     return new Promise((resolve, reject) => {
       db.boxes.findOne({ box: boxId }, (err, doc) => {
         if (err) {
@@ -204,7 +204,7 @@ export const NeDBBackend = (options) => {
 
   return {
     async checkSecurity(boxId, id, write = false) {
-      const { security = 'private' } = await getBoxRecord(boxId);
+      const { security = 'private' } = await getBoxOption(boxId);
       switch (security) {
         case 'private':
           return false;
@@ -212,6 +212,8 @@ export const NeDBBackend = (options) => {
           return true;
         case 'readOnly':
           return !write;
+        case 'writeOnly':
+          return write;
         default:
           return false;
       }
@@ -245,7 +247,7 @@ export const NeDBBackend = (options) => {
         q,
       } = {}
     ) {
-      const boxRecord = await getBoxRecord(boxId);
+      const boxRecord = await getBoxOption(boxId);
 
       if (!boxRecord) {
         throwError('Box not found', 404);
@@ -277,7 +279,7 @@ export const NeDBBackend = (options) => {
     },
 
     async get(boxId, id) {
-      const boxRecord = await getBoxRecord(boxId);
+      const boxRecord = await getBoxOption(boxId);
 
       if (!boxRecord) {
         throwError('Box not found', 404);
@@ -299,7 +301,7 @@ export const NeDBBackend = (options) => {
     },
 
     async save(boxId, id, data) {
-      const boxRecord = await getBoxRecord(boxId);
+      const boxRecord = await getBoxOption(boxId);
 
       if (!boxRecord) {
         throwError('Box not found', 404);

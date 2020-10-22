@@ -5,7 +5,6 @@ import { memoryBackend } from './storeBackends.js';
 
 // ROADMAP
 // - Add bulk operations with atomicity
-// - Handle more permissions types (Read, Delete, …)
 // - Add Queries
 // - Add relationship
 // - Add http2 relationship ?
