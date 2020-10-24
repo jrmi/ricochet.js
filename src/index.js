@@ -41,7 +41,12 @@ const corsOption = {
 };
 
 app.use(cors(corsOption));
-app.use(express.json());
+app.use(
+  express.json({
+    parameterLimit: 100000,
+    limit: '50mb',
+  })
+);
 app.use(express.urlencoded({ extended: true }));
 
 const onSendToken = (userEmail, userId, token) => {
