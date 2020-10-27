@@ -27,12 +27,6 @@ export const STORE_BACKEND = process.env.STORE_BACKEND || 'memory';
 export const STORE_PREFIX = process.env.STORE_PREFIX || '/store';
 export const NEDB_BACKEND_DIRNAME = process.env.NEDB_BACKEND_DIRNAME || '/tmp/';
 
-export const REMOTE_HOST = process.env.REMOTE_HOST || 'http://localhost:3000';
-
-const REMOTE_EXECUTE_PATH = process.env.REMOTE_EXECUTE_PATH || '/exec';
-
-export const REMOTE_EXECUTE_URL = `${REMOTE_HOST}${REMOTE_EXECUTE_PATH}`;
-
 export const SECRET = process.env.SECRET;
 
 export const DISABLE_CACHE = process.env.DISABLE_CACHE === '1';

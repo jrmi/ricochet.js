@@ -26,8 +26,6 @@ import {
   STORE_BACKEND,
   STORE_PREFIX,
   NEDB_BACKEND_DIRNAME,
-  REMOTE_HOST,
-  REMOTE_EXECUTE_URL,
   SECRET,
   DISABLE_CACHE,
 } from './settings.js';
@@ -37,7 +35,10 @@ const httpServer = createServer(app);
 
 const corsOption = {
   credentials: true,
-  origin: [REMOTE_HOST],
+  origin: (origin, callback) => {
+    // Allow ALL origins pls
+    return callback(null, true);
+  },
 };
 
 app.use(cors(corsOption));
@@ -50,7 +51,7 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 
 const onSendToken = (userEmail, userId, token) => {
-  console.log(`${REMOTE_HOST}/login/${userId}/${token}`);
+  console.log(`/login/${userId}/${token}`);
 };
 const onLogin = (userId, req) => {
   req.session.userId = userId;
@@ -119,7 +120,6 @@ switch (STORE_BACKEND) {
 app.use(
   execute({
     context: { store: storeBackend },
-    remote: REMOTE_EXECUTE_URL,
     disableCache: DISABLE_CACHE,
   })
 );

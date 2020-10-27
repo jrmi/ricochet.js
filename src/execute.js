@@ -2,7 +2,6 @@ import express from 'express';
 import http from 'http';
 import https from 'https';
 import vm from 'vm';
-import { REMOTE_EXECUTE_URL } from './settings';
 
 /* Roadmap
 - Encrypt setyp.js
