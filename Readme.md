@@ -35,7 +35,7 @@ You have 3 APIs with this server:
 
 - A JSON store similar to jsonbox.io (Key/Value & List)
 - A file store
-- A Remote Remote procedure call. Yeah remote twice is on purpose.
+- A Side procedure call. A Remote procedure call where procedure lives side by side with your frontend code.
 
 ### JSON store
 
@@ -94,13 +94,14 @@ To store a new image in `boxId`
 
 To delete the file identified by `filename`.
 
-### RRPC
+### SPC
 
-This should be the most unobvious part. This is a remote procedure call where
-remote procedure are stored in another place configured in `.env` file. You can
-store the remote function alongside with your frontend to allow easy deployment.
+This should be the most unobvious part. This is a remote procedure call like where
+remote procedures are hosted on "Referer" or urel pointed by "X-SPC-Host" header. 
+You can (should) store the remote function alongside with your frontend 
+to allow easy deployment.
 
-Scripts should contains a `main` function that is called. The function cann return
+Scripts should contains a `main` function that is called. The function can return
 a value that is returned to the caller.
 
 #### ANY on /execute/:functionName/:id?
@@ -111,9 +112,13 @@ The server get the file from configured remote (a CDN for example), parse it,
 then execute the main function and collect the returned value. The returned value
 is sent back to the client.
 
-The script have access to some globally defined variable:
+The script have access to some globally defined variables:
 - `console` to enable console.log
-- `store` to allow store modification
+
+and receive an object with following properties:
+
+- `store` the very same store API used for JSON store API. Allow you to do some
+  protected operation
 - `method` the http verb used
 - `query` a dict of query parameters
 - `body` the request payload
@@ -122,3 +127,6 @@ The script have access to some globally defined variable:
 Additionnaly, you can create on the remote a script call `setup.js` with a main 
 function that returns a dict of extra context values. This file is automatically
 loaded on first function call.
+
+The setup is really important because this is the only way to create your box
+before using them.

@@ -2,6 +2,7 @@ import express from 'express';
 import http from 'http';
 import https from 'https';
 import vm from 'vm';
+import { REMOTE_EXECUTE_URL } from './settings';
 
 /* Roadmap
 - Encrypt setyp.js
@@ -23,11 +24,10 @@ const errorGuard = (func) => async (req, res, next) => {
 export const exec = ({
   prefix = 'execute',
   context = {},
-  remote,
   setup = 'setup',
   disableCache = false,
+  //sites = () => {},
 } = {}) => {
-  const httpClient = remote.startsWith('https') ? https : http;
   const router = express.Router();
   const functionCache = {};
 
@@ -36,9 +36,15 @@ export const exec = ({
    * @param {string} functionName script name.
    * @param {string} extraCommands to be concatened at the end of script.
    */
-  const cacheOrFetch = async (functionName, extraCommands = '') => {
-    if (functionCache[functionName]) {
-      return functionCache[functionName];
+  const cacheOrFetch = async (remote, functionName, extraCommands = '') => {
+    const httpClient = remote.startsWith('https') ? https : http;
+
+    if (!functionCache[remote]) {
+      functionCache[remote] = {};
+    }
+
+    if (functionCache[remote][functionName]) {
+      return functionCache[remote][functionName];
     } else {
       return new Promise((resolve, reject) => {
         const functionUrl = `${remote}/${functionName}.js`;
@@ -58,7 +64,7 @@ export const exec = ({
               data += extraCommands;
               try {
                 const script = new vm.Script(data, { filename: functionUrl });
-                if (!disableCache) functionCache[functionName] = script;
+                if (!disableCache) functionCache[remote][functionName] = script;
                 resolve(script);
               } catch (e) {
                 reject(e);
@@ -73,9 +79,9 @@ export const exec = ({
     }
   };
 
-  const getConfig = async () => {
+  const getConfig = async (remote) => {
     try {
-      const toRun = await cacheOrFetch(setup, '\nmain(__params);');
+      const toRun = await cacheOrFetch(remote, setup, '\nmain(__params);');
       if (toRun) {
         const setupContext = {
           console,
@@ -86,12 +92,37 @@ export const exec = ({
         return {};
       }
     } catch (e) {
-      console.log(`Can't get config from remote ${remote}`, e);
+      console.log(`Can't get config from site <${remote}>`, e);
       return {};
     }
   };
 
-  let configPromise = getConfig();
+  let configPromise = null;
+
+  router.all(
+    `/${prefix}/_register/`,
+    errorGuard(async (req, res) => {
+      const {
+        query: { clearCache },
+        headers: { 'x-spc-host': remote = '' },
+      } = req;
+
+      if (!remote) {
+        res.status(400).send('X-SPC-Host header is required');
+        return;
+      }
+
+      if (clearCache) {
+        delete functionCache[remote];
+      }
+
+      if (!configPromise || disableCache) {
+        configPromise = getConfig(remote);
+      }
+
+      res.send('ok');
+    })
+  );
 
   // Route all query to correct script
   router.all(
@@ -102,17 +133,27 @@ export const exec = ({
         params: { functionName, id },
         query,
         method,
+        headers: { 'x-spc-host': remote = '' },
         authenticatedUser = null,
       } = req;
 
-      const toRun = await cacheOrFetch(functionName, '\nmain(__params);');
-      if (!toRun) {
-        res.status(404).send('Not found');
+      if (!remote) {
+        res.status(400).send('X-SPC-Host header is required');
         return;
       }
 
       if (!configPromise || disableCache) {
-        configPromise = getConfig();
+        configPromise = getConfig(remote);
+      }
+
+      const toRun = await cacheOrFetch(
+        remote,
+        functionName,
+        '\nmain(__params);'
+      );
+      if (!toRun) {
+        res.status(404).send('Not found');
+        return;
       }
 
       // Wait to be sure config is resolved
