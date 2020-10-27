@@ -33,7 +33,7 @@ export const memoryBackend = () => {
 
   return {
     async checkSecurity(boxId, id, write = false) {
-      const { security = 'private' } = boxOptions[boxId];
+      const { security = 'private' } = boxOptions[boxId] || {};
       switch (security) {
         case 'private':
           return false;
@@ -204,7 +204,7 @@ export const NeDBBackend = (options) => {
 
   return {
     async checkSecurity(boxId, id, write = false) {
-      const { security = 'private' } = await getBoxOption(boxId);
+      const { security = 'private' } = (await getBoxOption(boxId)) || {};
       switch (security) {
         case 'private':
           return false;
