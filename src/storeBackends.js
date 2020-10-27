@@ -361,7 +361,7 @@ export const NeDBBackend = (options) => {
     },
 
     async update(boxId, id, data) {
-      const boxRecord = await getBoxRecord(boxId);
+      const boxRecord = await getBoxOption(boxId);
       if (!boxRecord) {
         throwError('Box not found', 404);
       }
@@ -397,7 +397,7 @@ export const NeDBBackend = (options) => {
     },
 
     async delete(boxId, id) {
-      const boxRecord = await getBoxRecord(boxId);
+      const boxRecord = await getBoxOption(boxId);
       if (!boxRecord) {
         return 0;
       }
