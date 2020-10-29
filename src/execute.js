@@ -107,8 +107,7 @@ export const exec = ({
       } = req;
 
       if (!remote) {
-        res.status(400).send('X-SPC-Host header is required');
-        return;
+        throwError('X-SPC-Host header is required', 400);
       }
 
       if (clearCache) {

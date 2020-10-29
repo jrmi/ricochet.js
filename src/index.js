@@ -13,6 +13,8 @@ import auth from './authentication.js';
 
 import cookieSession from 'cookie-session';
 
+import nodemailer from 'nodemailer';
+
 import {
   HOST,
   PORT,
@@ -28,7 +30,29 @@ import {
   NEDB_BACKEND_DIRNAME,
   SECRET,
   DISABLE_CACHE,
+  EMAIL_HOST,
+  EMAIL_PORT,
+  EMAIL_USER,
+  EMAIL_PASSWORD,
+  EMAIL_FROM,
 } from './settings.js';
+
+let _transporter = null;
+
+const getTransporter = () => {
+  if (_transporter === null) {
+    _transporter = nodemailer.createTransport({
+      host: EMAIL_HOST,
+      port: EMAIL_PORT,
+      secure: false,
+      auth: {
+        user: EMAIL_USER,
+        pass: EMAIL_PASSWORD,
+      },
+    });
+  }
+  return _transporter;
+};
 
 const app = express();
 const httpServer = createServer(app);
@@ -50,8 +74,22 @@ app.use(
 );
 app.use(express.urlencoded({ extended: true }));
 
-const onSendToken = (userEmail, userId, token) => {
-  console.log(`/login/${userId}/${token}`);
+const onSendToken = async (origin, userEmail, userId, token) => {
+  // if fake host, link is only logged
+  if (EMAIL_HOST === 'fake') {
+    console.log(`Link to connect: ${origin}/login/${userId}/${token}`);
+    return;
+  }
+
+  await getTransporter().sendMail({
+    from: EMAIL_FROM,
+    to: userEmail,
+    subject: 'Your authentication link',
+    text: `${origin}/login/${userId}/${token}`,
+    html: `<a href="${origin}/login/${userId}/${token}">${origin}/login/${userId}/${token}</b>`,
+  });
+
+  console.log('Auth mai sent');
 };
 const onLogin = (userId, req) => {
   req.session.userId = userId;
@@ -66,9 +104,10 @@ app.use(
   cookieSession({
     name: 'session',
     keys: [SECRET],
+    httpOnly: true,
 
     // Cookie Options
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    //maxAge: 24 * 60 * 60 * 1000, // 24 hours
   })
 );
 

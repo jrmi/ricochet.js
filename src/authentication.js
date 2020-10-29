@@ -1,6 +1,7 @@
 import easyNoPassword from 'easy-no-password';
 import express from 'express';
 import crypto from 'crypto';
+import { exception } from 'console';
 
 const errorGuard = (func) => async (req, res, next) => {
   try {
@@ -25,7 +26,7 @@ const sha256 = (data) => {
 export const authentication = ({
   prefix = 'auth',
   secret,
-  onSendToken = (userEmail, userId, token) => {},
+  onSendToken = (origin, userEmail, userId, token) => {},
   onLogin = (req, userId) => {},
   onLogout = (req) => {},
 } = {}) => {
@@ -59,10 +60,15 @@ export const authentication = ({
   // Get token
   router.post(
     `/${prefix}/`,
-    errorGuard(async (req, res) => {
+    errorGuard(async (req, res, next) => {
       const {
         body: { userEmail },
+        headers: { 'x-auth-host': origin = '' },
       } = req;
+
+      if (!origin) {
+        throwError('X-Auth-Host header is required', 400);
+      }
 
       if (!userEmail) {
         throwError("Missing mandatory 'email' parameter", 400);
@@ -74,9 +80,17 @@ export const authentication = ({
         if (err) {
           throwError('Unknown error', 500);
         }
-        onSendToken(userEmail, userId, token);
-
-        res.json({ message: 'Token sent' });
+        return onSendToken(origin, userEmail, userId, token).then(
+          () => {
+            res.json({ message: 'Token sent' });
+          },
+          (e) => {
+            console.log('Error while sending email', e);
+            const errorObject = new Error(e);
+            errorObject.statusCode = 503;
+            next(errorObject);
+          }
+        );
       });
     })
   );
