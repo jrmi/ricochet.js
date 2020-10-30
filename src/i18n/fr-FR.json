@@ -1,0 +1,43 @@
+[
+  {
+    "files": [
+      "src/index.js"
+    ],
+    "id": "njb9E57et7",
+    "key": "Auth mail html message",
+    "new": false,
+    "timestamp": "2020-10-30T12:54:57.077Z",
+    "value": "<p>Bonjour,<p>\n\n<p>Voici le lien qui vous permet de vous connecter à {siteName} :</p>\n\n<a ref=\"{url}\">{url}</a>\n\n<p>Cliquez sur le lien ou copiez et collez le dans votre navigateur.</p>\n\n<p>Cordialement,</p>\n\n\n<p>L'équipe de {siteName}.</p>",
+    "variables": [
+      "url",
+      "siteName"
+    ]
+  },
+  {
+    "files": [
+      "src/index.js"
+    ],
+    "id": "Robp98jBSx",
+    "key": "Auth mail text_message",
+    "new": false,
+    "timestamp": "2020-10-30T12:54:57.077Z",
+    "value": "Bonjour,\n\nVoici le lien qui vous permet de vous connecter à {siteName} :\n\n{url}\n\nVeuillez le copier-coller dans votre navigateur.\n\nCordialement,\n\nL'équipe de {siteName}.",
+    "variables": [
+      "url",
+      "siteName"
+    ]
+  },
+  {
+    "files": [
+      "src/index.js"
+    ],
+    "id": "AbqdkznMsr",
+    "key": "Your authentication link",
+    "new": false,
+    "timestamp": "2020-10-30T12:49:15.194Z",
+    "value": "[{siteName}] Votre lien d'authentification",
+    "variables": [
+      "siteName"
+    ]
+  }
+]

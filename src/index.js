@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
+import requestLanguage from 'express-request-language';
+import cookieSession from 'cookie-session';
+import nodemailer from 'nodemailer';
 
 import fileStore from './fileStore.js';
 import store from './store.js';
@@ -11,9 +14,7 @@ import { NeDBBackend, memoryBackend } from './storeBackends.js';
 import execute from './execute.js';
 import auth from './authentication.js';
 
-import cookieSession from 'cookie-session';
-
-import nodemailer from 'nodemailer';
+import localizations from './i18n/output/all.js';
 
 import {
   HOST,
@@ -35,6 +36,7 @@ import {
   EMAIL_USER,
   EMAIL_PASSWORD,
   EMAIL_FROM,
+  SITE_NAME,
 } from './settings.js';
 
 let _transporter = null;
@@ -67,6 +69,12 @@ const corsOption = {
 
 app.use(cors(corsOption));
 app.use(
+  requestLanguage({
+    languages: ['en-US', 'fr-FR'],
+    localizations,
+  })
+);
+app.use(
   express.json({
     parameterLimit: 100000,
     limit: '50mb',
@@ -74,22 +82,37 @@ app.use(
 );
 app.use(express.urlencoded({ extended: true }));
 
-const onSendToken = async (origin, userEmail, userId, token) => {
+console.log(SITE_NAME);
+
+const onSendToken = async ({ origin, userEmail, userId, token, req }) => {
+  let l = req.localizations;
+  console.log(`Link to connect: ${origin}/login/${userId}/${token}`);
   // if fake host, link is only logged
   if (EMAIL_HOST === 'fake') {
-    console.log(`Link to connect: ${origin}/login/${userId}/${token}`);
+    console.log(
+      l('Auth mail text_message', {
+        url: `${origin}/login/${userId}/${token}`,
+        siteName: SITE_NAME,
+      })
+    );
     return;
   }
 
   await getTransporter().sendMail({
     from: EMAIL_FROM,
     to: userEmail,
-    subject: 'Your authentication link',
-    text: `${origin}/login/${userId}/${token}`,
-    html: `<a href="${origin}/login/${userId}/${token}">${origin}/login/${userId}/${token}</b>`,
+    subject: l('Your authentication link', { siteName: SITE_NAME }),
+    text: l('Auth mail text_message', {
+      url: `${origin}/login/${userId}/${token}`,
+      siteName: SITE_NAME,
+    }),
+    html: l('Auth mail html message', {
+      url: `${origin}/login/${userId}/${token}`,
+      siteName: SITE_NAME,
+    }),
   });
 
-  console.log('Auth mai sent');
+  console.log('Auth mail sent');
 };
 const onLogin = (userId, req) => {
   req.session.userId = userId;

@@ -1,0 +1,26 @@
+{
+  "defaultProject": "supportme",
+  "projects": {
+    "supportme": {
+      "timezones": [
+        "America/Los_Angeles"
+      ],
+      "currencies": [
+        "USD"
+      ],
+      "interface": {
+        "autoOpen": true,
+        "port": 3001
+      },
+      "languages": {
+        "en-US": "English(US)",
+        "fr-FR": "Français(FR)"
+      },
+      "defaultLanguage": "en-US",
+      "programmingLanguage": "javascript",
+      "store": "src/i18n/",
+      "output": "src/i18n/output",
+      "source": ["src/index.js"]
+    }
+  }
+}

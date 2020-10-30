@@ -1,0 +1,43 @@
+[
+  {
+    "files": [
+      "src/index.js"
+    ],
+    "id": "njb9E57et7",
+    "key": "Auth mail html message",
+    "new": false,
+    "timestamp": "2020-10-30T12:54:57.077Z",
+    "value": "<p>Hello,<p>\n\n<p>Here is the link that allows you to log in to {siteName}:</p>\n\n<a ref=\"{url}\">{url}</a>\n\n<p>Please click on the link or copy and paste it into your browser.</p>\n\n<p>Yours sincerely,</p>\n\n<p>{siteName} team.</p>",
+    "variables": [
+      "url",
+      "siteName"
+    ]
+  },
+  {
+    "files": [
+      "src/index.js"
+    ],
+    "id": "Robp98jBSx",
+    "key": "Auth mail text_message",
+    "new": false,
+    "timestamp": "2020-10-30T12:54:57.077Z",
+    "value": "Hello,\n\nHere is the link that allows you to log in {siteName}:\n\n{url}\n\nPlease copy and paste it into your browser.\n\nYours sincerely,\n\n{siteName} team.",
+    "variables": [
+      "url",
+      "siteName"
+    ]
+  },
+  {
+    "files": [
+      "src/index.js"
+    ],
+    "id": "AbqdkznMsr",
+    "key": "Your authentication link",
+    "new": false,
+    "timestamp": "2020-10-30T12:49:15.194Z",
+    "value": "[{siteName}] Your authentication link",
+    "variables": [
+      "siteName"
+    ]
+  }
+]

@@ -1,7 +1,6 @@
 import easyNoPassword from 'easy-no-password';
 import express from 'express';
 import crypto from 'crypto';
-import { exception } from 'console';
 
 const errorGuard = (func) => async (req, res, next) => {
   try {
@@ -80,7 +79,7 @@ export const authentication = ({
         if (err) {
           throwError('Unknown error', 500);
         }
-        return onSendToken(origin, userEmail, userId, token).then(
+        return onSendToken({ origin, userEmail, userId, token, req }).then(
           () => {
             res.json({ message: 'Token sent' });
           },
