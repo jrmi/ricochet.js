@@ -6,6 +6,7 @@ import { nanoid } from 'nanoid';
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
+import log from './log.js';
 
 const DEFAULT_PREFIX = 'file';
 

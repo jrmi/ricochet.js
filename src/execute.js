@@ -2,6 +2,7 @@ import express from 'express';
 import http from 'http';
 import https from 'https';
 import vm from 'vm';
+import log from './log.js';
 
 /* Roadmap
 - Encrypt setyp.js
@@ -91,7 +92,7 @@ export const exec = ({
         return {};
       }
     } catch (e) {
-      console.log(`Can't get config from site <${remote}>`, e);
+      log.warning({ error: e }, `Can't get config from site <${remote}>`);
       return {};
     }
   };

@@ -4,7 +4,9 @@ import { createServer } from 'http';
 import requestLanguage from 'express-request-language';
 import cookieSession from 'cookie-session';
 import nodemailer from 'nodemailer';
+import pinoHttp from 'pino-http';
 
+import log from './log.js';
 import fileStore from './fileStore.js';
 import store from './store.js';
 import { defineSocket } from './socket.js';
@@ -67,6 +69,7 @@ const corsOption = {
   },
 };
 
+app.use(pinoHttp({ logger: log }));
 app.use(cors(corsOption));
 app.use(
   requestLanguage({
@@ -82,14 +85,12 @@ app.use(
 );
 app.use(express.urlencoded({ extended: true }));
 
-console.log(SITE_NAME);
-
 const onSendToken = async ({ origin, userEmail, userId, token, req }) => {
   let l = req.localizations;
-  console.log(`Link to connect: ${origin}/login/${userId}/${token}`);
+  log.debug(`Link to connect: ${origin}/login/${userId}/${token}`);
   // if fake host, link is only logged
   if (EMAIL_HOST === 'fake') {
-    console.log(
+    log.debug(
       l('Auth mail text_message', {
         url: `${origin}/login/${userId}/${token}`,
         siteName: SITE_NAME,
@@ -112,7 +113,7 @@ const onSendToken = async ({ origin, userEmail, userId, token, req }) => {
     }),
   });
 
-  console.log('Auth mail sent');
+  log.info('Auth mail sent');
 };
 const onLogin = (userId, req) => {
   req.session.userId = userId;
@@ -137,10 +138,8 @@ app.use(
 // authenticate middleware
 app.use((req, res, next) => {
   if (req.session.userId) {
-    console.log('Authenticated');
     req.authenticatedUser = req.session.userId;
   } else {
-    console.log('Not authenticated');
     req.authenticatedUser = null;
   }
   next();
@@ -189,7 +188,7 @@ app.use(
 defineSocket(httpServer);
 
 httpServer.listen(PORT, HOST, () => {
-  console.log(`listening on ${HOST}:${PORT}`);
+  log.info(`listening on ${HOST}:${PORT}`);
 });
 
 export default app;

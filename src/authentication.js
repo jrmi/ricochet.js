@@ -1,6 +1,7 @@
 import easyNoPassword from 'easy-no-password';
 import express from 'express';
 import crypto from 'crypto';
+import log from './log.js';
 
 const errorGuard = (func) => async (req, res, next) => {
   try {
@@ -84,7 +85,7 @@ export const authentication = ({
             res.json({ message: 'Token sent' });
           },
           (e) => {
-            console.log('Error while sending email', e);
+            log.error({ error: e }, 'Error while sending email');
             const errorObject = new Error(e);
             errorObject.statusCode = 503;
             next(errorObject);
