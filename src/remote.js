@@ -12,7 +12,7 @@ const errorGuard = (func) => async (req, res, next) => {
   try {
     return await func(req, res, next);
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     next(error);
   }
 };
@@ -56,8 +56,6 @@ export const remote = ({
       if (!remote) {
         throwError('X-SPC-Host or Origin header is required', 400);
       }
-
-      console.log('remote', remote);
 
       if (clearCache) {
         remoteCode.clearCache(remote);

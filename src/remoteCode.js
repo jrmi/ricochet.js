@@ -24,7 +24,6 @@ class RemoteCode {
       httpClient
         .get(configUrl, (resp) => {
           if (resp.statusCode === 404) {
-            console.log('Config not found', remote);
             reject({
               status: 'not-found',
             });
@@ -38,7 +37,6 @@ class RemoteCode {
           resp.on('end', () => {
             try {
               const { siteId, scriptPath = '/' } = JSON.parse(data);
-              console.log('Config found', { siteId, scriptPath });
               resolve({ siteId, scriptPath });
             } catch (e) {
               reject({
@@ -61,24 +59,21 @@ class RemoteCode {
    * @param {string} extraCommands to be concatened at the end of script.
    */
   async cacheOrFetch(remote, scriptName, extraCommands = '') {
-    console.log(remote, scriptName);
     if (!this.scriptCache[remote]) {
       this.scriptCache[remote] = {};
     }
 
-    if (this.scriptCache[remote][scriptName] && !disableCache) {
+    if (this.scriptCache[remote][scriptName] && !this.disableCache) {
       return this.scriptCache[remote][scriptName];
     } else {
       const httpClient = remote.startsWith('https') ? https : http;
       const config = this.configCache[remote];
       const { scriptPath } = config;
-      console.log(scriptPath);
       return new Promise((resolve, reject) => {
         const scriptUrl = `${remote}${scriptPath}${scriptName}.js`.replace(
           '//',
           '/'
         );
-        console.log('url', scriptUrl);
 
         httpClient
           .get(scriptUrl, (resp) => {
@@ -98,7 +93,7 @@ class RemoteCode {
                 const parsedScript = new vm.Script(script, {
                   filename: scriptUrl,
                 });
-                this.scriptCache[remote][scriptPath] = parsedScript;
+                this.scriptCache[remote][scriptName] = parsedScript;
                 resolve(parsedScript);
               } catch (e) {
                 reject({ status: 'error', error: e });
@@ -123,10 +118,6 @@ class RemoteCode {
           // File is missing. We quit.
           return;
         } else {
-          log.warn(
-            { error },
-            `Fails to load or parse config file from ${remote}`
-          );
           throw error;
         }
       }
@@ -144,14 +135,11 @@ class RemoteCode {
       );
       return await toRun.runInNewContext(scriptContext);
     } catch (e) {
-      if (e.status) {
-        if (e.status === 'not-found') {
-          throw `Script ${scriptName} not found on remote ${remote}`;
-        } else {
-          throw e.error;
-        }
+      if (e.status === 'not-found') {
+        throw `Script ${scriptName} not found on remote ${remote}`;
+      } else {
+        throw e.error;
       }
-      throw e;
     }
   }
 

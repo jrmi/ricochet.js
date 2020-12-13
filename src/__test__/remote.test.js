@@ -50,17 +50,21 @@ describe('Remote Test', () => {
     expect(content).toEqual(
       expect.objectContaining({ hello: true, response: 42 })
     );
+
+    // Try again
+    await query
+      .get(`/remote/test`)
+      .set('X-SPC-Host', 'http://localhost:5000/')
+      .expect(200);
   });
 
-  it('should fails to find config file', async () => {
+  it('should ignore missing config file', async () => {
     app = express();
     app.use(express.json());
-    content = { hello: true };
     app.use(
       remote({
         setupFunction: 'mysetup',
-        configFile: 'badconfigfile.json',
-        context: { content },
+        configFile: 'noconfig.json',
       })
     );
     app.all('/remote/test', (req, res) => {
@@ -74,15 +78,33 @@ describe('Remote Test', () => {
       .expect(200);
   });
 
+  it('should fails with bad config file', async () => {
+    app = express();
+    app.use(express.json());
+    app.use(
+      remote({
+        setupFunction: 'mysetup',
+        configFile: 'badconfigfile.json',
+      })
+    );
+    app.all('/remote/test', (req, res) => {
+      res.send('ok');
+    });
+    query = request(app);
+
+    const result = await query
+      .get(`/remote/test`)
+      .set('X-SPC-Host', 'http://localhost:5000/')
+      .expect(500);
+  });
+
   it('should fails to parse setup', async () => {
     app = express();
     app.use(express.json());
-    content = { hello: true };
     app.use(
       remote({
         setupFunction: 'bad',
         configFile: 'myconfig.json',
-        context: { content },
       })
     );
     app.all('/remote/test', (req, res) => {
