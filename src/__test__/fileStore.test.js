@@ -5,13 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import tempy from 'tempy';
 import aws from 'aws-sdk';
-import {
-  S3_ACCESS_KEY,
-  S3_SECRET_KEY,
-  S3_ENDPOINT,
-  S3_BUCKET,
-} from '../settings';
-import { DocumentClient } from 'aws-sdk/clients/dynamodb';
+import { S3_ACCESS_KEY, S3_SECRET_KEY, S3_ENDPOINT } from '../settings';
 
 jest.mock('nanoid', () => {
   let count = 0;
