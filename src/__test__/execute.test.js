@@ -20,7 +20,7 @@ jest.spyOn(global.Date, 'now').mockImplementation(() => {
   return new Date(`2020-03-14T11:01:${second}.135Z`).valueOf();
 });
 
-describe('Store Test', () => {
+describe('Execute Test', () => {
   let app;
   let query;
   let execFunction;

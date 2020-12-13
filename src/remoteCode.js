@@ -1,4 +1,3 @@
-import { config } from 'dotenv/types';
 import http from 'http';
 import https from 'https';
 import vm from 'vm';
@@ -7,11 +6,10 @@ class RemoteCode {
   constructor({
     disableCache = false,
     preProcess = (script) => script,
-    configFile = 'config.json',
+    configFile = '/config.json',
   }) {
-    Objects.assign(this, {
+    Object.assign(this, {
       disableCache,
-      decryptKey,
       scriptCache: {},
       configCache: {},
       configFile,
@@ -22,10 +20,14 @@ class RemoteCode {
   getConfig(remote) {
     const httpClient = remote.startsWith('https') ? https : http;
     return new Promise((resolve, reject) => {
+      const configUrl = `${remote}${this.configFile}`;
       httpClient
-        .get(`${remote}/${this.configFile}`.replace('//', '/'), (resp) => {
+        .get(configUrl, (resp) => {
           if (resp.statusCode === 404) {
-            reject('Config not found');
+            console.log('Config not found', remote);
+            reject({
+              status: 'not-found',
+            });
             return;
           }
 
@@ -35,10 +37,14 @@ class RemoteCode {
           });
           resp.on('end', () => {
             try {
-              const { siteId, scriptPath } = JSON.parse(data);
+              const { siteId, scriptPath = '/' } = JSON.parse(data);
+              console.log('Config found', { siteId, scriptPath });
               resolve({ siteId, scriptPath });
             } catch (e) {
-              reject(e);
+              reject({
+                status: 'error',
+                error: e,
+              });
             }
           });
         })
@@ -55,25 +61,29 @@ class RemoteCode {
    * @param {string} extraCommands to be concatened at the end of script.
    */
   async cacheOrFetch(remote, scriptName, extraCommands = '') {
-    if (this.scriptCache[remote][scriptName] || this.disableCache) {
+    console.log(remote, scriptName);
+    if (!this.scriptCache[remote]) {
+      this.scriptCache[remote] = {};
+    }
+
+    if (this.scriptCache[remote][scriptName] && !disableCache) {
       return this.scriptCache[remote][scriptName];
     } else {
-      if (!this.scriptCache[remote]) {
-        this.scriptCache[remote] = {};
-      }
-
       const httpClient = remote.startsWith('https') ? https : http;
       const config = this.configCache[remote];
+      const { scriptPath } = config;
+      console.log(scriptPath);
       return new Promise((resolve, reject) => {
-        const scriptUrl = `${remote}/${config.scriptBase}/${scriptName}`.replace(
+        const scriptUrl = `${remote}${scriptPath}${scriptName}.js`.replace(
           '//',
           '/'
         );
+        console.log('url', scriptUrl);
 
         httpClient
           .get(scriptUrl, (resp) => {
             if (resp.statusCode === 404) {
-              resolve(null);
+              reject({ status: 'not-found' });
               return;
             }
 
@@ -85,17 +95,19 @@ class RemoteCode {
               script = this.preProcess.bind(this)(script, config);
               script += extraCommands;
               try {
-                const script = new vm.Script(script, { filename: scriptUrl });
-                this.scriptCache[remote][scriptPath] = script;
-                resolve(script);
+                const parsedScript = new vm.Script(script, {
+                  filename: scriptUrl,
+                });
+                this.scriptCache[remote][scriptPath] = parsedScript;
+                resolve(parsedScript);
               } catch (e) {
-                reject(e);
+                reject({ status: 'error', error: e });
               }
             });
           })
           .on('error', (err) => {
             /* istanbul ignore next */
-            reject(err);
+            reject({ status: 'error', error: err });
           });
       });
     }
@@ -104,23 +116,48 @@ class RemoteCode {
   async exec(remote, scriptName, context) {
     // Ensure config is loaded
     if (!this.configCache[remote] || this.disableCache) {
-      this.configCache[remote] = await this.getConfig(remote);
+      try {
+        this.configCache[remote] = await this.getConfig(remote);
+      } catch ({ status, error }) {
+        if (status === 'not-found') {
+          // File is missing. We quit.
+          return;
+        } else {
+          log.warn(
+            { error },
+            `Fails to load or parse config file from ${remote}`
+          );
+          throw error;
+        }
+      }
     }
+    const scriptContext = {
+      console,
+      __params: { ...context },
+    };
 
-    const toRun = await cacheOrFetch(
-      remote,
-      scriptName,
-      '\nmain.default(__params);'
-    );
-    if (toRun) {
-      const scriptContext = {
-        console,
-        __params: { ...context },
-      };
+    try {
+      const toRun = await this.cacheOrFetch(
+        remote,
+        scriptName,
+        '\nmain(__params);'
+      );
       return await toRun.runInNewContext(scriptContext);
-    } else {
-      throw 'Script not found on remote';
+    } catch (e) {
+      if (e.status) {
+        if (e.status === 'not-found') {
+          throw `Script ${scriptName} not found on remote ${remote}`;
+        } else {
+          throw e.error;
+        }
+      }
+      throw e;
     }
+  }
+
+  clearCache(remote) {
+    this.scriptCache[remote] = {};
+    this.configCache[remote] = {};
   }
 }
 

@@ -1,11 +1,13 @@
-@api_url = http://localhost:3001/store
-@exec_url = http://localhost:3001/execution
+@remote_url = http://localhost:9000
+@api_url = http://192.168.0.11:4000/store
+@exec_url = http://192.168.0.11:4000/execute
 
-@auth_url = http://localhost:3001/auth
+@auth_url = http://192.168.0.11:4000/auth
 
 ### LIST
 
 GET {{api_url}}/boxId/ HTTP/1.1
+x-spc-host: {{remote_url}}
 
 ### CREATE FOO
 
@@ -107,6 +109,7 @@ DELETE {{api_url}}/boxId/{{elemIdWithKey}}?key=testkey HTTP/1.1
 ### just get test
 
 GET {{exec_url}}/test/?param1=toto HTTP/1.1
+x-spc-host: http://localhost:9000
 
 # Auth module
 
@@ -118,3 +121,13 @@ POST {{auth_url}}/ HTTP/1.1
     "userId": "test@yopmail.com"
 }
 
+
+### LIST GAME
+
+GET {{api_url}}/game/ HTTP/1.1
+x-spc-host: {{remote_url}}
+
+### just get test
+
+GET {{exec_url}}/test/?param1=toto HTTP/1.1
+x-spc-host: http://localhost:9000

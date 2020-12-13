@@ -38,3 +38,4 @@ export const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD;
 export const EMAIL_FROM = process.env.EMAIL_FROM;
 
 export const SITE_NAME = process.env.SITE_NAME || 'Support Me';
+export const SETUP_FUNCTION = process.env.SETUP_FUNCTION || 'setup';

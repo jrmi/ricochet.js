@@ -13,6 +13,7 @@ import { defineSocket } from './socket.js';
 
 import { NeDBBackend, memoryBackend } from './storeBackends.js';
 
+import remote from './remote.js';
 import execute from './execute.js';
 import auth from './authentication.js';
 
@@ -39,6 +40,7 @@ import {
   EMAIL_PASSWORD,
   EMAIL_FROM,
   SITE_NAME,
+  SETUP_FUNCTION,
 } from './settings.js';
 
 let _transporter = null;
@@ -148,6 +150,32 @@ app.use((req, res, next) => {
 // Auth middleware
 app.use(auth({ onSendToken, onLogin, onLogout, secret: SECRET }));
 
+// JSON store backend
+let storeBackend;
+switch (STORE_BACKEND) {
+  case 'nedb':
+    storeBackend = NeDBBackend({ dirname: NEDB_BACKEND_DIRNAME });
+    break;
+  default:
+    storeBackend = memoryBackend();
+}
+
+// Remote Function map
+const functions = {};
+
+// Remote code
+app.use(
+  remote({
+    context: { store: storeBackend, functions },
+    disableCache: DISABLE_CACHE,
+    setupFunction: SETUP_FUNCTION,
+    preProcess: (script, config) => {
+      console.log(config);
+      return script;
+    },
+  })
+);
+
 // File store
 app.use(
   fileStore(FILE_STORE_TYPE, {
@@ -161,27 +189,13 @@ app.use(
 );
 
 // JSON store
-let storeBackend;
-switch (STORE_BACKEND) {
-  case 'nedb':
-    storeBackend = NeDBBackend({ dirname: NEDB_BACKEND_DIRNAME });
-    app.use(
-      store({
-        prefix: STORE_PREFIX,
-        backend: storeBackend,
-      })
-    );
-    break;
-  default:
-    storeBackend = memoryBackend();
-    app.use(store({ prefix: STORE_PREFIX, backend: storeBackend }));
-}
+app.use(store({ prefix: STORE_PREFIX, backend: storeBackend }));
 
 // Execute middleware
 app.use(
   execute({
     context: { store: storeBackend },
-    disableCache: DISABLE_CACHE,
+    functions,
   })
 );
 
