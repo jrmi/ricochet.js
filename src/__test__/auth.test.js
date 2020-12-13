@@ -9,7 +9,9 @@ describe('Authentication test', () => {
   let onLogout;
 
   beforeEach(() => {
-    onSendToken = jest.fn();
+    onSendToken = jest.fn(({ remote, userEmail, userId, token, req }) =>
+      Promise.resolve()
+    );
     onLogin = jest.fn();
     onLogout = jest.fn();
     const app = express();
@@ -26,10 +28,14 @@ describe('Authentication test', () => {
   });
 
   it('should get and verify token', async () => {
-    await query.post('/auth/').send({ userEmail: 'test@yopmail' }).expect(200);
+    await query
+      .post('/auth/')
+      .set('X-Auth-Host', 'http://localhost:5000/')
+      .send({ userEmail: 'test@yopmail' })
+      .expect(200);
 
-    const userId = onSendToken.mock.calls[0][1];
-    const token = onSendToken.mock.calls[0][2];
+    const userId = onSendToken.mock.calls[0][0].userId;
+    const token = onSendToken.mock.calls[0][0].token;
 
     const result = await query
       .get(`/auth/verify/${userId}/${token}`)
@@ -45,10 +51,14 @@ describe('Authentication test', () => {
   });
 
   it('should login and logout', async () => {
-    await query.post('/auth/').send({ userEmail: 'test@yopmail' }).expect(200);
+    await query
+      .post('/auth/')
+      .set('X-Auth-Host', 'http://localhost:5000/')
+      .send({ userEmail: 'test@yopmail' })
+      .expect(200);
 
-    const token = onSendToken.mock.calls[0][2];
-    const userId = onSendToken.mock.calls[0][1];
+    const userId = onSendToken.mock.calls[0][0].userId;
+    const token = onSendToken.mock.calls[0][0].token;
 
     await query.get(`/auth/verify/${userId}/${token}`).expect(200);
 
