@@ -2,15 +2,21 @@
   "name": "supportme",
   "version": "1.0.0",
   "description": "Basic server",
-  "main": "src/index.js",
+  "main": "dist/index.js",
+  "bin": {
+    "supportme": "dist/cli.es5.js"
+  },
   "scripts": {
-    "dev": "nodemon  --exec babel-node src/index.js | pino-tiny",
-    "start": "pm2 start 'babel-node src/index.js > server.log' --name airboard-server",
+    "dev": "nodemon  --exec babel-node src/cli.js | pino-tiny",
+    "start": "pm2 start 'babel-node src/cli.js > server.log' --name airboard-server",
     "stop": "pm2 stop airboard-server",
     "test": "jest --watch",
     "test:server": "npx serve src/__test__/test.files",
     "coverage": "jest --coverage",
-    "generateKeys": "babel-node src/generateKey.js"
+    "generateKeys": "babel-node src/generateKey.js",
+    "build": "babel src -d dist --ignore 'src/**/__test__/'",
+    "shebang": "echo '#!/usr/bin/env node' > dist/cli.es5.js && cat dist/cli.js >> dist/cli.es5.js",
+    "prepublish": "npm run build && npm run shebang"
   },
   "keywords": [
     "server"
@@ -43,6 +49,7 @@
     "socket.io": "^2.3.0"
   },
   "devDependencies": {
+    "@babel/cli": "^7.12.10",
     "babel-jest": "^26.6.3",
     "eslint": "^7.15.0",
     "eslint-config-prettier": "^6.15.0",
