@@ -26,7 +26,8 @@ const sha256 = (data) => {
 export const authentication = ({
   prefix = 'auth',
   secret,
-  onSendToken = (origin, userEmail, userId, token) => {},
+  onSendToken = ({ remote, userEmail, userId, token, req }) =>
+    Promise.resolve(),
   onLogin = (req, userId) => {},
   onLogout = (req) => {},
 } = {}) => {
@@ -63,11 +64,11 @@ export const authentication = ({
     errorGuard(async (req, res, next) => {
       const {
         body: { userEmail },
-        headers: { 'x-auth-host': origin = '' },
+        headers: { 'x-auth-host': authHost = '', origin },
       } = req;
 
-      if (!origin) {
-        throwError('X-Auth-Host header is required', 400);
+      if (!origin && !authHost) {
+        throwError('X-Auth-Host or origin header is required', 400);
       }
 
       if (!userEmail) {
@@ -80,7 +81,8 @@ export const authentication = ({
         if (err) {
           throwError('Unknown error', 500);
         }
-        return onSendToken({ origin, userEmail, userId, token, req }).then(
+        const remote = authHost ?? origin;
+        return onSendToken({ remote, userEmail, userId, token, req }).then(
           () => {
             res.json({ message: 'Token sent' });
           },
