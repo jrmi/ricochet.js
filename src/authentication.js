@@ -45,6 +45,9 @@ export const authentication = ({
 
       const isValid = await new Promise((resolve, reject) => {
         enp.isValid(token, userId, (err, isValid) => {
+          if (err) {
+            reject(err);
+          }
           resolve(isValid);
         });
       });

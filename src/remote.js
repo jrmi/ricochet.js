@@ -92,6 +92,7 @@ export const remote = ({
     })
   );
 
+  // eslint-disable-next-line no-unused-vars
   router.use((err, req, res, _next) => {
     res
       .status(err.statusCode || 500)

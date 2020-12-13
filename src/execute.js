@@ -1,8 +1,4 @@
 import express from 'express';
-import http from 'http';
-import https from 'https';
-import vm from 'vm';
-import log from './log.js';
 
 /* Roadmap
 - Encrypt setup.js
@@ -27,31 +23,6 @@ export const exec = ({
   functions = {},
 } = {}) => {
   const router = express.Router();
-
-  /*router.all(
-    `/${prefix}/_register/`,
-    errorGuard(async (req, res) => {
-      console.log('here');
-      const {
-        query: { clearCache },
-        headers: { 'x-spc-host': remote = '' },
-      } = req;
-
-      if (!remote) {
-        throwError('X-SPC-Host header is required', 400);
-      }
-
-      if (clearCache) {
-        delete functionCache[remote];
-      }
-
-      if (!configPromise || disableCache) {
-        configPromise = getConfig(remote);
-      }
-
-      res.send('ok');
-    })
-  );*/
 
   // Route all query to correct script
   router.all(
@@ -82,6 +53,7 @@ export const exec = ({
     })
   );
 
+  // eslint-disable-next-line no-unused-vars
   router.use((err, req, res, _next) => {
     res
       .status(err.statusCode || 500)

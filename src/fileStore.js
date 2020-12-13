@@ -6,7 +6,6 @@ import { nanoid } from 'nanoid';
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
-import log from './log.js';
 
 const DEFAULT_PREFIX = 'file';
 
@@ -226,10 +225,6 @@ export const fileStorage = (type = 'memory', config = {}) => {
 
     // Upload file
     app.post(`/${prefix}/:namespace/`, upload.single('file'), (req, res) => {
-      const {
-        params: { namespace },
-      } = req;
-
       res.send(`${url}/${prefix}/${req.file.key}`);
     });
 
@@ -273,7 +268,7 @@ export const fileStorage = (type = 'memory', config = {}) => {
       s3.listObjects(params, (err, data) => {
         if (err) {
           /* istanbul ignore next */
-          throw error;
+          throw err;
         }
 
         res.send(data.Contents.map(({ Key }) => `/${prefix}/${Key}`));

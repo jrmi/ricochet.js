@@ -1,6 +1,5 @@
 import express from 'express';
 import { memoryBackend } from './storeBackends.js';
-import log from './log.js';
 
 // Utility functions
 
