@@ -130,4 +130,4 @@ x-spc-host: {{remote_url}}
 ### just get test
 
 GET {{exec_url}}/test/?param1=toto HTTP/1.1
-x-spc-host: http://localhost:9000
+x-spc-host: http://localhost:9000/

@@ -1,3 +1,4 @@
+import fs from 'fs';
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
@@ -18,6 +19,7 @@ import execute from './execute.js';
 import auth from './authentication.js';
 
 import localizations from './i18n/output/all.js';
+import { decrypt } from './crypt.js';
 
 import {
   HOST,
@@ -42,6 +44,7 @@ import {
   SITE_NAME,
   SETUP_FUNCTION,
 } from './settings.js';
+import { privateDecrypt } from 'crypto';
 
 let _transporter = null;
 
@@ -62,6 +65,17 @@ const getTransporter = () => {
 
 const app = express();
 const httpServer = createServer(app);
+
+const site = {};
+
+fs.readFile('./site.json', 'utf-8', (err, jsonString) => {
+  if (err) {
+    throw 'Failed to load site.json configuration file';
+  }
+
+  const data = JSON.parse(jsonString);
+  Object.assign(site, data);
+});
 
 const corsOption = {
   credentials: true,
@@ -90,7 +104,7 @@ app.use(express.urlencoded({ extended: true }));
 const onSendToken = async ({ origin, userEmail, userId, token, req }) => {
   let l = req.localizations;
   log.debug(`Link to connect: ${origin}/login/${userId}/${token}`);
-  // if fake host, link is only logged
+  // if fake host, link is only loggued
   if (EMAIL_HOST === 'fake') {
     log.debug(
       l('Auth mail text_message', {
@@ -163,16 +177,25 @@ switch (STORE_BACKEND) {
 // Remote Function map
 const functions = {};
 
+const decryptPayload = (script, { siteId }) => {
+  const data = JSON.parse(script);
+
+  if (!site[siteId]) {
+    throw { error: 'Site not registered', status: 'error' };
+  }
+
+  const { key } = site[siteId];
+  const decrypted = decrypt(data, key);
+  return decrypted;
+};
+
 // Remote code
 app.use(
   remote({
     context: { store: storeBackend, functions },
     disableCache: DISABLE_CACHE,
     setupFunction: SETUP_FUNCTION,
-    preProcess: (script, config) => {
-      console.log(config);
-      return script;
-    },
+    preProcess: decryptPayload,
   })
 );
 
