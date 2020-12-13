@@ -44,7 +44,6 @@ import {
   SITE_NAME,
   SETUP_FUNCTION,
 } from './settings.js';
-import { privateDecrypt } from 'crypto';
 
 let _transporter = null;
 
@@ -131,6 +130,7 @@ const onSendToken = async ({ origin, userEmail, userId, token, req }) => {
 
   log.info('Auth mail sent');
 };
+
 const onLogin = (userId, req) => {
   req.session.userId = userId;
 };
