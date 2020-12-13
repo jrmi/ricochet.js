@@ -23,24 +23,28 @@ jest.spyOn(global.Date, 'now').mockImplementation(() => {
 describe('Store Test', () => {
   let app;
   let query;
+  let execFunction;
 
   beforeAll(() => {
     app = express();
     app.use(express.json());
-    app.use(execute());
+    execFunction = jest.fn(({ body, method, query, id, response }) => {
+      const result = { hello: true, method, query, body, console, id };
+      try {
+        result.response = response;
+      } catch {}
+      return result;
+    });
+    const functions = { mytestfunction: execFunction };
+    app.use(execute({ functions }));
     query = request(app);
   });
 
   it('should execute remote function', async () => {
-    await query
-      .get(`/execute/missingfunction`)
-      .set('X-SPC-Host', 'http://localhost:5000/')
-      .expect(404);
+    await query.get(`/execute/missingfunction`).expect(404);
 
-    const result = await query
-      .get(`/execute/mytestfunction/`)
-      .set('X-SPC-Host', 'http://localhost:5000/')
-      .expect(200);
+    const result = await query.get(`/execute/mytestfunction/`).expect(200);
+
     expect(result.body).toEqual(expect.objectContaining({ hello: true }));
     expect(result.body.method).toBe('GET');
 
@@ -54,33 +58,7 @@ describe('Store Test', () => {
   });
 
   it('should run remote function with id', async () => {
-    const result = await query
-      .get(`/execute/mytestfunction/42`)
-      .set('X-SPC-Host', 'http://localhost:5000/')
-      .expect(200);
+    const result = await query.get(`/execute/mytestfunction/42`).expect(200);
     expect(result.body).toEqual(expect.objectContaining({ id: '42' }));
-  });
-
-  it('should fails to parse', async () => {
-    const result = await query
-      .get(`/execute/bad`)
-      .set('X-SPC-Host', 'http://localhost:5000/')
-      .expect(500);
-    expect(result.body.stackTrace).toEqual(
-      expect.stringContaining('no js here !!!')
-    );
-  });
-
-  it('should load setup', async () => {
-    const app2 = express();
-    app2.use(express.json());
-    app2.use(execute({ setup: 'mysetup' }));
-
-    const result = await request(app2)
-      .get(`/execute/mytestfunction/`)
-      .set('X-SPC-Host', 'http://localhost:5000/')
-      .expect(200);
-
-    expect(result.body).toEqual(expect.objectContaining({ response: 42 }));
   });
 });
