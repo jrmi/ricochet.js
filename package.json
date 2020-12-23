@@ -1,10 +1,11 @@
 {
   "name": "ricochet-js",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "description": "Multi-purpose deploy once prototyping backend",
   "main": "dist/index.js",
   "bin": {
-    "ricochet": "dist/cli.es5.js"
+    "ricochet": "dist/cli.es5.js",
+    "ricochet-js": "dist/cli.es5.js"
   },
   "scripts": {
     "dev": "nodemon  --exec babel-node src/cli.js | pino-tiny",
@@ -22,10 +23,12 @@
   "keywords": [
     "server",
     "json",
-    "store"
+    "store",
+    "backend",
+    "prototyping"
   ],
   "author": "Jérémie Pardou",
-  "repository": "https://github.com/jrmi/ricochet-js",
+  "repository": "https://github.com/jrmi/ricochetjs",
   "license": "ISC",
   "dependencies": {
     "aws-sdk": "^2.799.0",
@@ -37,7 +40,6 @@
     "easy-no-password": "^1.2.0",
     "express": "^4.17.1",
     "express-request-language": "^1.1.15",
-    "l10ns": "^2.4.42",
     "mime-types": "^2.1.27",
     "multer": "^1.4.2",
     "multer-s3": "^2.9.0",
@@ -62,6 +64,7 @@
     "eslint-config-prettier": "^6.15.0",
     "eslint-plugin-prettier": "^3.1.4",
     "jest": "^26.6.3",
+    "l10ns": "^2.4.42",
     "nodemon": "^2.0.6",
     "pino-pretty": "^4.3.0",
     "pino-tiny": "^1.0.0",
