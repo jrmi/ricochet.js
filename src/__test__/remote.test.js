@@ -118,7 +118,7 @@ describe('Remote Test', () => {
       .expect(500);
 
     expect(result.body.stackTrace).toEqual(
-      expect.stringContaining('no js here !!!')
+      expect.stringContaining('Unexpected identifier')
     );
   });
 });

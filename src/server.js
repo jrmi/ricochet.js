@@ -34,6 +34,13 @@ import {
   SETUP_FUNCTION,
 } from './settings.js';
 
+if (!SECRET) {
+  console.log(
+    'You must define "SECRET" environnement variable (tips: use .env file)'
+  );
+  process.exit(-1);
+}
+
 const app = express();
 const httpServer = createServer(app);
 

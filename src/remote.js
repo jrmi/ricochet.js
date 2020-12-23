@@ -89,7 +89,7 @@ export const remote = ({
           log.info(`Setup successfully loaded from ${remote}`);
         } catch (e) {
           log.warn({ error: e }, `Fails to load setup from ${remote}`);
-          throw e;
+          throwError(e, 500);
         }
       }
 

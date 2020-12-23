@@ -16,7 +16,7 @@ export const SOCKET_PATH =
 
 export const FILE_STORE_TYPE = process.env.FILE_STORAGE || 'memory';
 export const DISK_DESTINATION =
-  process.env.DISK_DESTINATION || '/tmp/airboardmedia';
+  process.env.DISK_DESTINATION || '/tmp/ricochet_file';
 
 export const S3_ACCESS_KEY = process.env.S3_ACCESS_KEY;
 export const S3_SECRET_KEY = process.env.S3_SECRET_KEY;
@@ -31,11 +31,10 @@ export const SECRET = process.env.SECRET;
 
 export const DISABLE_CACHE = process.env.DISABLE_CACHE === '1';
 
-export const EMAIL_HOST = process.env.EMAIL_HOST;
+export const EMAIL_HOST = process.env.EMAIL_HOST || 'fake';
 export const EMAIL_PORT = process.env.EMAIL_PORT;
 export const EMAIL_USER = process.env.EMAIL_USER;
 export const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD;
 export const EMAIL_FROM = process.env.EMAIL_FROM;
 
-export const SITE_NAME = process.env.SITE_NAME || 'Support Me';
 export const SETUP_FUNCTION = process.env.SETUP_FUNCTION || 'setup';

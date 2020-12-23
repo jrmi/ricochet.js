@@ -22,6 +22,7 @@ export const middleware = ({
   disableCache = false,
   setupFunction = 'setup',
   emailConfig = { host: 'fake' },
+  configFile = './site.json',
 } = {}) => {
   const router = express.Router();
 
@@ -38,13 +39,27 @@ export const middleware = ({
   const site = {};
 
   // Read config file
-  fs.readFile('./site.json', 'utf-8', (err, jsonString) => {
+  fs.readFile(configFile, 'utf-8', (err, jsonString) => {
     if (err) {
-      throw 'Failed to load site.json configuration file';
+      const { code } = err;
+      if (code === 'ENOENT') {
+        const data = {};
+        log.info('No config file, create default');
+        fs.writeFile(configFile, JSON.stringify(data, null, 2), () => {
+          Object.assign(site, data);
+        });
+      } else {
+        throw `Failed to load ${configFile} configuration file`;
+      }
+    } else {
+      try {
+        const data = JSON.parse(jsonString);
+        Object.assign(site, data);
+      } catch (e) {
+        console.log('Fails to parse config file...\n', e);
+        process.exit(-1);
+      }
     }
-
-    const data = JSON.parse(jsonString);
-    Object.assign(site, data);
   });
 
   // Remote Function map
@@ -54,7 +69,7 @@ export const middleware = ({
     const data = JSON.parse(script);
 
     if (!site[siteId]) {
-      throw { error: 'Site not registered', status: 'error' };
+      throw `Site ${siteId} not registered on ricochet.js`;
     }
 
     const { key } = site[siteId];

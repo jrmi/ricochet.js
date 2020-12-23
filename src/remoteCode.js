@@ -95,7 +95,11 @@ class RemoteCode {
               script += chunk;
             });
             resp.on('end', () => {
-              script = this.preProcess.bind(this)(script, config);
+              try {
+                script = this.preProcess.bind(this)(script, config);
+              } catch (e) {
+                reject({ status: 'error', error: e });
+              }
               script += extraCommands;
               try {
                 const parsedScript = new vm.Script(script, {
