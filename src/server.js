@@ -31,7 +31,6 @@ import {
   EMAIL_USER,
   EMAIL_PASSWORD,
   EMAIL_FROM,
-  SITE_NAME,
   SETUP_FUNCTION,
 } from './settings.js';
 
@@ -64,7 +63,6 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   middleware({
-    siteName: SITE_NAME,
     secret: SECRET,
     storeConfig: {
       type: STORE_BACKEND,

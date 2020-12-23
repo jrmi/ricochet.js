@@ -58,7 +58,7 @@ describe('Remote Test', () => {
       .expect(200);
   });
 
-  it('should ignore missing config file', async () => {
+  it('should fails on missing config file', async () => {
     app = express();
     app.use(express.json());
     app.use(
@@ -75,7 +75,7 @@ describe('Remote Test', () => {
     const result = await query
       .get(`/remote/test`)
       .set('X-SPC-Host', 'http://localhost:5000/')
-      .expect(200);
+      .expect(400);
   });
 
   it('should fails with bad config file', async () => {

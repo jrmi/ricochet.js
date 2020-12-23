@@ -21,7 +21,7 @@ const errorGuard = (func) => async (req, res, next) => {
 export const remote = ({
   prefix = 'remote',
   setupFunction = 'setup.js',
-  configFile = 'config.json',
+  configFile = '/config.json',
   context = {},
   disableCache,
   preProcess,
@@ -62,9 +62,29 @@ export const remote = ({
         log.info(`Clear cache for ${remote}`);
       }
 
+      let config = null;
+      try {
+        // Add siteId to request
+        config = await remoteCode.getConfig(remote);
+        req.siteId = config.siteId;
+      } catch ({ status, error }) {
+        if (status === 'not-found') {
+          // File is missing. We quit.
+          throwError(
+            'A config file must be available from remote to use this service',
+            400
+          );
+        } else {
+          throw error;
+        }
+      }
+
       if (!setupLoaded[remote] || disableCache || clearCache) {
         try {
-          await remoteCode.exec(remote, setupFunction, { ...context });
+          await remoteCode.exec(remote, setupFunction, {
+            ...config,
+            ...context,
+          });
           setupLoaded[remote] = true;
           log.info(`Setup successfully loaded from ${remote}`);
         } catch (e) {

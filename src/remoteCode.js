@@ -17,40 +17,48 @@ class RemoteCode {
     });
   }
 
-  getConfig(remote) {
-    const httpClient = remote.startsWith('https') ? https : http;
-    return new Promise((resolve, reject) => {
-      const configUrl = `${remote}${this.configFile}`;
-      httpClient
-        .get(configUrl, (resp) => {
-          if (resp.statusCode === 404) {
-            reject({
-              status: 'not-found',
-            });
-            return;
-          }
-
-          let data = '';
-          resp.on('data', (chunk) => {
-            data += chunk;
-          });
-          resp.on('end', () => {
-            try {
-              const { siteId, scriptPath = '/' } = JSON.parse(data);
-              resolve({ siteId, scriptPath });
-            } catch (e) {
+  /**
+   * Load config from remote. Returns the config dict.
+   * @param {string} remote
+   */
+  async getConfig(remote) {
+    if (!this.configCache[remote] || this.disableCache) {
+      const httpClient = remote.startsWith('https') ? https : http;
+      this.configCache[remote] = await new Promise((resolve, reject) => {
+        const configUrl = `${remote}${this.configFile}`;
+        httpClient
+          .get(configUrl, (resp) => {
+            if (resp.statusCode === 404) {
               reject({
-                status: 'error',
-                error: e,
+                status: 'not-found',
               });
+              return;
             }
+
+            let data = '';
+            resp.on('data', (chunk) => {
+              data += chunk;
+            });
+            resp.on('end', () => {
+              try {
+                const { siteId, scriptPath = '/' } = JSON.parse(data);
+                resolve({ siteId, scriptPath });
+              } catch (e) {
+                reject({
+                  status: 'error',
+                  error: e,
+                });
+              }
+            });
+          })
+          .on('error', (err) => {
+            /* istanbul ignore next */
+            reject(err);
           });
-        })
-        .on('error', (err) => {
-          /* istanbul ignore next */
-          reject(err);
-        });
-    });
+      });
+    }
+
+    return this.configCache[remote];
   }
 
   /**
@@ -110,22 +118,16 @@ class RemoteCode {
 
   async exec(remote, scriptName, context) {
     // Ensure config is loaded
-    if (!this.configCache[remote] || this.disableCache) {
-      try {
-        this.configCache[remote] = await this.getConfig(remote);
-      } catch ({ status, error }) {
-        if (status === 'not-found') {
-          // File is missing. We quit.
-          return;
-        } else {
-          throw error;
-        }
+    try {
+      await this.getConfig(remote);
+    } catch ({ status, error }) {
+      if (status === 'not-found') {
+        // File is missing. We quit.
+        return;
+      } else {
+        throw error;
       }
     }
-    const scriptContext = {
-      console,
-      __params: { ...context },
-    };
 
     try {
       const toRun = await this.cacheOrFetch(
@@ -133,6 +135,10 @@ class RemoteCode {
         scriptName,
         '\nmain(__params);'
       );
+      const scriptContext = {
+        console,
+        __params: { ...context },
+      };
       return await toRun.runInNewContext(scriptContext);
     } catch (e) {
       if (e.status === 'not-found') {

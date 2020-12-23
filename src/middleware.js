@@ -16,7 +16,6 @@ import auth from './authentication.js';
 import { decrypt } from './crypt.js';
 
 export const middleware = ({
-  siteName,
   secret,
   storeConfig = {},
   fileStoreConfig = {},
@@ -25,6 +24,53 @@ export const middleware = ({
   emailConfig = { host: 'fake' },
 } = {}) => {
   const router = express.Router();
+
+  // JSON store backend
+  let storeBackend;
+  switch (storeConfig.type) {
+    case 'nedb':
+      storeBackend = NeDBBackend({ dirname: storeConfig.dirname });
+      break;
+    default:
+      storeBackend = memoryBackend();
+  }
+
+  const site = {};
+
+  // Read config file
+  fs.readFile('./site.json', 'utf-8', (err, jsonString) => {
+    if (err) {
+      throw 'Failed to load site.json configuration file';
+    }
+
+    const data = JSON.parse(jsonString);
+    Object.assign(site, data);
+  });
+
+  // Remote Function map
+  const functions = {};
+
+  const decryptPayload = (script, { siteId }) => {
+    const data = JSON.parse(script);
+
+    if (!site[siteId]) {
+      throw { error: 'Site not registered', status: 'error' };
+    }
+
+    const { key } = site[siteId];
+    const decrypted = decrypt(data, key);
+    return decrypted;
+  };
+
+  // Remote code
+  router.use(
+    remote({
+      context: { store: storeBackend, functions },
+      disableCache,
+      setupFunction,
+      preProcess: decryptPayload,
+    })
+  );
 
   let _transporter = null;
 
@@ -37,25 +83,21 @@ export const middleware = ({
     return _transporter;
   };
 
-  const site = {};
+  const onSendToken = async ({ remote, userEmail, userId, token, req }) => {
+    const { siteId, localizations: l } = req;
 
-  fs.readFile('./site.json', 'utf-8', (err, jsonString) => {
-    if (err) {
-      throw 'Failed to load site.json configuration file';
+    if (!site[siteId]) {
+      throw { error: 'Site not registered', status: 'error' };
     }
 
-    const data = JSON.parse(jsonString);
-    Object.assign(site, data);
-  });
+    const { name: siteName } = site[siteId];
 
-  const onSendToken = async ({ origin, userEmail, userId, token, req }) => {
-    let l = req.localizations;
-    log.debug(`Link to connect: ${origin}/login/${userId}/${token}`);
+    log.debug(`Link to connect: ${remote}/login/${userId}/${token}`);
     // if fake host, link is only loggued
     if (emailConfig.host === 'fake') {
-      log.debug(
+      log.info(
         l('Auth mail text_message', {
-          url: `${origin}/login/${userId}/${token}`,
+          url: `${remote}/login/${userId}/${token}`,
           siteName: siteName,
         })
       );
@@ -65,14 +107,14 @@ export const middleware = ({
     await getTransporter().sendMail({
       from: emailConfig.from,
       to: userEmail,
-      subject: l('Your authentication link', { siteName: siteName }),
+      subject: l('Your authentication link', { siteName }),
       text: l('Auth mail text_message', {
-        url: `${origin}/login/${userId}/${token}`,
-        siteName: siteName,
+        url: `${remote}/login/${userId}/${token}`,
+        siteName,
       }),
       html: l('Auth mail html message', {
-        url: `${origin}/login/${userId}/${token}`,
-        siteName: siteName,
+        url: `${remote}/login/${userId}/${token}`,
+        siteName,
       }),
     });
 
@@ -111,41 +153,6 @@ export const middleware = ({
 
   // Auth middleware
   router.use(auth({ onSendToken, onLogin, onLogout, secret: secret }));
-
-  // JSON store backend
-  let storeBackend;
-  switch (storeConfig.type) {
-    case 'nedb':
-      storeBackend = NeDBBackend({ dirname: storeConfig.dirname });
-      break;
-    default:
-      storeBackend = memoryBackend();
-  }
-
-  // Remote Function map
-  const functions = {};
-
-  const decryptPayload = (script, { siteId }) => {
-    const data = JSON.parse(script);
-
-    if (!site[siteId]) {
-      throw { error: 'Site not registered', status: 'error' };
-    }
-
-    const { key } = site[siteId];
-    const decrypted = decrypt(data, key);
-    return decrypted;
-  };
-
-  // Remote code
-  router.use(
-    remote({
-      context: { store: storeBackend, functions },
-      disableCache,
-      setupFunction,
-      preProcess: decryptPayload,
-    })
-  );
 
   // File store
   router.use(

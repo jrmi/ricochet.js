@@ -84,7 +84,7 @@ export const authentication = ({
         if (err) {
           throwError('Unknown error', 500);
         }
-        const remote = authHost ?? origin;
+        const remote = authHost || origin;
         return onSendToken({ remote, userEmail, userId, token, req }).then(
           () => {
             res.json({ message: 'Token sent' });
