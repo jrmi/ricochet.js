@@ -1,3 +1,11 @@
-const { default: middleware } = require('./middleware');
-export { default as middleware } from './middleware.js';
-export { default as EncryptPlugin } from './EncryptPlugin.js';
+export { default } from './middleware.js';
+
+export let EncryptPlugin = null;
+
+try{
+  EncryptPlugin = require('./EncryptPlugin.js').default;
+}catch(e){
+  if(e.code !== 'MODULE_NOT_FOUND'){
+    throw e;
+  }
+}
