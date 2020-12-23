@@ -105,7 +105,7 @@ export const middleware = ({
       throw { error: 'Site not registered', status: 'error' };
     }
 
-    const { name: siteName } = site[siteId];
+    const { name: siteName, emailFrom } = site[siteId];
 
     log.debug(`Link to connect: ${remote}/login/${userId}/${token}`);
     // if fake host, link is only loggued
@@ -120,7 +120,7 @@ export const middleware = ({
     }
 
     await getTransporter().sendMail({
-      from: emailConfig.from,
+      from: emailFrom,
       to: userEmail,
       subject: l('Your authentication link', { siteName }),
       text: l('Auth mail text_message', {

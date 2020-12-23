@@ -1,33 +1,121 @@
-# Air board game backend
+# Ricochet.js
 
-Welcome to airboargame backend application. This server contains only generic
- generic purpose API and can actually be used with many projects.
+Welcome to ricochet.js application. This server contains only generic
+ purpose API and can actually be used with many projects.
 
 This is a "deploy and forget" backend. Once deployed, you don't need to redeploy
 each time you make "backend" modifications.
 
-In fact, the backend code is embeded with your frontend code.
+In fact, the backend code is deployed with your frontend code.
 
-You have ready to use general purpose API for common needs and when want specifics
+You have ready to use general purpose API for common needs and when wants specific
 behaviours, you can complete with function executed server side in secured
 context.
 
 ## Install
 
-Clone the repository. Copy the `.env.dist` file to `.env` and modify it to fit
-your needs.
-
-Inside the clonned repository:
-
 ```sh
-npm ci
+npm install ricochet-js # -g to install globally
 ```
 
-Then to start the server in developpment mode:
+Create `.env` file:
 
 ```sh
-npm run dev
+SERVER_PORT=4000
+SERVER_HOST=localhost
+
+# memory, disk or s3 storage are available
+FILE_STORAGE=memory
+
+# S3 storage configuration
+S3_ACCESS_KEY=
+S3_SECRET_KEY=
+S3_ENDPOINT=
+S3_BUCKET=
+
+# memory or nedb store backend
+STORE_BACKEND=memory
+
+NEDB_BACKEND_DIRNAME=/path/to/data # Any path where nedb databases will be kept
+
+SECRET=YourSuperSecretHere
+
+# Smtp server configuration
+EMAIL_HOST=fake # `fake` logs mail and prevent sending
+EMAIL_PORT=
+EMAIL_USER=
+EMAIL_PASSWORD=
+EMAIL_FROM=
+
 ```
+
+Create `site.json` file. This file should contains the site configuration.
+Here an example:
+
+```json
+{
+  "mysiteId": {
+    "name": "My site name",
+    "key": "<secret key>",
+    "emailFrom": "\"My site name\" <no-reply@example.com>"
+  }
+}
+```
+
+## Launch
+
+if installed globally, just launch `ricochet` command.
+Otherwise use a npm script command.
+
+## Using the APIs
+
+If you want to use the 3 APIs from a website you must first define an entry for
+the siteId you want to use in the `site.json` configuration file on server 
+(See above).
+
+Then you must create a `config.json` file with this content:
+
+```json
+{
+  "siteId": "mysiteid",
+  "scriptBase": "/"
+}
+```
+
+Where `siteId` is the site id you define in `config.json` file and `scriptBase`
+the path where the setup script (see below) is located.
+
+Finnally, setup the server with the `setup.js` script. This should be a regular
+js script that should export a function which will be called by the server.
+
+This script is executed on *Ricochet.js* server so don't rely on browser
+capabilities. Also the execution context is limited. You only have access to 
+`console` and the exported function receive a dict with 
+`store`, `functions` and `fileStore` values. 
+
+- `store` is the store manager instance.
+- `functions` is an object that you can spc functions.
+- `fileStore` the fileStore manager instance.
+
+Here's an example:
+
+```js
+
+const main = ({ store, functions }) => {
+  // Add remote functions
+  functions.test = ({ store }) => {
+    console.log("Test function call is a success", store);
+  };
+  // Declare store
+  store.createOrUpdateBox("testBox", { security: "readOnly" });
+  console.log("Setup loaded");
+};
+
+export default main;
+```
+
+Which the setup you can declare allowed JSON store and create remote 
+functions.
 
 ## APIs
 
@@ -35,7 +123,9 @@ You have 3 APIs with this server:
 
 - A JSON store similar to jsonbox.io (Key/Value & List)
 - A file store
-- A Side procedure call. A Remote procedure call where procedure lives side by side with your frontend code.
+- Call to previously declared function by `setup`
+
+Can be authenticated.
 
 ### JSON store
 
@@ -96,13 +186,7 @@ To delete the file identified by `filename`.
 
 ### SPC
 
-This should be the most unobvious part. This is a remote procedure call like where
-remote procedures are hosted on "Referer" or urel pointed by "X-SPC-Host" header. 
-You can (should) store the remote function alongside with your frontend 
-to allow easy deployment.
-
-Scripts should contains a `main` function that is called. The function can return
-a value that is returned to the caller.
+You can call previously defined by setup functions here.
 
 #### ANY on /execute/:functionName/:id?
 
@@ -113,6 +197,7 @@ then execute the main function and collect the returned value. The returned valu
 is sent back to the client.
 
 The script have access to some globally defined variables:
+
 - `console` to enable console.log
 
 and receive an object with following properties:
@@ -130,3 +215,20 @@ loaded on first function call.
 
 The setup is really important because this is the only way to create your box
 before using them.
+
+## Ricochet developpment installation
+
+Clone the repository. Copy the `.env.dist` file to `.env` and modify it to fit
+your needs.
+
+Inside the clonned repository:
+
+```sh
+npm ci
+```
+
+Then to start the server in developpment mode:
+
+```sh
+npm run dev
+```
