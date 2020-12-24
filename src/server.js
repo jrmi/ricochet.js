@@ -30,7 +30,6 @@ import {
   EMAIL_PORT,
   EMAIL_USER,
   EMAIL_PASSWORD,
-  EMAIL_FROM,
   SETUP_FUNCTION,
 } from './settings.js';
 
@@ -90,9 +89,10 @@ app.use(
     emailConfig: {
       host: EMAIL_HOST,
       port: EMAIL_PORT,
-      user: EMAIL_USER,
-      password: EMAIL_PASSWORD,
-      from: EMAIL_FROM,
+      auth: {
+        user: EMAIL_USER,
+        pass: EMAIL_PASSWORD,
+      },
     },
   })
 );

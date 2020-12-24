@@ -35,6 +35,5 @@ export const EMAIL_HOST = process.env.EMAIL_HOST || 'fake';
 export const EMAIL_PORT = process.env.EMAIL_PORT;
 export const EMAIL_USER = process.env.EMAIL_USER;
 export const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD;
-export const EMAIL_FROM = process.env.EMAIL_FROM;
 
 export const SETUP_FUNCTION = process.env.SETUP_FUNCTION || 'setup';
