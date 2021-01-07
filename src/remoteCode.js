@@ -148,7 +148,11 @@ class RemoteCode {
       if (e.status === 'not-found') {
         throw `Script ${scriptName} not found on remote ${remote}`;
       } else {
-        throw e.error;
+        if (e.error) {
+          throw e.error;
+        } else {
+          throw e;
+        }
       }
     }
   }

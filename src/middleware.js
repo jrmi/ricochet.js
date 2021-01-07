@@ -26,6 +26,18 @@ export const middleware = ({
 } = {}) => {
   const router = express.Router();
 
+  // File store
+  router.use(
+    fileStore(fileStoreConfig.type, {
+      url: fileStoreConfig.apiUrl,
+      destination: fileStoreConfig.diskDestination,
+      bucket: fileStoreConfig.s3Bucket,
+      endpoint: fileStoreConfig.s3Endpoint,
+      accessKey: fileStoreConfig.s3AccesKey,
+      secretKey: fileStoreConfig.s3SecretKey,
+    })
+  );
+
   // JSON store backend
   let storeBackend;
   switch (storeConfig.type) {
@@ -168,18 +180,6 @@ export const middleware = ({
 
   // Auth middleware
   router.use(auth({ onSendToken, onLogin, onLogout, secret: secret }));
-
-  // File store
-  router.use(
-    fileStore(fileStoreConfig.type, {
-      url: fileStoreConfig.apiUrl,
-      destination: fileStoreConfig.diskDestination,
-      bucket: fileStoreConfig.s3Bucket,
-      endpoint: fileStoreConfig.s3Endpoint,
-      accessKey: fileStoreConfig.s3AccesKey,
-      secretKey: fileStoreConfig.s3SecretKey,
-    })
-  );
 
   // JSON store
   router.use(store({ prefix: storeConfig.prefix, backend: storeBackend }));
