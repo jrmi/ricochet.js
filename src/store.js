@@ -1,5 +1,5 @@
 import express from 'express';
-import { memoryBackend } from './storeBackends.js';
+import { memoryBackend, wrapBackend } from './storeBackends.js';
 
 // Utility functions
 
@@ -48,7 +48,11 @@ export const store = ({
         fields,
       } = req.query;
 
-      if (!(await backend.checkSecurity(boxId, null))) {
+      const { siteId, authenticatedUser } = req;
+
+      const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
+
+      if (!(await wrappedBackend.checkSecurity(boxId, null))) {
         throwError('You need read access for this box', 403);
       }
 
@@ -66,7 +70,7 @@ export const store = ({
         asc = false;
       }
 
-      const result = await backend.list(boxId, {
+      const result = await wrappedBackend.list(boxId, {
         sort: sortProperty,
         asc,
         limit: parsedLimit,
@@ -84,6 +88,10 @@ export const store = ({
     errorGuard(async (req, res) => {
       const { boxId, id } = req.params;
 
+      const { siteId, authenticatedUser } = req;
+
+      const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
+
       if (boxId[0] === '_') {
         throwError(
           "'_' char is forbidden for first letter of a box id parameter",
@@ -91,11 +99,11 @@ export const store = ({
         );
       }
 
-      if (!(await backend.checkSecurity(boxId, id))) {
+      if (!(await wrappedBackend.checkSecurity(boxId, id))) {
         throwError('You need read access for this box', 403);
       }
 
-      const result = await backend.get(boxId, id);
+      const result = await wrappedBackend.get(boxId, id);
       res.json(result);
     })
   );
@@ -107,7 +115,11 @@ export const store = ({
       const {
         params: { boxId, id },
         body,
+        siteId,
+        authenticatedUser,
       } = req;
+
+      const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
 
       if (boxId[0] === '_') {
         throwError(
@@ -116,10 +128,10 @@ export const store = ({
         );
       }
 
-      if (!(await backend.checkSecurity(boxId, id, true))) {
+      if (!(await wrappedBackend.checkSecurity(boxId, id, true))) {
         throwError('You need write access for this box', 403);
       }
-      const result = await backend.save(boxId, id, body);
+      const result = await wrappedBackend.save(boxId, id, body);
       return res.json(result);
     })
   );
@@ -130,6 +142,10 @@ export const store = ({
     errorGuard(async (req, res) => {
       const { boxId, id } = req.params;
 
+      const { siteId, authenticatedUser } = req;
+
+      const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
+
       if (boxId[0] === '_') {
         throwError(
           "'_' char is forbidden for first letter of a letter of a box id parameter",
@@ -137,10 +153,10 @@ export const store = ({
         );
       }
 
-      if (!(await backend.checkSecurity(boxId, id, true))) {
+      if (!(await wrappedBackend.checkSecurity(boxId, id, true))) {
         throwError('You need write access for this resource', 403);
       }
-      const result = await backend.update(boxId, id, req.body);
+      const result = await wrappedBackend.update(boxId, id, req.body);
       return res.json(result);
     })
   );
@@ -151,6 +167,10 @@ export const store = ({
     errorGuard(async (req, res) => {
       const { boxId, id } = req.params;
 
+      const { siteId, authenticatedUser } = req;
+
+      const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
+
       if (boxId[0] === '_') {
         throwError(
           "'_' char is forbidden for first letter of a box id parameter",
@@ -158,10 +178,10 @@ export const store = ({
         );
       }
 
-      if (!(await backend.checkSecurity(boxId, id, true))) {
+      if (!(await wrappedBackend.checkSecurity(boxId, id, true))) {
         throwError('You need write access for this resource', 403);
       }
-      const result = await backend.delete(boxId, id);
+      const result = await wrappedBackend.delete(boxId, id);
       if (result === 1) {
         res.json({ message: 'Deleted' });
         return;

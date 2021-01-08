@@ -30,13 +30,19 @@ describe('Store Test', () => {
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     backend = memoryBackend();
+    app.use((req, res, next) => {
+      req.siteId = 'fakeSiteId';
+      next();
+    });
     app.use(store({ backend }));
     query = request(app);
   });
 
   it('should get empty box', async () => {
     const box = 'myboxid_test1';
-    await backend.createOrUpdateBox(box, { security: 'public' });
+    await backend.createOrUpdateBox(`_fakeSiteId__${box}`, {
+      security: 'public',
+    });
 
     const res = await query
       .get(`/store/${box}/`)
@@ -46,7 +52,9 @@ describe('Store Test', () => {
 
   it('should add resource', async () => {
     const box = 'myboxid_test2';
-    await backend.createOrUpdateBox(box, { security: 'public' });
+    await backend.createOrUpdateBox(`_fakeSiteId__${box}`, {
+      security: 'public',
+    });
 
     const res = await query
       .post(`/store/${box}/`)
@@ -77,7 +85,9 @@ describe('Store Test', () => {
 
   it('should get a resource', async () => {
     const box = 'myboxid_test3';
-    await backend.createOrUpdateBox(box, { security: 'public' });
+    await backend.createOrUpdateBox(`_fakeSiteId__${box}`, {
+      security: 'public',
+    });
 
     const res = await query
       .post(`/store/${box}/`)
@@ -96,7 +106,9 @@ describe('Store Test', () => {
 
   it('should update a resource', async () => {
     const box = 'myboxid_test4';
-    await backend.createOrUpdateBox(box, { security: 'public' });
+    await backend.createOrUpdateBox(`_fakeSiteId__${box}`, {
+      security: 'public',
+    });
 
     const res = await query
       .post(`/store/${box}/`)
@@ -126,7 +138,9 @@ describe('Store Test', () => {
 
   it('should delete a resource', async () => {
     const box = 'myboxid_test5';
-    await backend.createOrUpdateBox(box, { security: 'public' });
+    await backend.createOrUpdateBox(`_fakeSiteId__${box}`, {
+      security: 'public',
+    });
 
     const res = await query
       .post(`/store/${box}/`)
@@ -145,7 +159,9 @@ describe('Store Test', () => {
 
   it('should return 404', async () => {
     const box = 'boxId_400';
-    await backend.createOrUpdateBox(box, { security: 'public' });
+    await backend.createOrUpdateBox(`_fakeSiteId__${box}`, {
+      security: 'public',
+    });
 
     await query.get(`/store/${box}/noresource`).expect(404);
 
@@ -154,7 +170,9 @@ describe('Store Test', () => {
 
   it('should return 403', async () => {
     let box = 'boxId_500';
-    await backend.createOrUpdateBox(box, { security: 'readOnly' });
+    await backend.createOrUpdateBox(`_fakeSiteId__${box}`, {
+      security: 'readOnly',
+    });
 
     await query.get(`/store/${box}/`).expect(200);
 

@@ -9,6 +9,51 @@ const throwError = (message, code = 400) => {
 
 const DEFAULT_BOX_OPTIONS = { security: 'private', personal: false };
 
+export const wrapBackend = (backend, siteId, userId) => {
+  const getBoxId = (userBoxId) => {
+    return `_${siteId}__${userBoxId}`;
+  };
+
+  return {
+    async checkSecurity(boxId, id, write = false) {
+      const { security = 'private' } = await backend.getBoxOption(
+        getBoxId(boxId)
+      );
+      switch (security) {
+        case 'private':
+          return false;
+        case 'public':
+          return true;
+        case 'readOnly':
+          return !write;
+        default:
+          return false;
+      }
+    },
+    async createOrUpdateBox(boxId, options) {
+      return await backend.createOrUpdateBox(getBoxId(boxId), options);
+    },
+    async list(boxId, options) {
+      return await backend.list(getBoxId(boxId), options);
+    },
+    async get(boxId, id) {
+      return await backend.get(getBoxId(boxId), id);
+    },
+    async create(boxId, data) {
+      return await backend.create(getBoxId(boxId), data);
+    },
+    async save(boxId, id, body) {
+      return await backend.save(getBoxId(boxId), id, body);
+    },
+    async update(boxId, id, body) {
+      return await backend.update(getBoxId(boxId), id, body);
+    },
+    async delete(boxId, id) {
+      return await backend.delete(getBoxId(boxId), id);
+    },
+  };
+};
+
 // Memory backend for proof of concept
 export const memoryBackend = () => {
   const dataMemoryStore = {};
@@ -32,18 +77,8 @@ export const memoryBackend = () => {
   };
 
   return {
-    async checkSecurity(boxId, id, write = false) {
-      const { security = 'private' } = boxOptions[boxId] || {};
-      switch (security) {
-        case 'private':
-          return false;
-        case 'public':
-          return true;
-        case 'readOnly':
-          return !write;
-        default:
-          return false;
-      }
+    async getBoxOption(boxId) {
+      return boxOptions[boxId] || {};
     },
 
     async createOrUpdateBox(boxId, options = { ...DEFAULT_BOX_OPTIONS }) {
@@ -186,7 +221,7 @@ export const NeDBBackend = (options) => {
           /* istanbul ignore next */
           reject(err);
         }
-        resolve(doc);
+        resolve(doc || {});
       });
     });
   };
@@ -203,22 +238,7 @@ export const NeDBBackend = (options) => {
   };
 
   return {
-    async checkSecurity(boxId, id, write = false) {
-      const { security = 'private' } = (await getBoxOption(boxId)) || {};
-      switch (security) {
-        case 'private':
-          return false;
-        case 'public':
-          return true;
-        case 'readOnly':
-          return !write;
-        case 'writeOnly':
-          return write;
-        default:
-          return false;
-      }
-    },
-
+    getBoxOption,
     async createOrUpdateBox(boxId, options = { ...DEFAULT_BOX_OPTIONS }) {
       return new Promise((resolve, reject) => {
         db.boxes.update(
@@ -249,11 +269,12 @@ export const NeDBBackend = (options) => {
     ) {
       const boxRecord = await getBoxOption(boxId);
 
-      if (!boxRecord) {
+      if (!boxRecord.box) {
         throwError('Box not found', 404);
       }
 
       const boxDB = getBoxDB(boxId);
+
       return new Promise((resolve, reject) => {
         boxDB
           .find(

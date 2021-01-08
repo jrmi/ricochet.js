@@ -7,7 +7,7 @@ import log from './log.js';
 import fileStore from './fileStore.js';
 import store from './store.js';
 
-import { NeDBBackend, memoryBackend } from './storeBackends.js';
+import { NeDBBackend, memoryBackend, wrapBackend } from './storeBackends.js';
 
 import remote from './remote.js';
 import execute from './execute.js';
@@ -92,7 +92,15 @@ export const middleware = ({
   // Remote code
   router.use(
     remote({
-      context: { store: storeBackend, functions },
+      context: (req) => {
+        const { siteId, authenticatedUser } = req;
+        const wrappedBackend = wrapBackend(
+          storeBackend,
+          siteId,
+          authenticatedUser
+        );
+        return { store: wrappedBackend, functions };
+      },
       disableCache,
       setupFunction,
       preProcess: decryptPayload,
