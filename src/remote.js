@@ -86,9 +86,13 @@ export const remote = ({
 
       if (!setupLoaded[remote] || disableCache || clearCache) {
         try {
+          let contextAddition = context;
+          if (typeof context === 'function') {
+            contextAddition = context(req);
+          }
           await remoteCode.exec(remote, setupFunction, {
             ...config,
-            ...context,
+            ...contextAddition,
           });
           setupLoaded[remote] = true;
           log.info(`Setup successfully loaded from ${remote}`);

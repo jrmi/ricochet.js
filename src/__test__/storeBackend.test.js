@@ -1,4 +1,4 @@
-import { memoryBackend, NeDBBackend } from '../storeBackends';
+import { memoryBackend, NeDBBackend, wrapBackend } from '../storeBackends';
 
 jest.mock('nanoid', () => {
   let count = 0;
@@ -19,8 +19,15 @@ jest.spyOn(global.Date, 'now').mockImplementation(() => {
 });
 
 const backends = [
-  ['memory', memoryBackend()],
-  ['NeDB', NeDBBackend({ filename: null, inMemoryOnly: true })],
+  ['memory', wrapBackend(memoryBackend(), 'siteid', 'userid')],
+  [
+    'NeDB',
+    wrapBackend(
+      NeDBBackend({ filename: null, inMemoryOnly: true }),
+      'siteid',
+      'userid'
+    ),
+  ],
 ];
 
 describe.each(backends)('Store backend <%s> tests', (backendName, backend) => {
