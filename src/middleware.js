@@ -35,6 +35,7 @@ export const middleware = ({
       endpoint: fileStoreConfig.s3Endpoint,
       accessKey: fileStoreConfig.s3AccesKey,
       secretKey: fileStoreConfig.s3SecretKey,
+      region: fileStoreConfig.s3Region,
     })
   );
 
