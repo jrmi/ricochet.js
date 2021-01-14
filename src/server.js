@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import bodyParser from 'body-parser';
 import { createServer } from 'http';
 import requestLanguage from 'express-request-language';
 import pinoHttp from 'pino-http';
@@ -54,8 +55,7 @@ const corsOption = {
 app.use(cors(corsOption));
 app.use(pinoHttp({ logger: log }));
 app.use(
-  express.json({
-    parameterLimit: 100000,
+  bodyParser.json({
     limit: '50mb',
   })
 );
@@ -65,7 +65,7 @@ app.use(
     localizations,
   })
 );
-app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(
   middleware({
