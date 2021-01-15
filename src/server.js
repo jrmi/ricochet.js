@@ -2,15 +2,17 @@ import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import { createServer } from 'http';
-import requestLanguage from 'express-request-language';
 import pinoHttp from 'pino-http';
+import i18next from 'i18next';
+import i18nextMiddleware from 'i18next-http-middleware';
+import i18nextBackend from 'i18next-fs-backend';
 
 import log from './log.js';
 import { defineSocket } from './socket.js';
 
 import middleware from './middleware.js';
-
-import localizations from './i18n/output/all.js';
+import path from 'path';
+import fs from 'fs';
 
 import {
   HOST,
@@ -33,6 +35,28 @@ import {
   EMAIL_PASSWORD,
   SETUP_FUNCTION,
 } from './settings.js';
+
+i18next
+  .use(i18nextMiddleware.LanguageDetector)
+  .use(i18nextBackend)
+  .init({
+    supportedLngs: ['en', 'fr'],
+    initImmediate: false,
+    fallbackLng: 'en',
+    preload: fs
+      .readdirSync(path.join(__dirname, '../locales'))
+      .filter((fileName) => {
+        const joinedPath = path.join(
+          path.join(__dirname, '../locales'),
+          fileName
+        );
+        const isDirectory = fs.statSync(joinedPath).isDirectory();
+        return isDirectory;
+      }),
+    backend: {
+      loadPath: path.join(__dirname, '../locales/{{lng}}/{{ns}}.json'),
+    },
+  });
 
 if (!SECRET) {
   console.log(
@@ -59,12 +83,9 @@ app.use(
     limit: '50mb',
   })
 );
-app.use(
-  requestLanguage({
-    languages: ['en-US', 'fr-FR'],
-    localizations,
-  })
-);
+
+app.use(i18nextMiddleware.handle(i18next));
+
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(
