@@ -111,7 +111,7 @@ export const middleware = ({
   };
 
   const onSendToken = async ({ remote, userEmail, userId, token, req }) => {
-    const { siteId, localizations: l } = req;
+    const { siteId, t } = req;
 
     if (!site[siteId]) {
       throw { error: 'Site not registered', status: 'error' };
@@ -123,9 +123,10 @@ export const middleware = ({
     // if fake host, link is only loggued
     if (emailConfig.host === 'fake') {
       log.info(
-        l('Auth mail text_message', {
+        t('Auth mail text message', {
           url: `${remote}/login/${userId}/${token}`,
           siteName: siteName,
+          interpolation: { escapeValue: false },
         })
       );
       return;
@@ -134,12 +135,15 @@ export const middleware = ({
     await getTransporter().sendMail({
       from: emailFrom,
       to: userEmail,
-      subject: l('Your authentication link', { siteName }),
-      text: l('Auth mail text_message', {
+      subject: t('Your authentication link', {
+        siteName,
+        interpolation: { escapeValue: false },
+      }),
+      text: t('Auth mail text message', {
         url: `${remote}/login/${userId}/${token}`,
         siteName,
       }),
-      html: l('Auth mail html message', {
+      html: t('Auth mail html message', {
         url: `${remote}/login/${userId}/${token}`,
         siteName,
       }),
