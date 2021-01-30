@@ -24,6 +24,9 @@ export const decrypt = (data, key, algorithm = 'aes-256-cbc') => {
   return decrypted.toString();
 };
 
+export const generateKey = () =>
+  Buffer.from(crypto.randomBytes(32)).toString('base64');
+
 /* test
 const algo = 'aes-256-cbc';
 const key = Buffer.from(crypto.randomBytes(32)).toString('base64');
