@@ -20,6 +20,7 @@
     "shebang": "echo '#!/usr/bin/env node' > dist/cli.es5.js && cat dist/cli.js >> dist/cli.es5.js",
     "prepare": "npm run build && npm run shebang",
     "watch": "npm run prepare && babel src -d dist --ignore 'src/**/__test__/' --watch",
+    "version": "git changelog -n -t $npm_package_version && git add CHANGELOG.md",
     "i18n:parser": "npx i18next-parser 'src/**/*.js'"
   },
   "keywords": [
@@ -35,7 +36,7 @@
   "dependencies": {
     "aws-sdk": "^2.799.0",
     "body-parser": "^1.19.0",
-    "client2client.io": "^1.3.1",
+    "client2client.io": "^1.3.4",
     "cookie-session": "^1.4.0",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
