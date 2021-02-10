@@ -1,6 +1,6 @@
 {
   "name": "ricochet-js",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Multi-purpose deploy once prototyping backend",
   "main": "dist/index.js",
   "bin": {
@@ -54,7 +54,7 @@
     "nodemailer": "^6.4.16",
     "pino": "^6.7.0",
     "pino-http": "^5.3.0",
-    "socket.io": "^2.3.0",
+    "socket.io": "^3.1.1",
     "yargs": "^16.2.0"
   },
   "peerDependencies": {
