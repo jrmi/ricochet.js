@@ -21,6 +21,7 @@
     "prepare": "npm run build && npm run shebang",
     "watch": "npm run prepare && babel src -d dist --ignore 'src/**/__test__/' --watch",
     "version": "git changelog -n -t $npm_package_version && git add CHANGELOG.md",
+    "ci": "npx start-server-and-test test:server http://localhost:5000 coverage",
     "i18n:parser": "npx i18next-parser 'src/**/*.js'"
   },
   "keywords": [

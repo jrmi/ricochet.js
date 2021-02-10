@@ -26,4 +26,4 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm ci
-    - run: npx start-server-and-test test:server http://localhost:5000 coverage
+    - run: npm run ci
