@@ -17,9 +17,17 @@ const errorGuard = (func) => async (req, res, next) => {
   }
 };
 
+const getRemoteFromQuery = ({
+  headers: {
+    'x-spc-host': spcHost = '',
+    'x-ricochet-origin': ricochetOrigin,
+    origin,
+    referer,
+  },
+}) => ricochetOrigin || origin || (referer ? new URL(referer).origin : spcHost);
+
 // Remote setup Middleware
 export const remote = ({
-  prefix = 'remote',
   setupFunction = 'setup.js',
   configFile = '/config.json',
   context = {},
@@ -41,21 +49,18 @@ export const remote = ({
     errorGuard(async (req, res, next) => {
       const {
         query: { clearCache },
-        headers: { 'x-spc-host': spcHost = '', origin },
       } = req;
 
-      let remote = null;
-      if (spcHost) {
-        remote = spcHost;
-      } else {
-        if (origin) {
-          remote = origin;
-        }
-      }
+      const remote = getRemoteFromQuery(req);
 
       if (!remote) {
-        throwError('X-SPC-Host or Origin header is required', 400);
+        throwError(
+          'One of x-ricochet-origin, Origin, Referer header is required',
+          400
+        );
       }
+
+      req.ricochetOrigin = remote;
 
       if (clearCache) {
         remoteCode.clearCache(remote);
@@ -94,21 +99,6 @@ export const remote = ({
       }
 
       next();
-    })
-  );
-
-  router.all(
-    `/${prefix}/register/`,
-    errorGuard(async (req, res) => {
-      const {
-        headers: { 'x-spc-host': remote = '' },
-      } = req;
-
-      if (!remote) {
-        throwError('X-SPC-Host header is required', 400);
-      }
-
-      res.send('ok');
     })
   );
 

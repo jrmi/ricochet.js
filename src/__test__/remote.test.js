@@ -14,7 +14,7 @@ describe('Remote Test', () => {
     app.use(
       remote({
         setupFunction: 'mysetup',
-        configFile: 'myconfig.json',
+        configFile: '/myconfig.json',
         context: { content },
       })
     );
@@ -24,15 +24,19 @@ describe('Remote Test', () => {
     query = request(app);
   });
 
-  it('should allow only call with Origin or X-SPC-Host header', async () => {
+  it('should allow calls with Origin, X-Ricochet-Origin, referer header', async () => {
     await query.get(`/remote/test`).expect(400);
     await query
       .get(`/remote/test`)
-      .set('X-SPC-Host', 'http://localhost:5000/')
+      .set('X-Ricochet-Origin', 'http://localhost:5000')
       .expect(200);
     await query
       .get(`/remote/test`)
-      .set('origin', 'http://localhost:5000/')
+      .set('Origin', 'http://localhost:5000')
+      .expect(200);
+    await query
+      .get(`/remote/test`)
+      .set('Referer', 'http://localhost:5000/test/toto')
       .expect(200);
   });
 
@@ -43,7 +47,7 @@ describe('Remote Test', () => {
 
     await query
       .get(`/remote/test`)
-      .set('X-SPC-Host', 'http://localhost:5000/')
+      .set('X-Ricochet-Origin', 'http://localhost:5000')
       .expect(200);
 
     // Is setup really processed ?
@@ -54,7 +58,7 @@ describe('Remote Test', () => {
     // Try again
     await query
       .get(`/remote/test`)
-      .set('X-SPC-Host', 'http://localhost:5000/')
+      .set('X-Ricochet-Origin', 'http://localhost:5000')
       .expect(200);
   });
 
@@ -64,7 +68,7 @@ describe('Remote Test', () => {
     app.use(
       remote({
         setupFunction: 'mysetup',
-        configFile: 'noconfig.json',
+        configFile: '/noconfig.json',
       })
     );
     app.all('/remote/test', (req, res) => {
@@ -74,7 +78,7 @@ describe('Remote Test', () => {
 
     const result = await query
       .get(`/remote/test`)
-      .set('X-SPC-Host', 'http://localhost:5000/')
+      .set('X-Ricochet-Origin', 'http://localhost:5000')
       .expect(400);
   });
 
@@ -84,7 +88,7 @@ describe('Remote Test', () => {
     app.use(
       remote({
         setupFunction: 'mysetup',
-        configFile: 'badconfigfile.json',
+        configFile: '/badconfigfile.json',
       })
     );
     app.all('/remote/test', (req, res) => {
@@ -94,7 +98,7 @@ describe('Remote Test', () => {
 
     const result = await query
       .get(`/remote/test`)
-      .set('X-SPC-Host', 'http://localhost:5000/')
+      .set('X-Ricochet-Origin', 'http://localhost:5000')
       .expect(500);
   });
 
@@ -104,7 +108,7 @@ describe('Remote Test', () => {
     app.use(
       remote({
         setupFunction: 'bad',
-        configFile: 'myconfig.json',
+        configFile: '/myconfig.json',
       })
     );
     app.all('/remote/test', (req, res) => {
@@ -114,7 +118,7 @@ describe('Remote Test', () => {
 
     const result = await query
       .get(`/remote/test`)
-      .set('X-SPC-Host', 'http://localhost:5000/')
+      .set('X-Ricochet-Origin', 'http://localhost:5000')
       .expect(500);
 
     expect(result.body.stackTrace).toEqual(
