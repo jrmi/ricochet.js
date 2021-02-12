@@ -67,12 +67,8 @@ export const authentication = ({
     errorGuard(async (req, res, next) => {
       const {
         body: { userEmail },
-        headers: { 'x-auth-host': authHost = '', origin },
+        ricochetOrigin,
       } = req;
-
-      if (!origin && !authHost) {
-        throwError('X-Auth-Host or origin header is required', 400);
-      }
 
       if (!userEmail) {
         throwError("Missing mandatory 'email' parameter", 400);
@@ -84,8 +80,13 @@ export const authentication = ({
         if (err) {
           throwError('Unknown error', 500);
         }
-        const remote = authHost || origin;
-        return onSendToken({ remote, userEmail, userId, token, req }).then(
+        return onSendToken({
+          remote: ricochetOrigin,
+          userEmail,
+          userId,
+          token,
+          req,
+        }).then(
           () => {
             res.json({ message: 'Token sent' });
           },

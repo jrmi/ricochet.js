@@ -1,6 +1,6 @@
 import RemoteCode from '../remoteCode';
 
-const REMOTE = 'http://localhost:5000/';
+const REMOTE = 'http://localhost:5000';
 
 describe('Remote Test', () => {
   let remoteCode;
@@ -42,7 +42,7 @@ describe('Remote Test', () => {
       await remoteCode.exec(REMOTE, 'notexisting');
     } catch (e) {
       expect(e).toMatch(
-        'Script notexisting not found on remote http://localhost:5000/'
+        'Script notexisting not found on remote http://localhost:5000'
       );
     }
   });
