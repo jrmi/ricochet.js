@@ -1,4 +1,10 @@
 
+0.4.0 / 2021-02-13
+==================
+
+  * Use referer also for ricochet origin
+  * [Breaking] Remove end '/' from ricochet origin
+
 0.3.1 / 2021-02-12
 ==================
 
