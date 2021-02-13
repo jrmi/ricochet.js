@@ -24,7 +24,7 @@ const getRemoteFromQuery = ({
     origin,
     referer,
   },
-}) => ricochetOrigin || origin || (referer ? new URL(referer).origin : spcHost);
+}) => ricochetOrigin || (referer ? new URL(referer).origin : origin || spcHost);
 
 // Remote setup Middleware
 export const remote = ({
