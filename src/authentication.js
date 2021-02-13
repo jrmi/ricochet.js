@@ -61,6 +61,18 @@ export const authentication = ({
     })
   );
 
+  // Allow to check authentification
+  router.get(
+    `/${prefix}/check`,
+    errorGuard(async (req, res) => {
+      if (req.session.userId) {
+        res.json({ message: 'success' });
+      } else {
+        throwError('Not authenticated', 403);
+      }
+    })
+  );
+
   // Get token
   router.post(
     `/${prefix}/`,
