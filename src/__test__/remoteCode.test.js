@@ -31,7 +31,7 @@ describe('Remote Test', () => {
     expect(result2).toEqual('foo');
 
     // Clear cache
-    remoteCode.clearCache();
+    remoteCode.clearCache(REMOTE);
 
     const result3 = await remoteCode.exec(REMOTE, 'mysetup', { content });
     expect(result3).toEqual('foo');

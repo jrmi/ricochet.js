@@ -2,16 +2,24 @@ import http from 'http';
 import https from 'https';
 import vm from 'vm';
 
+import NodeCache from 'node-cache';
+
 class RemoteCode {
   constructor({
     disableCache = false,
     preProcess = (script) => script,
     configFile = '/config.json',
   }) {
+    const cacheConfig = {
+      useClones: false,
+      stdTTL: 200,
+      checkperiod: 250,
+    };
     Object.assign(this, {
       disableCache,
-      scriptCache: {},
-      configCache: {},
+      scriptCache: new NodeCache(cacheConfig),
+      configCache: new NodeCache(cacheConfig),
+      cacheConfig,
       configFile,
       preProcess,
     });
@@ -22,9 +30,9 @@ class RemoteCode {
    * @param {string} remote
    */
   async getConfig(remote) {
-    if (!this.configCache[remote] || this.disableCache) {
+    if (!this.configCache.has(remote) || this.disableCache) {
       const httpClient = remote.startsWith('https') ? https : http;
-      this.configCache[remote] = await new Promise((resolve, reject) => {
+      const result = await new Promise((resolve, reject) => {
         const configUrl = `${remote}${this.configFile}`;
         httpClient
           .get(configUrl, (resp) => {
@@ -56,9 +64,10 @@ class RemoteCode {
             reject(err);
           });
       });
+      this.configCache.set(remote, result);
     }
 
-    return this.configCache[remote];
+    return this.configCache.get(remote);
   }
 
   /**
@@ -67,15 +76,17 @@ class RemoteCode {
    * @param {string} extraCommands to be concatened at the end of script.
    */
   async cacheOrFetch(remote, scriptName, extraCommands = '') {
-    if (!this.scriptCache[remote]) {
-      this.scriptCache[remote] = {};
+    if (!this.scriptCache.has(remote)) {
+      this.scriptCache.set(remote, new NodeCache(this.cacheConfig));
     }
 
-    if (this.scriptCache[remote][scriptName] && !this.disableCache) {
-      return this.scriptCache[remote][scriptName];
+    const cache = this.scriptCache.get(remote);
+
+    if (cache.has(scriptName) && !this.disableCache) {
+      return cache.get(scriptName);
     } else {
       const httpClient = remote.startsWith('https') ? https : http;
-      const config = this.configCache[remote];
+      const config = this.configCache.get(remote);
       const { scriptPath } = config;
       return new Promise((resolve, reject) => {
         const scriptUrl = `${remote}${scriptPath}${scriptName}.js`.replace(
@@ -105,7 +116,9 @@ class RemoteCode {
                 const parsedScript = new vm.Script(script, {
                   filename: scriptUrl,
                 });
-                this.scriptCache[remote][scriptName] = parsedScript;
+                cache.set(scriptName, parsedScript);
+                this.scriptCache.set(remote, cache);
+
                 resolve(parsedScript);
               } catch (e) {
                 reject({ status: 'error', error: e });
@@ -158,8 +171,8 @@ class RemoteCode {
   }
 
   clearCache(remote) {
-    this.scriptCache[remote] = {};
-    this.configCache[remote] = {};
+    this.scriptCache.del(remote);
+    this.configCache.del(remote);
   }
 }
 
