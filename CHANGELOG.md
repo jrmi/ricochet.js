@@ -1,4 +1,16 @@
 
+0.5.0 / 2021-02-21
+==================
+
+  * Add store migration to avoid manual manipulation
+  * Refactor fileStore to extract backends
+  * Add siteId prefix to store boxes to allow multiple site
+
+BREAKING CHANGES:
+Now data are stored by site_id. The migration migrate the 
+data but you need to manually delete old database file
+if you were using NeDB backend.
+
 0.4.2 / 2021-02-18
 ==================
 
