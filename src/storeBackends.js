@@ -1,5 +1,6 @@
 import { nanoid } from 'nanoid';
 import Datastore from 'nedb';
+import log from './log.js';
 
 const throwError = (message, code = 400) => {
   const errorObject = new Error(message);
@@ -14,11 +15,45 @@ export const wrapBackend = (backend, siteId, userId) => {
     return `_${siteId}__${userBoxId}`;
   };
 
+  const migrationToApply = {
+    async storeBySiteId(newBoxId) {
+      const oldBoxId = newBoxId.split('__')[1];
+      const exists = await backend.getBoxOption(oldBoxId);
+
+      // Migrate only previously existing collection
+      if (!exists) return;
+
+      const data = await backend.list(oldBoxId);
+
+      for (const item of data) {
+        await backend.save(newBoxId, item.id, item);
+      }
+    },
+  };
+
+  const migrate = async (boxId) => {
+    const options = (await backend.getBoxOption(boxId)) || {};
+    const { migrations = [] } = options;
+    const migrationApplied = [];
+
+    for (const key of Object.keys(migrationToApply)) {
+      if (!migrations.includes(key)) {
+        log.info(`Apply ${key} migration on box ${boxId}`);
+        await migrationToApply[key](boxId);
+        migrationApplied.push(key);
+      }
+    }
+
+    await backend.createOrUpdateBox(boxId, {
+      ...options,
+      migrations: Array.from(new Set([...migrations, ...migrationApplied])),
+    });
+  };
+
   return {
     async checkSecurity(boxId, id, write = false) {
-      const { security = 'private' } = await backend.getBoxOption(
-        getBoxId(boxId)
-      );
+      const { security = 'private' } =
+        (await backend.getBoxOption(getBoxId(boxId))) || {};
       switch (security) {
         case 'private':
           return false;
@@ -31,7 +66,10 @@ export const wrapBackend = (backend, siteId, userId) => {
       }
     },
     async createOrUpdateBox(boxId, options) {
-      return await backend.createOrUpdateBox(getBoxId(boxId), options);
+      const result = await backend.createOrUpdateBox(getBoxId(boxId), options);
+      // Apply migration if any
+      await migrate(getBoxId(boxId));
+      return result;
     },
     async list(boxId, options) {
       return await backend.list(getBoxId(boxId), options);
@@ -78,7 +116,7 @@ export const memoryBackend = () => {
 
   return {
     async getBoxOption(boxId) {
-      return boxOptions[boxId] || {};
+      return boxOptions[boxId];
     },
 
     async createOrUpdateBox(boxId, options = { ...DEFAULT_BOX_OPTIONS }) {
@@ -221,7 +259,7 @@ export const NeDBBackend = (options) => {
           /* istanbul ignore next */
           reject(err);
         }
-        resolve(doc || {});
+        resolve(doc || undefined);
       });
     });
   };
@@ -240,10 +278,11 @@ export const NeDBBackend = (options) => {
   return {
     getBoxOption,
     async createOrUpdateBox(boxId, options = { ...DEFAULT_BOX_OPTIONS }) {
+      const prevOptions = (await getBoxOption(boxId)) || {};
       return new Promise((resolve, reject) => {
         db.boxes.update(
           { box: boxId },
-          { ...options, box: boxId },
+          { ...prevOptions, ...options, box: boxId },
           { upsert: true },
           (err, doc) => {
             if (err) {
@@ -269,7 +308,7 @@ export const NeDBBackend = (options) => {
     ) {
       const boxRecord = await getBoxOption(boxId);
 
-      if (!boxRecord.box) {
+      if (!boxRecord) {
         throwError('Box not found', 404);
       }
 
