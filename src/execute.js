@@ -36,18 +36,29 @@ export const exec = ({
         authenticatedUser = null,
       } = req;
 
-      if (!functions[functionName]) {
+      let allFunctions = functions;
+      if (typeof functions === 'function') {
+        allFunctions = functions(req);
+      }
+
+      if (!allFunctions[functionName]) {
         res.status(404).send('Not found');
         return;
       }
 
-      const result = await functions[functionName]({
+      let contextAddition = context;
+
+      if (typeof context === 'function') {
+        contextAddition = context(req);
+      }
+
+      const result = await allFunctions[functionName]({
         query,
         body,
         method,
         id,
         userId: authenticatedUser,
-        ...context,
+        ...contextAddition,
       });
       res.json(result);
     })
