@@ -1,4 +1,9 @@
 
+0.5.1 / 2021-02-24
+==================
+
+  * Fix bad behaviour on execute calls that prevent game save
+
 0.5.0 / 2021-02-21
 ==================
 
