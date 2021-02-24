@@ -76,7 +76,7 @@ export const middleware = ({
   });
 
   // Remote Function map
-  const functions = {};
+  const functionsBySite = {};
 
   const decryptPayload = (script, { siteId }) => {
     const data = JSON.parse(script);
@@ -100,7 +100,10 @@ export const middleware = ({
           siteId,
           authenticatedUser
         );
-        return { store: wrappedBackend, functions };
+        if (!functionsBySite[siteId]) {
+          functionsBySite[siteId] = {};
+        }
+        return { store: wrappedBackend, functions: functionsBySite[siteId] };
       },
       disableCache,
       setupFunction,
@@ -200,8 +203,19 @@ export const middleware = ({
   // Execute middleware
   router.use(
     execute({
-      context: { store: storeBackend },
-      functions,
+      context: (req) => {
+        const { siteId, authenticatedUser } = req;
+        const wrappedBackend = wrapBackend(
+          storeBackend,
+          siteId,
+          authenticatedUser
+        );
+        return { store: wrappedBackend };
+      },
+      functions: (req) => {
+        const { siteId } = req;
+        return functionsBySite[siteId];
+      },
     })
   );
 
