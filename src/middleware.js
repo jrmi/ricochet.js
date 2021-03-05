@@ -2,6 +2,7 @@ import fs from 'fs';
 import express from 'express';
 import cookieSession from 'cookie-session';
 import nodemailer from 'nodemailer';
+import schedule from 'node-schedule';
 
 import log from './log.js';
 import fileStore from './fileStore.js';
@@ -77,6 +78,8 @@ export const middleware = ({
 
   // Remote Function map
   const functionsBySite = {};
+  // Schedule map
+  const schedulesBySite = {};
 
   const decryptPayload = (script, { siteId }) => {
     const data = JSON.parse(script);
@@ -103,7 +106,14 @@ export const middleware = ({
         if (!functionsBySite[siteId]) {
           functionsBySite[siteId] = {};
         }
-        return { store: wrappedBackend, functions: functionsBySite[siteId] };
+        if (!schedulesBySite[siteId]) {
+          schedulesBySite[siteId] = { hourly: [], daily: [] };
+        }
+        return {
+          store: wrappedBackend,
+          functions: functionsBySite[siteId],
+          schedules: schedulesBySite[siteId],
+        };
       },
       disableCache,
       setupFunction,
@@ -218,6 +228,27 @@ export const middleware = ({
       },
     })
   );
+
+  // Schedule daily and hourly actions
+  schedule.scheduleJob('22 * * * *', () => {
+    log.info('Execute hourly actions');
+    for (const key in schedulesBySite) {
+      const { hourly } = schedulesBySite[key];
+      hourly.forEach((callback) => {
+        callback();
+      });
+    }
+  });
+
+  schedule.scheduleJob('42 3 * * *', () => {
+    log.info('Execute daily actions');
+    for (const key in schedulesBySite) {
+      const { daily } = schedulesBySite[key];
+      daily.forEach((callback) => {
+        callback();
+      });
+    }
+  });
 
   return router;
 };
