@@ -353,7 +353,9 @@ export const NeDBBackend = (options) => {
             reject(err);
           }
           if (!doc) {
-            reject(new Error('Resource not found'));
+            const newError = new Error('Resource not found');
+            newError.statusCode = 404;
+            reject(newError);
           }
           resolve(doc);
         });
@@ -406,7 +408,9 @@ export const NeDBBackend = (options) => {
               { returnUpdatedDocs: true },
               (err, numAffected, affectedDoc) => {
                 if (!numAffected) {
-                  reject(new Error('Resource not found'));
+                  const newError = new Error('Resource not found');
+                  newError.statusCode = 404;
+                  reject(newError);
                 }
                 if (err) {
                   /* istanbul ignore next */
@@ -444,7 +448,9 @@ export const NeDBBackend = (options) => {
           { returnUpdatedDocs: true },
           (err, numAffected, affectedDoc) => {
             if (!numAffected) {
-              reject(new Error('Resource not found'));
+              const newError = new Error('Resource not found');
+              newError.statusCode = 404;
+              reject(newError);
             }
             if (err) {
               /* istanbul ignore next */
