@@ -1,5 +1,5 @@
 import express from 'express';
-import { memoryBackend, wrapBackend } from './storeBackends.js';
+import { memoryBackend, NeDBBackend, wrapBackend } from './storeBackends.js';
 
 // Utility functions
 

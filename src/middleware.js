@@ -8,7 +8,7 @@ import log from './log.js';
 import fileStore from './fileStore.js';
 import store from './store.js';
 
-import { NeDBBackend, memoryBackend, wrapBackend } from './storeBackends.js';
+import { getStoreBackend, wrapBackend } from './storeBackends.js';
 
 import remote from './remote.js';
 import execute from './execute.js';
@@ -41,14 +41,7 @@ export const middleware = ({
   );
 
   // JSON store backend
-  let storeBackend;
-  switch (storeConfig.type) {
-    case 'nedb':
-      storeBackend = NeDBBackend({ dirname: storeConfig.dirname });
-      break;
-    default:
-      storeBackend = memoryBackend();
-  }
+  const storeBackend = getStoreBackend(storeConfig.type, storeConfig);
 
   const site = {};
 

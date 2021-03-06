@@ -92,6 +92,15 @@ export const wrapBackend = (backend, siteId, userId) => {
   };
 };
 
+export const getStoreBackend = (type, options = {}) => {
+  switch (type) {
+    case 'nedb':
+      return NeDBBackend(options);
+    default:
+      return memoryBackend();
+  }
+};
+
 // Memory backend for proof of concept
 export const memoryBackend = () => {
   const dataMemoryStore = {};
