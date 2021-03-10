@@ -15,7 +15,6 @@ import path from 'path';
 import fs from 'fs';
 
 import {
-  HOST,
   PORT,
   API_URL,
   FILE_STORE_TYPE,
@@ -123,8 +122,8 @@ const startServer = () => {
 
   defineSocket(httpServer);
 
-  httpServer.listen(PORT, HOST, () => {
-    log.info(`listening on ${HOST}:${PORT}`);
+  httpServer.listen(PORT, () => {
+    log.info(`listening on ${PORT}`);
   });
   return app;
 };
