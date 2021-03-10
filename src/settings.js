@@ -3,7 +3,7 @@ dotenv.config();
 
 // Settings
 
-export const PORT = process.env.SERVER_PORT || 4000;
+export const PORT = process.env.SERVER_PORT || process.env.PORT || 4000;
 export const HOST = process.env.SERVER_HOST || 'localhost';
 
 export const API_URL =
