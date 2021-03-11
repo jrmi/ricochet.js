@@ -27,6 +27,8 @@ import {
   STORE_BACKEND,
   STORE_PREFIX,
   NEDB_BACKEND_DIRNAME,
+  MONGODB_URI,
+  MONGODB_DATABASE,
   SECRET,
   DISABLE_CACHE,
   EMAIL_HOST,
@@ -96,6 +98,8 @@ const startServer = () => {
         type: STORE_BACKEND,
         prefix: STORE_PREFIX,
         dirname: NEDB_BACKEND_DIRNAME,
+        uri: MONGODB_URI,
+        database: MONGODB_DATABASE,
       },
       fileStoreConfig: {
         type: FILE_STORE_TYPE,

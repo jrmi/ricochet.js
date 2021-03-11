@@ -1,5 +1,6 @@
 import { nanoid } from 'nanoid';
 import Datastore from 'nedb';
+import { MongoClient } from 'mongodb';
 import log from './log.js';
 
 const throwError = (message, code = 400) => {
@@ -96,6 +97,8 @@ export const getStoreBackend = (type, options = {}) => {
   switch (type) {
     case 'nedb':
       return NeDBBackend(options);
+    case 'mongodb':
+      return MongoDBBackend(options);
     default:
       return memoryBackend();
   }
@@ -486,6 +489,191 @@ export const NeDBBackend = (options) => {
           resolve(numRemoved);
         });
       });
+    },
+  };
+};
+
+// Mongodb backend
+export const MongoDBBackend = (options) => {
+  let database;
+
+  const _client = new MongoClient(options.uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
+
+  const close = async () => {
+    if (_client.isConnected()) {
+      database = undefined;
+      await _client.close();
+    }
+  };
+
+  const getBoxDb = async (boxId) => {
+    if (!_client.isConnected()) {
+      await _client.connect();
+      database = await _client.db(options.database);
+    }
+
+    return await database.collection(boxId);
+  };
+
+  const getBoxOption = async (boxId) => {
+    const boxes = await getBoxDb('boxes');
+    return await boxes.findOne({ box: boxId });
+  };
+
+  return {
+    getBoxOption,
+    _close: close,
+
+    async createOrUpdateBox(boxId, options = { ...DEFAULT_BOX_OPTIONS }) {
+      const prevOptions = (await getBoxOption(boxId)) || {};
+
+      const boxes = await getBoxDb('boxes');
+      return await boxes.findOneAndUpdate(
+        { box: boxId },
+        { $set: { ...prevOptions, ...options, box: boxId } },
+        { upsert: true, returnOriginal: false }
+      ).value;
+    },
+    async list(
+      boxId,
+      {
+        limit = 50,
+        sort = '_id',
+        asc = true,
+        skip = 0,
+        onlyFields = [],
+        q,
+      } = {}
+    ) {
+      const boxRecord = await getBoxOption(boxId);
+
+      if (!boxRecord) {
+        throwError('Box not found', 404);
+      }
+
+      const boxDB = await getBoxDb(boxId);
+
+      const listOptions = {};
+
+      if (onlyFields.length) {
+        listOptions.projection = onlyFields.reduce((acc, field) => {
+          acc[field] = 1;
+          return acc;
+        }, {});
+      }
+
+      return await boxDB
+        .find({}, listOptions)
+        .limit(limit)
+        .skip(skip)
+        .sort({ [sort]: asc ? 1 : -1 })
+        .toArray();
+    },
+    async get(boxId, id) {
+      const boxRecord = await getBoxOption(boxId);
+
+      if (!boxRecord) {
+        throwError('Box not found', 404);
+      }
+
+      const boxDB = await getBoxDb(boxId);
+
+      const result = await boxDB.findOne({ _id: id });
+
+      if (!result) {
+        const newError = new Error('Resource not found');
+        newError.statusCode = 404;
+        throw newError;
+      }
+
+      return result;
+    },
+
+    async save(boxId, id, data) {
+      const boxRecord = await getBoxOption(boxId);
+
+      if (!boxRecord) {
+        throwError('Box not found', 404);
+      }
+
+      const boxDB = await getBoxDb(boxId);
+      const actualId = id || nanoid();
+
+      const cleanedData = data;
+      delete cleanedData._createdOn;
+      delete cleanedData._modifiedOn;
+
+      const found = await boxDB.findOne({ _id: actualId });
+
+      if (!found) {
+        return (
+          await boxDB.insertOne({
+            ...cleanedData,
+            _createdOn: Date.now(),
+            _id: actualId,
+          })
+        ).ops[0];
+      } else {
+        return (
+          await boxDB.findOneAndReplace(
+            { _id: actualId },
+            {
+              ...cleanedData,
+              _updatedOn: Date.now(),
+              _createdOn: found._createdOn,
+              _id: actualId,
+            },
+            { returnOriginal: false }
+          )
+        ).value;
+      }
+    },
+
+    async update(boxId, id, data) {
+      const boxRecord = await getBoxOption(boxId);
+      if (!boxRecord) {
+        throwError('Box not found', 404);
+      }
+      const boxDB = await getBoxDb(boxId);
+
+      const cleanedData = data;
+      delete cleanedData._createdOn;
+      delete cleanedData._modifiedOn;
+
+      const found = await boxDB.findOne({ _id: id });
+
+      if (!found) {
+        const newError = new Error('Resource not found');
+        newError.statusCode = 404;
+        throw newError;
+      }
+
+      return (
+        await boxDB.findOneAndUpdate(
+          { _id: id },
+          {
+            $set: {
+              ...cleanedData,
+              _updatedOn: Date.now(),
+              _id: id,
+            },
+          },
+          { returnOriginal: false }
+        )
+      ).value;
+    },
+
+    async delete(boxId, id) {
+      const boxRecord = await getBoxOption(boxId);
+      if (!boxRecord) {
+        return 0;
+      }
+      const boxDB = await getBoxDb(boxId);
+      const { deletedCount } = await boxDB.deleteOne({ _id: id });
+      return deletedCount;
     },
   };
 };
