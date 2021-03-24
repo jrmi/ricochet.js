@@ -86,7 +86,7 @@ export const authentication = ({
         throwError("Missing mandatory 'email' parameter", 400);
       }
 
-      const userId = sha256(userEmail);
+      const userId = sha256(userEmail.toLowerCase());
 
       enp.createToken(userId, (err, token) => {
         if (err) {
