@@ -16,6 +16,34 @@ import auth from './authentication.js';
 
 import { decrypt } from './crypt.js';
 
+const loadConfigFile = (configFile) => {
+  return new Promise((resolve, reject) => {
+    // Read config file
+    fs.readFile(configFile, 'utf-8', (err, jsonString) => {
+      if (err) {
+        const { code } = err;
+        if (code === 'ENOENT') {
+          const data = {};
+          log.info('No config file, create default');
+          fs.writeFile(configFile, JSON.stringify(data, null, 2), () => {
+            resolve(data);
+          });
+        } else {
+          reject(`Failed to load ${configFile} configuration file`);
+        }
+      } else {
+        try {
+          const data = JSON.parse(jsonString);
+          resolve(data);
+        } catch (e) {
+          console.log('Fails to parse config file...\n', e);
+          reject('Fails to parse config file...');
+        }
+      }
+    });
+  });
+};
+
 export const middleware = ({
   secret,
   storeConfig = {},
@@ -46,28 +74,14 @@ export const middleware = ({
   const site = {};
 
   // Read config file
-  fs.readFile(configFile, 'utf-8', (err, jsonString) => {
-    if (err) {
-      const { code } = err;
-      if (code === 'ENOENT') {
-        const data = {};
-        log.info('No config file, create default');
-        fs.writeFile(configFile, JSON.stringify(data, null, 2), () => {
-          Object.assign(site, data);
-        });
-      } else {
-        throw `Failed to load ${configFile} configuration file`;
-      }
-    } else {
-      try {
-        const data = JSON.parse(jsonString);
-        Object.assign(site, data);
-      } catch (e) {
-        console.log('Fails to parse config file...\n', e);
-        process.exit(-1);
-      }
-    }
-  });
+  loadConfigFile(configFile)
+    .then((data) => {
+      Object.assign(site, data);
+    })
+    .catch((e) => {
+      console.log(e);
+      process.exit(-1);
+    });
 
   // Remote Function map
   const functionsBySite = {};
