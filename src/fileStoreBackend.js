@@ -145,6 +145,7 @@ export const S3FileBackend = ({
   accessKey,
   endpoint,
   region,
+  proxy = false,
 }) => {
   aws.config.update({
     secretAccessKey: secretKey,
@@ -233,6 +234,26 @@ export const S3FileBackend = ({
         range: Range,
       }
     ) {
+      // We generate a signed url and we return it
+      if (!proxy) {
+        const params = {
+          Bucket: bucket,
+          Key: `${namespace}/${filename}`,
+          Expires: 60 * 5,
+        };
+        const url = await new Promise((resolve, reject) => {
+          s3.getSignedUrl('getObject', params, (err, url) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(url);
+            }
+          });
+        });
+
+        return { redirectTo: url };
+      }
+
       const params = {
         Bucket: bucket,
         Key: `${namespace}/${filename}`,
@@ -242,7 +263,6 @@ export const S3FileBackend = ({
         IfMatch,
         Range,
       };
-
       return new Promise((resolve) => {
         s3.getObject(params)
           .on('httpHeaders', function (statusCode, headers) {
