@@ -1,7 +1,6 @@
 import express from 'express';
 
 /* Roadmap
-- Encrypt setup.js
 - Allow to register new site
   - Return public key if no key pair is given
 - Allow to sign code

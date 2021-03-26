@@ -84,13 +84,20 @@ export const fileStorage = (type = 'memory', config = {}) => {
       }
 
       const {
-        mimetype,
         stream,
+        redirectTo,
+        mimetype,
         length,
         lastModifield,
         eTag,
         statusCode = 200,
       } = await backend.get(namespace, filename, req.headers);
+
+      // Here the backend respond with another url so we redirect to it
+      if (redirectTo) {
+        res.redirect(redirectTo);
+        return;
+      }
 
       if (length !== undefined) {
         res.set('Content-Length', length);
