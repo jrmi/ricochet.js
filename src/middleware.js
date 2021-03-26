@@ -44,29 +44,15 @@ const loadConfigFile = (configFile) => {
   });
 };
 
-export const middleware = ({
+export const ricochetMiddleware = ({
   secret,
   storeConfig = {},
-  fileStoreConfig = {},
   disableCache = false,
   setupFunction = 'setup',
   emailConfig = { host: 'fake' },
   configFile = './site.json',
 } = {}) => {
   const router = express.Router();
-
-  // File store
-  router.use(
-    fileStore(fileStoreConfig.type, {
-      url: fileStoreConfig.apiUrl,
-      destination: fileStoreConfig.diskDestination,
-      bucket: fileStoreConfig.s3Bucket,
-      endpoint: fileStoreConfig.s3Endpoint,
-      accessKey: fileStoreConfig.s3AccesKey,
-      secretKey: fileStoreConfig.s3SecretKey,
-      region: fileStoreConfig.s3Region,
-    })
-  );
 
   // JSON store backend
   const storeBackend = getStoreBackend(storeConfig.type, storeConfig);
@@ -88,7 +74,7 @@ export const middleware = ({
   // Schedule map
   const schedulesBySite = {};
 
-  const decryptPayload = (script, { siteId }) => {
+  const decryptPayload = (script, siteId) => {
     const data = JSON.parse(script);
 
     if (!site[siteId]) {
@@ -265,4 +251,32 @@ export const middleware = ({
 
   return router;
 };
-export default middleware;
+
+export const mainMiddleware = ({ fileStoreConfig = {}, ...rest } = {}) => {
+  const router = express.Router();
+
+  // File store
+  router.use(
+    fileStore(fileStoreConfig.type, {
+      url: fileStoreConfig.apiUrl,
+      destination: fileStoreConfig.diskDestination,
+      bucket: fileStoreConfig.s3Bucket,
+      endpoint: fileStoreConfig.s3Endpoint,
+      accessKey: fileStoreConfig.s3AccesKey,
+      secretKey: fileStoreConfig.s3SecretKey,
+      region: fileStoreConfig.s3Region,
+    })
+  );
+
+  router.use(
+    '/:siteId',
+    (req, res, next) => {
+      req.siteId = req.params.siteId;
+      next();
+    },
+    ricochetMiddleware(rest)
+  );
+  return router;
+};
+
+export default mainMiddleware;

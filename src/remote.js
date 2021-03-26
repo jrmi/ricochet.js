@@ -29,7 +29,6 @@ const getRemoteFromQuery = ({
 // Remote setup Middleware
 export const remote = ({
   setupFunction = 'setup.js',
-  configFile = '/config.json',
   context = {},
   disableCache,
   preProcess,
@@ -42,7 +41,6 @@ export const remote = ({
   const remoteCode = new RemoteCode({
     disableCache,
     preProcess,
-    configFile,
   });
 
   router.use(
@@ -55,7 +53,7 @@ export const remote = ({
 
       if (!remote) {
         throwError(
-          'One of x-ricochet-origin, Origin, Referer header is required',
+          'One of X-Ricochet-Origin, Origin, Referer header is required',
           400
         );
       }
@@ -67,33 +65,17 @@ export const remote = ({
         log.info(`Clear cache for ${remote}`);
       }
 
-      let config = null;
-      try {
-        // Add siteId to request
-        config = await remoteCode.getConfig(remote);
-        req.siteId = config.siteId;
-      } catch ({ status, error }) {
-        if (status === 'not-found') {
-          // File is missing. We quit.
-          throwError(
-            'A config file must be available from remote to use this service',
-            400
-          );
-        } else {
-          throw error;
-        }
-      }
-
       if (!setupLoaded[remote] || disableCache || clearCache) {
         try {
           let contextAddition = context;
           if (typeof context === 'function') {
             contextAddition = context(req);
           }
-          await remoteCode.exec(remote, setupFunction, {
-            ...config,
+
+          await remoteCode.exec(req.siteId, remote, setupFunction, {
             ...contextAddition,
           });
+
           setupLoaded[remote] = true;
           log.info(`Setup successfully loaded from ${remote}`);
         } catch (e) {
@@ -105,6 +87,10 @@ export const remote = ({
       next();
     })
   );
+
+  router.get(`/ping`, async (req, res) => {
+    res.send('ok');
+  });
 
   // eslint-disable-next-line no-unused-vars
   router.use((err, req, res, _next) => {
