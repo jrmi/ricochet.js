@@ -1,6 +1,8 @@
 import RemoteCode from '../remoteCode';
 
-const REMOTE = 'http://localhost:5000';
+const REMOTE = 'http://localhost:5000/';
+
+const SITEID = 'mysiteid';
 
 describe('Remote Test', () => {
   let remoteCode;
@@ -13,13 +15,14 @@ describe('Remote Test', () => {
     remoteCode = new RemoteCode({
       disableCache: false,
       preProcess,
-      configFile: '/myconfig.json',
     });
   });
 
   it('should call remote function', async () => {
     const content = { hello: true };
-    const result = await remoteCode.exec(REMOTE, 'mysetup', { content });
+    const result = await remoteCode.exec(SITEID, REMOTE, 'scripts/mysetup', {
+      content,
+    });
     expect(result).toEqual('foo');
 
     expect(content).toEqual(
@@ -27,19 +30,23 @@ describe('Remote Test', () => {
     );
 
     // Hit cache
-    const result2 = await remoteCode.exec(REMOTE, 'mysetup', { content });
+    const result2 = await remoteCode.exec(SITEID, REMOTE, 'scripts/mysetup', {
+      content,
+    });
     expect(result2).toEqual('foo');
 
     // Clear cache
     remoteCode.clearCache(REMOTE);
 
-    const result3 = await remoteCode.exec(REMOTE, 'mysetup', { content });
+    const result3 = await remoteCode.exec(SITEID, REMOTE, 'scripts/mysetup', {
+      content,
+    });
     expect(result3).toEqual('foo');
   });
 
   it("shouldn't call missing remote function", async () => {
     try {
-      await remoteCode.exec(REMOTE, 'notexisting');
+      await remoteCode.exec(SITEID, REMOTE, 'notexisting');
     } catch (e) {
       expect(e).toMatch(
         'Script notexisting not found on remote http://localhost:5000'
