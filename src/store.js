@@ -94,7 +94,7 @@ export const store = ({
 
       if (boxId[0] === '_') {
         throwError(
-          "'_' char is forbidden for first letter of a box id parameter",
+          "'_' char is forbidden as first letter of a box id parameter",
           400
         );
       }

@@ -6,6 +6,7 @@ import schedule from 'node-schedule';
 
 import log from './log.js';
 import fileStore from './fileStore.js';
+import oldFileStore from './oldFileStore.js';
 import store from './store.js';
 
 import { getStoreBackend, wrapBackend } from './storeBackends.js';
@@ -47,6 +48,7 @@ const loadConfigFile = (configFile) => {
 export const ricochetMiddleware = ({
   secret,
   storeConfig = {},
+  fileStoreConfig = {},
   disableCache = false,
   setupFunction = 'setup',
   emailConfig = { host: 'fake' },
@@ -209,6 +211,19 @@ export const ricochetMiddleware = ({
   // JSON store
   router.use(store({ prefix: storeConfig.prefix, backend: storeBackend }));
 
+  // File store
+  router.use(
+    fileStore(fileStoreConfig.type, {
+      url: fileStoreConfig.apiUrl,
+      destination: fileStoreConfig.diskDestination,
+      bucket: fileStoreConfig.s3Bucket,
+      endpoint: fileStoreConfig.s3Endpoint,
+      accessKey: fileStoreConfig.s3AccesKey,
+      secretKey: fileStoreConfig.s3SecretKey,
+      region: fileStoreConfig.s3Region,
+    })
+  );
+
   // Execute middleware
   router.use(
     execute({
@@ -257,7 +272,7 @@ export const mainMiddleware = ({ fileStoreConfig = {}, ...rest } = {}) => {
 
   // File store
   router.use(
-    fileStore(fileStoreConfig.type, {
+    oldFileStore(fileStoreConfig.type, {
       url: fileStoreConfig.apiUrl,
       destination: fileStoreConfig.diskDestination,
       bucket: fileStoreConfig.s3Bucket,
@@ -274,7 +289,7 @@ export const mainMiddleware = ({ fileStoreConfig = {}, ...rest } = {}) => {
       req.siteId = req.params.siteId;
       next();
     },
-    ricochetMiddleware(rest)
+    ricochetMiddleware({ fileStoreConfig, ...rest })
   );
   return router;
 };

@@ -65,18 +65,16 @@ export const MemoryFileBackend = () => {
   };
 };
 
-export const DiskFileBackend = ({ destination }) => {
+export const DiskFileBackend = ({ destination, pathFromReq }) => {
   const storage = multer.diskStorage({
     destination: (req, tt, cb) => {
-      const {
-        params: { namespace },
-      } = req;
+      const objPath = pathFromReq(req);
 
-      const destinationDir = path.join(destination, namespace);
+      const destinationDir = path.join(destination, objPath);
       if (!fs.existsSync(destinationDir)) {
-        fs.mkdirSync(destinationDir);
+        fs.mkdirSync(destinationDir, { recursive: true });
       }
-      cb(null, path.join(destination, namespace));
+      cb(null, path.join(destination, objPath));
     },
     filename: (req, file, cb) => {
       const ext = mime.extension(file.mimetype);
@@ -146,6 +144,7 @@ export const S3FileBackend = ({
   endpoint,
   region,
   proxy = false,
+  pathFromReq,
 }) => {
   aws.config.update({
     secretAccessKey: secretKey,
@@ -166,9 +165,7 @@ export const S3FileBackend = ({
         cb(null, file.mimetype);
       },
       key: (req, file, cb) => {
-        const {
-          params: { namespace },
-        } = req;
+        const namespace = pathFromReq(req);
 
         const ext = mime.extension(file.mimetype);
         const filename = `${nanoid()}.${ext}`;

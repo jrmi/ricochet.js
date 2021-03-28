@@ -20,13 +20,12 @@ const errorGuard = (func) => async (req, res, next) => {
   }
 };
 
-const getPathFromReq = (req) => {
+const getPathFromReqWithoutSiteId = (req) => {
   const {
     params: { namespace },
-    siteId,
   } = req;
 
-  return `${siteId}/${namespace}`;
+  return namespace;
 };
 
 /**
@@ -36,11 +35,11 @@ const getPathFromReq = (req) => {
 export const fileStorage = (type = 'memory', config = {}) => {
   const app = express.Router();
 
-  const { prefix = DEFAULT_PREFIX } = config;
-
-  const backendConfig = { pathFromReq: getPathFromReq, ...config };
+  const { url = '', prefix = DEFAULT_PREFIX } = config;
 
   let backend = null;
+
+  const backendConfig = { pathFromReq: getPathFromReqWithoutSiteId, ...config };
 
   if (type === 'memory') {
     backend = MemoryFileBackend(backendConfig);
@@ -57,11 +56,11 @@ export const fileStorage = (type = 'memory', config = {}) => {
     `/${prefix}/:namespace/`,
     backend.uploadManager,
     errorGuard(async (req, res) => {
-      const { params: { namespace } = {}, file, siteId } = req;
+      const { params: { namespace } = {} } = req;
 
-      await backend.store(`${siteId}/${namespace}`, file);
+      await backend.store(namespace, req.file);
 
-      res.send(`/${siteId}/${prefix}/${namespace}/${req.file.filename}`);
+      res.send(`${url}/${prefix}/${namespace}/${req.file.filename}`);
     })
   );
 
@@ -71,15 +70,12 @@ export const fileStorage = (type = 'memory', config = {}) => {
     errorGuard(async (req, res) => {
       const {
         params: { namespace },
-        siteId,
       } = req;
 
-      const result = await backend.list(`${siteId}/${namespace}`);
+      const result = await backend.list(namespace);
 
       res.json(
-        result.map(
-          (filename) => `/${siteId}/${prefix}/${namespace}/${filename}`
-        )
+        result.map((filename) => `${url}/${prefix}/${namespace}/${filename}`)
       );
     })
   );
@@ -90,10 +86,9 @@ export const fileStorage = (type = 'memory', config = {}) => {
     errorGuard(async (req, res, next) => {
       const {
         params: { filename, namespace },
-        siteId,
       } = req;
 
-      if (!(await backend.exists(`${siteId}/${namespace}`, filename))) {
+      if (!(await backend.exists(namespace, filename))) {
         res.status(404).send('Not found');
         return;
       }
@@ -106,7 +101,7 @@ export const fileStorage = (type = 'memory', config = {}) => {
         lastModifield,
         eTag,
         statusCode = 200,
-      } = await backend.get(`${siteId}/${namespace}`, filename, req.headers);
+      } = await backend.get(namespace, filename, req.headers);
 
       // Here the backend respond with another url so we redirect to it
       if (redirectTo) {
@@ -146,15 +141,14 @@ export const fileStorage = (type = 'memory', config = {}) => {
     errorGuard(async (req, res) => {
       const {
         params: { filename, namespace },
-        siteId,
       } = req;
 
-      if (!(await backend.exists(`${siteId}/${namespace}`, filename))) {
+      if (!(await backend.exists(namespace, filename))) {
         res.status(404).send('Not found');
         return;
       }
 
-      await backend.delete(`${siteId}/${namespace}`, filename);
+      await backend.delete(namespace, filename);
 
       res.json({ message: 'Deleted' });
     })
