@@ -1,6 +1,6 @@
 import request from 'supertest';
 import express from 'express';
-import fileStore from '../fileStore';
+import fileStore from '../oldFileStore';
 import path from 'path';
 import fs from 'fs';
 import tempy from 'tempy';
@@ -17,8 +17,8 @@ jest.mock('nanoid', () => {
 });
 
 const fileStores = [
-  ['memory', {}],
-  ['disk', { destination: tempy.directory({ prefix: 'test__' }) }],
+  ['memory', { url: '' }],
+  ['disk', { url: '', destination: tempy.directory({ prefix: 'test__' }) }],
 ];
 
 const S3_BUCKET_TEST = process.env.S3_BUCKET_TEST;
@@ -27,6 +27,7 @@ if (S3_BUCKET_TEST) {
   fileStores.push([
     's3',
     {
+      url: '',
       bucket: process.env.S3_BUCKET_TEST,
       secretKey: S3_SECRET_KEY,
       accessKey: S3_ACCESS_KEY,
@@ -42,14 +43,7 @@ describe.each(fileStores)('Backend <%s> file store', (backendType, options) => {
   beforeAll(() => {
     app = express();
     app.use(express.json());
-    app.use(
-      '/:siteId',
-      (req, _, next) => {
-        req.siteId = req.params.siteId;
-        next();
-      },
-      fileStore(backendType, options)
-    );
+    app.use(fileStore(backendType, options));
     query = request(app);
   });
 
@@ -97,19 +91,17 @@ describe.each(fileStores)('Backend <%s> file store', (backendType, options) => {
   it('should store file', async () => {
     const boxId = 'box010';
     const res = await query
-      .post(`/mysiteid/file/${boxId}/`)
+      .post(`/file/${boxId}/`)
       .attach('file', path.resolve(__dirname, 'testFile.txt'))
       .expect(200);
 
-    expect(res.text).toEqual(
-      expect.stringContaining(`/mysiteid/file/${boxId}/nanoid_`)
-    );
+    expect(res.text).toEqual(expect.stringContaining(`/file/${boxId}/nanoid_`));
   });
 
   it('should retreive image file', async () => {
     const boxId = 'box020';
     const res = await query
-      .post(`/mysiteid/file/${boxId}/`)
+      .post(`/file/${boxId}/`)
       .attach('file', path.resolve(__dirname, 'test.png'))
       .expect(200);
 
@@ -128,7 +120,7 @@ describe.each(fileStores)('Backend <%s> file store', (backendType, options) => {
   it('should retreive text file', async () => {
     const boxId = 'box025';
     const res = await query
-      .post(`/mysiteid/file/${boxId}/`)
+      .post(`/file/${boxId}/`)
       .set('Content-Type', 'text/plain')
       .attach('file', path.resolve(__dirname, 'testFile.txt'))
       .expect(200);
@@ -148,52 +140,52 @@ describe.each(fileStores)('Backend <%s> file store', (backendType, options) => {
   it('should list files', async () => {
     const boxId = 'box030';
     const res = await query
-      .post(`/mysiteid/file/${boxId}/`)
+      .post(`/file/${boxId}/`)
       .attach('file', path.resolve(__dirname, 'testFile.txt'))
       .expect(200);
 
     const res2 = await query
-      .post(`/mysiteid/file/${boxId}/`)
+      .post(`/file/${boxId}/`)
       .attach('file', path.resolve(__dirname, 'test.png'))
       .expect(200);
 
-    const fileList = await query.get(`/mysiteid/file/${boxId}/`).expect(200);
+    const fileList = await query.get(`/file/${boxId}/`).expect(200);
 
     expect(Array.isArray(fileList.body)).toBe(true);
     expect(fileList.body.length).toBe(2);
     expect(fileList.body[0]).toEqual(
-      expect.stringContaining(`/mysiteid/file/${boxId}/nanoid_`)
+      expect.stringContaining(`/file/${boxId}/nanoid_`)
     );
   });
 
   it('should delete file', async () => {
     const boxId = 'box040';
     const res = await query
-      .post(`/mysiteid/file/${boxId}/`)
+      .post(`/file/${boxId}/`)
       .attach('file', path.resolve(__dirname, 'test.png'))
       .expect(200);
 
     const fileUrl = res.text;
 
-    await query.delete(fileUrl).buffer(false).expect(200);
+    await query.delete(fileUrl).buffer(false).redirects(1).expect(200);
 
-    const fileList = await query.get(`/mysiteid/file/${boxId}/`).expect(200);
+    const fileList = await query.get(`/file/${boxId}/`).expect(200);
     expect(fileList.body.length).toBe(0);
   });
 
   it('should return 404', async () => {
     const boxId = 'box050';
 
-    await query.get(`/mysiteid/file/${boxId}/nofile`).expect(404);
-    await query.delete(`/mysiteid/file/${boxId}/nofile`).expect(404);
+    await query.get(`/file/${boxId}/nofile`).expect(404);
+    await query.delete(`/file/${boxId}/nofile`).expect(404);
 
     // To create box
     await query
-      .post(`/mysiteid/file/${boxId}/`)
+      .post(`/file/${boxId}/`)
       .attach('file', path.resolve(__dirname, 'test.png'))
       .expect(200);
 
-    await query.get(`/mysiteid/file/${boxId}/nofile2`).expect(404);
-    await query.delete(`/mysiteid/file/${boxId}/nofile2`).expect(404);
+    await query.get(`/file/${boxId}/nofile2`).expect(404);
+    await query.delete(`/file/${boxId}/nofile2`).expect(404);
   });
 });
