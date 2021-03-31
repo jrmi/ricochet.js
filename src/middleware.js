@@ -183,9 +183,15 @@ export const middleware = ({
       httpOnly: true,
 
       // Cookie Options
-      //maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxAge: 10 * 24 * 60 * 60 * 1000, // 10 days
     })
   );
+
+  // Re-set cookie on activity
+  router.use((req, res, next) => {
+    req.session.nowInMinutes = Math.floor(Date.now() / (60 * 1000));
+    next();
+  });
 
   // authenticate middleware
   router.use((req, res, next) => {
