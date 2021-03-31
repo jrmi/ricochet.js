@@ -1,6 +1,6 @@
 {
   "name": "ricochet-js",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Multi-purpose deploy once prototyping backend",
   "main": "dist/index.js",
   "bin": {
