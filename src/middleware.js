@@ -5,11 +5,14 @@ import nodemailer from 'nodemailer';
 import schedule from 'node-schedule';
 
 import log from './log.js';
-import fileStore from './fileStore.js';
 import oldFileStore from './oldFileStore.js';
 import store from './store.js';
 
 import { getStoreBackend, wrapBackend } from './storeBackends.js';
+import {
+  getFileStoreBackend,
+  wrapBackend as wrapFileBackend,
+} from './fileStoreBackends.js';
 
 import remote from './remote.js';
 import execute from './execute.js';
@@ -58,6 +61,15 @@ export const ricochetMiddleware = ({
 
   // JSON store backend
   const storeBackend = getStoreBackend(storeConfig.type, storeConfig);
+  const fileStoreBackend = getFileStoreBackend(fileStoreConfig.type, {
+    url: fileStoreConfig.apiUrl,
+    destination: fileStoreConfig.diskDestination,
+    bucket: fileStoreConfig.s3Bucket,
+    endpoint: fileStoreConfig.s3Endpoint,
+    accessKey: fileStoreConfig.s3AccesKey,
+    secretKey: fileStoreConfig.s3SecretKey,
+    region: fileStoreConfig.s3Region,
+  });
 
   const site = {};
 
@@ -98,6 +110,11 @@ export const ricochetMiddleware = ({
           siteId,
           authenticatedUser
         );
+        const wrappedFileBackend = wrapFileBackend(
+          fileStoreBackend,
+          siteId,
+          authenticatedUser
+        );
         if (!functionsBySite[siteId]) {
           functionsBySite[siteId] = {};
         }
@@ -106,6 +123,7 @@ export const ricochetMiddleware = ({
         }
         return {
           store: wrappedBackend,
+          fileStore: wrappedFileBackend,
           functions: functionsBySite[siteId],
           schedules: schedulesBySite[siteId],
         };
@@ -213,20 +231,7 @@ export const ricochetMiddleware = ({
     store({
       prefix: storeConfig.prefix,
       backend: storeBackend,
-      fileStoreConfig,
-    })
-  );
-
-  // File store
-  router.use(
-    fileStore(fileStoreConfig.type, {
-      url: fileStoreConfig.apiUrl,
-      destination: fileStoreConfig.diskDestination,
-      bucket: fileStoreConfig.s3Bucket,
-      endpoint: fileStoreConfig.s3Endpoint,
-      accessKey: fileStoreConfig.s3AccesKey,
-      secretKey: fileStoreConfig.s3SecretKey,
-      region: fileStoreConfig.s3Region,
+      fileBackend: fileStoreBackend,
     })
   );
 
@@ -240,7 +245,12 @@ export const ricochetMiddleware = ({
           siteId,
           authenticatedUser
         );
-        return { store: wrappedBackend };
+        const wrappedFileBackend = wrapFileBackend(
+          fileStoreBackend,
+          siteId,
+          authenticatedUser
+        );
+        return { store: wrappedBackend, fileStore: wrappedFileBackend };
       },
       functions: (req) => {
         const { siteId } = req;

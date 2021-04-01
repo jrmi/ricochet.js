@@ -222,7 +222,7 @@ describe('Store Test', () => {
   });
 });
 
-describe.only('Store File Test', () => {
+describe('Store File Test', () => {
   let query;
   let backend;
   let fileBackend;
@@ -303,8 +303,6 @@ describe.only('Store File Test', () => {
       '1234',
       fakeFile
     );
-
-    console.log(fileName);
 
     await query
       .get(`/fakeSiteId/store/${box}/1234/file/${fileName}`)

@@ -3,7 +3,7 @@ import {
   DiskFileBackend,
   S3FileBackend,
   MemoryFileBackend,
-} from './fileStoreBackend.js';
+} from './oldFileStoreBackend.js';
 
 const DEFAULT_PREFIX = 'file';
 

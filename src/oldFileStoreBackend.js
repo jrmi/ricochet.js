@@ -14,37 +14,6 @@ const bufferToStream = (buffer) => {
   return stream;
 };
 
-export const getFileStoreBackend = (type, backendConfig) => {
-  switch (type) {
-    case 's3':
-      return S3FileBackend(backendConfig);
-    case 'disk':
-      return DiskFileBackend(backendConfig);
-    default:
-      return MemoryFileBackend(backendConfig);
-  }
-};
-
-export const wrapBackend = (backend, siteId, userId) => {
-  return {
-    async store(boxId, resourceId, file) {
-      return await backend.store(siteId, boxId, resourceId, file);
-    },
-    async list(boxId, resourceId) {
-      return await backend.list(siteId, boxId, resourceId);
-    },
-    async exists(boxId, resourceId, filename) {
-      return await backend.exists(siteId, boxId, resourceId, filename);
-    },
-    async get(boxId, resourceId, filename, headers) {
-      return await backend.get(siteId, boxId, resourceId, filename, headers);
-    },
-    async delete(boxId, resourceId, filename) {
-      return await backend.delete(siteId, boxId, resourceId, filename);
-    },
-  };
-};
-
 export const MemoryFileBackend = () => {
   const fileMap = {};
   const upload = multer({ storage: multer.memoryStorage() });
@@ -52,64 +21,60 @@ export const MemoryFileBackend = () => {
   return {
     uploadManager: upload.single('file'),
 
-    async list(siteId, boxId, resourceId) {
-      const store = fileMap[`${siteId}/${boxId}/${resourceId}`] || {};
+    async list(namespace) {
+      const store = fileMap[namespace] || {};
       return Object.keys(store);
     },
 
-    async store(siteId, boxId, resourceId, file) {
+    async store(namespace, file) {
       const ext = mime.extension(file.mimetype);
       const filename = `${nanoid()}.${ext}`;
 
       file.filename = filename;
 
-      const store = fileMap[`${siteId}/${boxId}/${resourceId}`] || {};
+      const store = fileMap[namespace] || {};
 
       store[filename] = {
         buffer: file.buffer,
         mimetype: file.mimetype,
       };
 
-      fileMap[`${siteId}/${boxId}/${resourceId}`] = store;
+      fileMap[namespace] = store;
 
       return filename;
     },
 
-    async exists(siteId, boxId, resourceId, filename) {
+    async exists(namespace, filename) {
       return (
-        fileMap[`${siteId}/${boxId}/${resourceId}`] !== undefined &&
-        fileMap[`${siteId}/${boxId}/${resourceId}`][filename] !== undefined
+        fileMap[namespace] !== undefined &&
+        fileMap[namespace][filename] !== undefined
       );
     },
 
-    async get(siteId, boxId, resourceId, filename) {
-      const fileBuffer = fileMap[`${siteId}/${boxId}/${resourceId}`][filename];
+    async get(namespace, filename) {
+      const fileBuffer = fileMap[namespace][filename];
       return {
         mimetype: fileBuffer.mimetype,
         stream: bufferToStream(fileBuffer.buffer),
       };
     },
 
-    async delete(siteId, boxId, resourceId, filename) {
-      delete fileMap[`${siteId}/${boxId}/${resourceId}`][filename];
+    async delete(namespace, filename) {
+      delete fileMap[namespace][filename];
     },
   };
 };
 
-export const DiskFileBackend = ({ destination }) => {
+export const DiskFileBackend = ({ destination, pathFromReq }) => {
   const storage = multer.diskStorage({
     destination: (req, tt, cb) => {
-      const destinationDir = path.join(
-        destination,
-        req.siteId,
-        req.boxId,
-        req.resourceId
-      );
+      const objPath = pathFromReq(req);
 
+      const destinationDir = path.join(destination, objPath);
       if (!fs.existsSync(destinationDir)) {
         fs.mkdirSync(destinationDir, { recursive: true });
       }
-      cb(null, destinationDir);
+      cb(null, path.join(destination, objPath));
     },
     filename: (req, file, cb) => {
       const ext = mime.extension(file.mimetype);
@@ -123,17 +88,13 @@ export const DiskFileBackend = ({ destination }) => {
   return {
     uploadManager: upload.single('file'),
 
-    async list(siteId, boxId, resourceId) {
-      const dir = path.join(destination, siteId, boxId, resourceId);
+    async list(namespace) {
+      const dir = path.join(destination, namespace);
       return new Promise((resolve, reject) => {
         fs.readdir(dir, (err, files) => {
           if (err) {
             /* istanbul ignore next */
-            if (err.code === 'ENOENT') {
-              resolve([]);
-            } else {
-              reject(err);
-            }
+            reject(err);
           } else {
             resolve(files);
           }
@@ -141,44 +102,26 @@ export const DiskFileBackend = ({ destination }) => {
       });
     },
 
-    async store(siteId, boxId, resourceId, file) {
+    async store(namespace, file) {
       // Nothing to do here. Already done by upload manager
-      return file.filename;
+      return;
     },
 
-    async exists(siteId, boxId, resourceId, filename) {
-      const filePath = path.join(
-        destination,
-        siteId,
-        boxId,
-        resourceId,
-        filename
-      );
+    async exists(namespace, filename) {
+      const filePath = path.join(destination, namespace, filename);
       return fs.existsSync(filePath);
     },
 
-    async get(siteId, boxId, resourceId, filename) {
-      const filePath = path.join(
-        destination,
-        siteId,
-        boxId,
-        resourceId,
-        filename
-      );
+    async get(namespace, filename) {
+      const filePath = path.join(destination, namespace, filename);
       const stream = fs.createReadStream(filePath);
 
       const mimetype = mime.lookup(filename);
       return { mimetype, stream };
     },
 
-    async delete(siteId, boxId, resourceId, filename) {
-      const filePath = path.join(
-        destination,
-        siteId,
-        boxId,
-        resourceId,
-        filename
-      );
+    async delete(namespace, filename) {
+      const filePath = path.join(destination, namespace, filename);
       return new Promise((resolve, reject) => {
         fs.unlink(filePath, (err) => {
           if (err) {
@@ -201,6 +144,7 @@ export const S3FileBackend = ({
   endpoint,
   region,
   proxy = false,
+  pathFromReq,
 }) => {
   aws.config.update({
     secretAccessKey: secretKey,
@@ -221,13 +165,13 @@ export const S3FileBackend = ({
         cb(null, file.mimetype);
       },
       key: (req, file, cb) => {
-        const keyPath = `${req.siteId}/${req.boxId}/${req.resourceId}`;
+        const namespace = pathFromReq(req);
 
         const ext = mime.extension(file.mimetype);
         const filename = `${nanoid()}.${ext}`;
         // Add filname to file
         file.filename = filename;
-        cb(null, `${keyPath}/${filename}`);
+        cb(null, `${namespace}/${filename}`);
       },
     }),
     limits: { fileSize: 1024 * 1024 * 5 }, // 5MB
@@ -236,11 +180,11 @@ export const S3FileBackend = ({
   return {
     uploadManager: upload.single('file'),
 
-    async list(siteId, boxId, resourceId) {
+    async list(namespace) {
       const params = {
         Bucket: bucket,
         Delimiter: '/',
-        Prefix: `${siteId}/${boxId}/${resourceId}/`,
+        Prefix: `${namespace}/`,
       };
 
       return new Promise((resolve, reject) => {
@@ -249,20 +193,20 @@ export const S3FileBackend = ({
             /* istanbul ignore next */
             reject(err);
           }
-          const toRemove = new RegExp(`^${siteId}/${boxId}/${resourceId}/`);
+          const toRemove = new RegExp(`^${namespace}/`);
           resolve(data.Contents.map(({ Key }) => Key.replace(toRemove, '')));
         });
       });
     },
 
-    async store(siteId, boxId, resourceId, file) {
-      return file.filename;
+    async store(namespace, file) {
+      return;
     },
 
-    async exists(siteId, boxId, resourceId, filename) {
+    async exists(namespace, filename) {
       const headParams = {
         Bucket: bucket,
-        Key: `${siteId}/${boxId}/${resourceId}/${filename}`,
+        Key: `${namespace}/${filename}`,
       };
 
       try {
@@ -277,9 +221,7 @@ export const S3FileBackend = ({
     },
 
     async get(
-      siteId,
-      boxId,
-      resourceId,
+      namespace,
       filename,
       {
         'if-none-match': IfNoneMatch,
@@ -293,7 +235,7 @@ export const S3FileBackend = ({
       if (!proxy) {
         const params = {
           Bucket: bucket,
-          Key: `${siteId}/${boxId}/${resourceId}/${filename}`,
+          Key: `${namespace}/${filename}`,
           Expires: 60 * 5,
         };
         const url = await new Promise((resolve, reject) => {
@@ -311,7 +253,7 @@ export const S3FileBackend = ({
 
       const params = {
         Bucket: bucket,
-        Key: `${siteId}/${boxId}/${resourceId}/${filename}`,
+        Key: `${namespace}/${filename}`,
         IfNoneMatch,
         IfUnmodifiedSince,
         IfModifiedSince,
@@ -351,8 +293,8 @@ export const S3FileBackend = ({
       });
     },
 
-    async delete(siteId, boxId, resourceId, filename) {
-      const key = `${siteId}/${boxId}/${resourceId}/${filename}`;
+    async delete(namespace, filename) {
+      const key = path.join(namespace, filename);
 
       const headParams = {
         Bucket: bucket,
