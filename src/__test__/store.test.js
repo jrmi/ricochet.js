@@ -1,7 +1,9 @@
 import request from 'supertest';
 import express from 'express';
 import store from '../store';
+import path from 'path';
 import { memoryBackend } from '../storeBackends';
+import { MemoryFileBackend } from '../fileStoreBackend';
 
 jest.mock('nanoid', () => {
   let count = 0;
@@ -30,11 +32,16 @@ describe('Store Test', () => {
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     backend = memoryBackend();
-    app.use((req, res, next) => {
-      req.siteId = 'fakeSiteId';
-      next();
-    });
-    app.use(store({ backend }));
+    app.use(
+      '/:siteId',
+      (req, _, next) => {
+        req.siteId = req.params.siteId;
+        next();
+      },
+      store({
+        backend,
+      })
+    );
     query = request(app);
   });
 
@@ -44,8 +51,8 @@ describe('Store Test', () => {
       security: 'public',
     });
 
-    const res = await query
-      .get(`/store/${box}/`)
+    await query
+      .get(`/fakeSiteId/store/${box}/`)
       .expect(200, [])
       .expect('Content-Type', /json/);
   });
@@ -57,7 +64,7 @@ describe('Store Test', () => {
     });
 
     const res = await query
-      .post(`/store/${box}/`)
+      .post(`/fakeSiteId/store/${box}/`)
       .send({ test: true, value: 42 })
       .expect(200);
 
@@ -68,7 +75,7 @@ describe('Store Test', () => {
     expect(res.body._createdOn).toBeGreaterThanOrEqual(1584183661135);
 
     const res2 = await query
-      .get(`/store/${box}/`)
+      .get(`/fakeSiteId/store/${box}/`)
       .expect(200)
       .expect('Content-Type', /json/);
 
@@ -76,7 +83,7 @@ describe('Store Test', () => {
 
     // Test object creation with id
     const resWithId = await query
-      .post(`/store/${box}/myid`)
+      .post(`/fakeSiteId/store/${box}/myid`)
       .send({ foo: 'bar', bar: 'foo' })
       .expect(200);
 
@@ -90,14 +97,14 @@ describe('Store Test', () => {
     });
 
     const res = await query
-      .post(`/store/${box}/`)
+      .post(`/fakeSiteId/store/${box}/`)
       .send({ test: true, value: 42 })
       .expect(200);
 
     let resourceId = res.body._id;
 
     const res2 = await query
-      .get(`/store/${box}/${resourceId}`)
+      .get(`/fakeSiteId/store/${box}/${resourceId}`)
       .expect(200)
       .expect('Content-Type', /json/);
 
@@ -111,23 +118,25 @@ describe('Store Test', () => {
     });
 
     const res = await query
-      .post(`/store/${box}/`)
+      .post(`/fakeSiteId/store/${box}/`)
       .send({ test: true, value: 40 })
       .expect(200);
 
     let resourceId = res.body._id;
 
     const res2 = await query
-      .put(`/store/${box}/${resourceId}`)
+      .put(`/fakeSiteId/store/${box}/${resourceId}`)
       .send({ value: 42 })
       .expect(200);
 
-    const res3 = await query.get(`/store/${box}/${resourceId}`).expect(200);
+    const res3 = await query
+      .get(`/fakeSiteId/store/${box}/${resourceId}`)
+      .expect(200);
 
     expect(res3.body.value).toEqual(42);
 
     const replaceWithId = await query
-      .post(`/store/${box}/${resourceId}`)
+      .post(`/fakeSiteId/store/${box}/${resourceId}`)
       .send({ value: 52 })
       .expect(200);
 
@@ -143,18 +152,18 @@ describe('Store Test', () => {
     });
 
     const res = await query
-      .post(`/store/${box}/`)
+      .post(`/fakeSiteId/store/${box}/`)
       .send({ test: true, value: 40 })
       .expect(200);
 
     let resourceId = res.body._id;
 
     const res2 = await query
-      .del(`/store/${box}/${resourceId}`)
+      .del(`/fakeSiteId/store/${box}/${resourceId}`)
       .expect(200)
       .expect('Content-Type', /json/);
 
-    const res3 = await query.get(`/store/${box}/`).expect(200, []);
+    const res3 = await query.get(`/fakeSiteId/store/${box}/`).expect(200, []);
   });
 
   it('should return 404', async () => {
@@ -163,9 +172,9 @@ describe('Store Test', () => {
       security: 'public',
     });
 
-    await query.get(`/store/${box}/noresource`).expect(404);
+    await query.get(`/fakeSiteId/store/${box}/noresource`).expect(404);
 
-    await query.delete(`/store/${box}/noresource`).expect(404);
+    await query.delete(`/fakeSiteId/store/${box}/noresource`).expect(404);
   });
 
   it('should return 403', async () => {
@@ -174,16 +183,160 @@ describe('Store Test', () => {
       security: 'readOnly',
     });
 
-    await query.get(`/store/${box}/`).expect(200);
+    await query.get(`/fakeSiteId/store/${box}/`).expect(200);
 
     await query
-      .post(`/store/${box}/`)
+      .post(`/fakeSiteId/store/${box}/`)
       .send({ test: true, value: 40 })
       .expect(403);
 
     box = 'boxId_550';
     await backend.createOrUpdateBox(box);
 
-    await query.get(`/store/${box}/`).expect(403);
+    await query.get(`/fakeSiteId/store/${box}/`).expect(403);
+  });
+
+  it('should store and get a file', async () => {
+    let box = 'boxId_600';
+    await backend.createOrUpdateBox(`_fakeSiteId__${box}`, {
+      security: 'public',
+    });
+
+    const toto = await query
+      .post(`/fakeSiteId/store/${box}/1234`)
+      .send({ test: true, value: 42 })
+      .expect(200);
+
+    const res = await query
+      .post(`/fakeSiteId/store/${box}/1234/file/`)
+      .attach('file', path.resolve(__dirname, 'testFile.txt'))
+      .expect(200);
+
+    const fileUrl = res.text;
+
+    const fileRes = await query
+      .get(`/${fileUrl}`)
+      .buffer(false)
+      .redirects(1)
+      .expect(200);
+  });
+});
+
+describe.only('Store File Test', () => {
+  let query;
+  let backend;
+  let fileBackend;
+
+  beforeAll(() => {
+    const app = express();
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: true }));
+    backend = memoryBackend();
+    fileBackend = MemoryFileBackend();
+    app.use(
+      '/:siteId',
+      (req, _, next) => {
+        req.siteId = req.params.siteId;
+        next();
+      },
+      store({
+        backend,
+        fileBackend,
+      })
+    );
+    query = request(app);
+  });
+
+  it('should store even if resource missing', async () => {
+    let box = 'boxId_600';
+    await backend.createOrUpdateBox(`_fakeSiteId__${box}`, {
+      security: 'public',
+    });
+
+    const res = await query
+      .post(`/fakeSiteId/store/${box}/1234/file/`)
+      .attach('file', path.resolve(__dirname, 'testFile.txt'))
+      .expect(200);
+
+    const fileUrl = res.text;
+
+    await query.get(`/${fileUrl}`).buffer(false).redirects(1).expect(200);
+  });
+
+  it('should store and get a file', async () => {
+    let box = 'boxId_600';
+    await backend.createOrUpdateBox(`_fakeSiteId__${box}`, {
+      security: 'public',
+    });
+
+    await query
+      .post(`/fakeSiteId/store/${box}/1234`)
+      .send({ test: true, value: 42 })
+      .expect(200);
+
+    const res = await query
+      .post(`/fakeSiteId/store/${box}/1234/file/`)
+      .attach('file', path.resolve(__dirname, 'testFile.txt'))
+      .expect(200);
+
+    const fileUrl = res.text;
+
+    await query.get(`/${fileUrl}`).buffer(false).redirects(1).expect(200);
+  });
+
+  it('should not allow to store a file on readOnly store', async () => {
+    let box = 'boxId_600';
+    await backend.createOrUpdateBox(`_fakeSiteId__${box}`, {
+      security: 'readOnly',
+    });
+
+    const fakeFile = { filename: 'test.txt', mimetype: 'text/plain' };
+
+    await query
+      .post(`/fakeSiteId/store/${box}/1234/file/`)
+      .attach('file', path.resolve(__dirname, 'testFile.txt'))
+      .expect(403);
+
+    const fileName = await fileBackend.store(
+      'fakeSiteId',
+      box,
+      '1234',
+      fakeFile
+    );
+
+    console.log(fileName);
+
+    await query
+      .get(`/fakeSiteId/store/${box}/1234/file/${fileName}`)
+      .buffer(false)
+      .redirects(1)
+      .expect(200);
+  });
+
+  it('should not allow to store and get a file on private store', async () => {
+    let box = 'boxId_600';
+    await backend.createOrUpdateBox(`_fakeSiteId__${box}`, {
+      security: 'private',
+    });
+
+    const fakeFile = { filename: 'test.txt', mimetype: 'text/plain' };
+
+    await query
+      .post(`/fakeSiteId/store/${box}/1234/file/`)
+      .attach('file', path.resolve(__dirname, 'testFile.txt'))
+      .expect(403);
+
+    const fileName = await fileBackend.store(
+      'fakeSiteId',
+      box,
+      '1234',
+      fakeFile
+    );
+
+    await query
+      .get(`/fakeSiteId/store/${box}/1234/file/${fileName}`)
+      .buffer(false)
+      .redirects(1)
+      .expect(403);
   });
 });

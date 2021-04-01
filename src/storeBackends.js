@@ -530,6 +530,7 @@ export const MongoDBBackend = (options) => {
     async createOrUpdateBox(boxId, options = { ...DEFAULT_BOX_OPTIONS }) {
       const prevOptions = (await getBoxOption(boxId)) || {};
 
+      // TODO boxes should be prefixed ?
       const boxes = await getBoxDb('boxes');
       return await boxes.findOneAndUpdate(
         { box: boxId },
