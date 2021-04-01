@@ -1,5 +1,7 @@
 import express from 'express';
-import { memoryBackend, NeDBBackend, wrapBackend } from './storeBackends.js';
+import { memoryBackend, wrapBackend } from './storeBackends.js';
+import { MemoryFileBackend } from './fileStoreBackend.js';
+import resourceFileStore from './resourceFileStore';
 
 // Utility functions
 
@@ -32,6 +34,7 @@ const errorGuard = (func) => async (req, res, next) => {
 export const store = ({
   prefix = '/store',
   backend = memoryBackend(),
+  fileBackend = MemoryFileBackend(),
 } = {}) => {
   const router = express.Router();
 
@@ -188,6 +191,32 @@ export const store = ({
       }
       throwError('Box or resource not found', 404);
     })
+  );
+
+  router.use(
+    `${prefix}/:boxId/:id/file`,
+    errorGuard(async (req, _, next) => {
+      const { boxId, id } = req.params;
+
+      const { siteId, authenticatedUser } = req;
+
+      const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
+
+      if (
+        !(await wrappedBackend.checkSecurity(
+          boxId,
+          id,
+          ['POST', 'PUT', 'PATCH'].includes(req.method)
+        ))
+      ) {
+        throwError('You need write access for this resource', 403);
+      }
+
+      req.boxId = boxId;
+      req.resourceId = id;
+      next();
+    }),
+    resourceFileStore(fileBackend, { prefix })
   );
 
   // Middleware to handle errors

@@ -209,7 +209,13 @@ export const ricochetMiddleware = ({
   router.use(auth({ onSendToken, onLogin, onLogout, secret: secret }));
 
   // JSON store
-  router.use(store({ prefix: storeConfig.prefix, backend: storeBackend }));
+  router.use(
+    store({
+      prefix: storeConfig.prefix,
+      backend: storeBackend,
+      fileStoreConfig,
+    })
+  );
 
   // File store
   router.use(
