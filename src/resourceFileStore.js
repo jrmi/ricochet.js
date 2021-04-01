@@ -1,8 +1,6 @@
 import express from 'express';
 import { MemoryFileBackend, wrapBackend } from './fileStoreBackend.js';
 
-const DEFAULT_PREFIX = 'file';
-
 /* ROADMAP
 - Add security
 */
@@ -11,7 +9,7 @@ const errorGuard = (func) => async (req, res, next) => {
   try {
     return await func(req, res, next);
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     next(error);
   }
 };
@@ -20,31 +18,8 @@ const errorGuard = (func) => async (req, res, next) => {
  *
  * @param {object} options
  */
-//export const fileStorage = (type = 'memory', config = {}) => {
 export const fileStorage = (backend = MemoryFileBackend(), { prefix }) => {
   const app = express.Router();
-
-  //const { prefix = DEFAULT_PREFIX } = config;
-
-  /*const getPathFromReq = (req) => {
-    const { siteId, boxId, resourceId } = req;
-
-    return `${siteId}/${prefix}/${boxId}/${resourceId}/file`;
-  };*/
-
-  /*const backendConfig = { pathFromReq: getPathFromReq, ...config };
-
-  let backend = null;
-
-  if (type === 'memory') {
-    backend = MemoryFileBackend(backendConfig);
-  }
-  if (type === 'disk') {
-    backend = DiskFileBackend(backendConfig);
-  }
-  if (type === 's3') {
-    backend = S3FileBackend(backendConfig);
-  }*/
 
   // Store a file
   app.post(
@@ -53,12 +28,7 @@ export const fileStorage = (backend = MemoryFileBackend(), { prefix }) => {
     errorGuard(async (req, res) => {
       const { siteId, boxId, resourceId, file, authenticatedUser } = req;
 
-      const wrappedBackend = wrapBackend(
-        backend,
-        prefix,
-        siteId,
-        authenticatedUser
-      );
+      const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
 
       const filename = await wrappedBackend.store(boxId, resourceId, file);
 
@@ -74,12 +44,7 @@ export const fileStorage = (backend = MemoryFileBackend(), { prefix }) => {
     errorGuard(async (req, res) => {
       const { siteId, boxId, resourceId, authenticatedUser } = req;
 
-      const wrappedBackend = wrapBackend(
-        backend,
-        prefix,
-        siteId,
-        authenticatedUser
-      );
+      const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
 
       const result = await wrappedBackend.list(boxId, resourceId);
 
@@ -102,12 +67,7 @@ export const fileStorage = (backend = MemoryFileBackend(), { prefix }) => {
         params: { filename },
       } = req;
 
-      const wrappedBackend = wrapBackend(
-        backend,
-        prefix,
-        siteId,
-        authenticatedUser
-      );
+      const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
 
       if (!(await wrappedBackend.exists(boxId, resourceId, filename))) {
         res.status(404).send('Not found');
@@ -168,12 +128,7 @@ export const fileStorage = (backend = MemoryFileBackend(), { prefix }) => {
         params: { filename },
       } = req;
 
-      const wrappedBackend = wrapBackend(
-        backend,
-        prefix,
-        siteId,
-        authenticatedUser
-      );
+      const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
 
       if (!(await wrappedBackend.exists(boxId, resourceId, filename))) {
         res.status(404).send('Not found');

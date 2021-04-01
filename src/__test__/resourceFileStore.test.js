@@ -21,12 +21,14 @@ jest.mock('nanoid', () => {
   };
 });
 
+const tempDestination = tempy.directory({ prefix: 'test__' });
+
 const fileStores = [
   ['memory', MemoryFileBackend(), { prefix: 'pref' }],
   [
     'disk',
     DiskFileBackend({
-      destination: tempy.directory({ prefix: 'test__' }),
+      destination: tempDestination,
       prefix: 'pref',
     }),
     { prefix: 'pref' },
@@ -76,7 +78,7 @@ describe.each(fileStores)(
       // Clean files
       if (backendType === 'disk') {
         try {
-          fs.rmdirSync(options.destination, { recursive: true });
+          fs.rmdirSync(tempDestination, { recursive: true });
         } catch (e) {
           console.log(e);
         }
