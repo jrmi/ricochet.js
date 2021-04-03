@@ -30,34 +30,85 @@ const errorGuard = (func) => async (req, res, next) => {
   }
 };
 
+const SAFE_METHOD = ['GET', 'OPTIONS', 'HEAD'];
+
 // Store Middleware
 export const store = ({
   prefix = '/store',
   backend = memoryBackend(),
   fileBackend = MemoryFileBackend(),
+  hooks = {},
 } = {}) => {
   const router = express.Router();
+
+  const applyHooks = async (
+    type,
+    req,
+    roContextAddition,
+    writableContextAddition = {}
+  ) => {
+    let hooksMap = hooks;
+    if (typeof hooks === 'function') {
+      hooksMap = hooks(req);
+    }
+
+    const {
+      body,
+      params: { boxId, id },
+      query,
+      method,
+      authenticatedUser = null,
+    } = req;
+
+    const roContext = {
+      method,
+      boxId: boxId,
+      resourceId: id,
+      userId: authenticatedUser,
+      ...roContextAddition,
+    };
+
+    let context = {
+      query,
+      body,
+      ...writableContextAddition,
+      ...roContext,
+    };
+
+    const hookList = hooksMap[type] || [];
+
+    for (const hook of hookList) {
+      const newContext = await hook(context);
+      context = { ...newContext, ...roContext };
+    }
+
+    return context;
+  };
 
   // Resource list
   router.get(
     `${prefix}/:boxId/`,
     errorGuard(async (req, res) => {
       const { boxId } = req.params;
+      const { siteId, authenticatedUser } = req;
+
+      const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
+
+      const { query, allow = false } = await applyHooks('before', req, {
+        store: wrappedBackend,
+      });
+
+      if (!allow && !(await wrappedBackend.checkSecurity(boxId, null))) {
+        throwError('You need read access for this box', 403);
+      }
+
       const {
         limit = '50',
         sort = '_createdOn',
         skip = '0',
         q,
         fields,
-      } = req.query;
-
-      const { siteId, authenticatedUser } = req;
-
-      const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
-
-      if (!(await wrappedBackend.checkSecurity(boxId, null))) {
-        throwError('You need read access for this box', 403);
-      }
+      } = query;
 
       const onlyFields = fields ? fields.split(',') : [];
 
@@ -73,7 +124,7 @@ export const store = ({
         asc = false;
       }
 
-      const result = await wrappedBackend.list(boxId, {
+      const response = await wrappedBackend.list(boxId, {
         sort: sortProperty,
         asc,
         limit: parsedLimit,
@@ -81,7 +132,18 @@ export const store = ({
         onlyFields: onlyFields,
         q,
       });
-      res.json(result);
+
+      const { response: hookedResponse } = await applyHooks(
+        'after',
+        req,
+        {
+          query,
+          store: wrappedBackend,
+        },
+        { response }
+      );
+
+      res.json(hookedResponse);
     })
   );
 
@@ -102,12 +164,26 @@ export const store = ({
         );
       }
 
-      if (!(await wrappedBackend.checkSecurity(boxId, id))) {
+      const { allow = false } = await applyHooks('before', req, {
+        store: wrappedBackend,
+      });
+
+      if (!allow && !(await wrappedBackend.checkSecurity(boxId, id))) {
         throwError('You need read access for this box', 403);
       }
 
-      const result = await wrappedBackend.get(boxId, id);
-      res.json(result);
+      const response = await wrappedBackend.get(boxId, id);
+
+      const { response: hookedResponse } = await applyHooks(
+        'after',
+        req,
+        {
+          store: wrappedBackend,
+        },
+        { response }
+      );
+
+      res.json(hookedResponse);
     })
   );
 
@@ -117,7 +193,6 @@ export const store = ({
     errorGuard(async (req, res) => {
       const {
         params: { boxId, id },
-        body,
         siteId,
         authenticatedUser,
       } = req;
@@ -131,11 +206,22 @@ export const store = ({
         );
       }
 
-      if (!(await wrappedBackend.checkSecurity(boxId, id, true))) {
+      const { body, allow = false } = await applyHooks('before', req, {
+        store: wrappedBackend,
+      });
+
+      if (!allow && !(await wrappedBackend.checkSecurity(boxId, id, true))) {
         throwError('You need write access for this box', 403);
       }
-      const result = await wrappedBackend.save(boxId, id, body);
-      return res.json(result);
+
+      const response = await wrappedBackend.save(boxId, id, body);
+
+      const { response: hookedResponse } = await applyHooks('after', req, {
+        response,
+        store: wrappedBackend,
+      });
+
+      return res.json(hookedResponse);
     })
   );
 
@@ -156,11 +242,22 @@ export const store = ({
         );
       }
 
-      if (!(await wrappedBackend.checkSecurity(boxId, id, true))) {
+      const { body, allow = false } = await applyHooks('before', req, {
+        store: wrappedBackend,
+      });
+
+      if (!allow && !(await wrappedBackend.checkSecurity(boxId, id, true))) {
         throwError('You need write access for this resource', 403);
       }
-      const result = await wrappedBackend.update(boxId, id, req.body);
-      return res.json(result);
+
+      const response = await wrappedBackend.update(boxId, id, body);
+
+      const { response: hookedResponse } = await applyHooks('after', req, {
+        response,
+        store: wrappedBackend,
+      });
+
+      return res.json(hookedResponse);
     })
   );
 
@@ -181,14 +278,25 @@ export const store = ({
         );
       }
 
-      if (!(await wrappedBackend.checkSecurity(boxId, id, true))) {
+      const { allow = false } = await applyHooks('before', req, {
+        store: wrappedBackend,
+      });
+
+      if (!allow && !(await wrappedBackend.checkSecurity(boxId, id, true))) {
         throwError('You need write access for this resource', 403);
       }
+
       const result = await wrappedBackend.delete(boxId, id);
+
+      await applyHooks('after', req, {
+        store: wrappedBackend,
+      });
+
       if (result === 1) {
         res.json({ message: 'Deleted' });
         return;
       }
+
       throwError('Box or resource not found', 404);
     })
   );
@@ -202,11 +310,16 @@ export const store = ({
 
       const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
 
+      const { allow = false } = await applyHooks('beforeFile', req, {
+        store: wrappedBackend,
+      });
+
       if (
+        !allow &&
         !(await wrappedBackend.checkSecurity(
           boxId,
           id,
-          ['POST', 'PUT', 'PATCH'].includes(req.method)
+          !SAFE_METHOD.includes(req.method)
         ))
       ) {
         throwError('You need write access for this resource', 403);
@@ -216,7 +329,19 @@ export const store = ({
       req.resourceId = id;
       next();
     }),
-    resourceFileStore(fileBackend, { prefix })
+    resourceFileStore(fileBackend, { prefix }),
+    errorGuard(async (req, _, next) => {
+      const { siteId, authenticatedUser } = req;
+      const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
+
+      console.log('execute after file hooks');
+
+      await applyHooks('afterFile', req, {
+        store: wrappedBackend,
+      });
+
+      next();
+    })
   );
 
   // Middleware to handle errors

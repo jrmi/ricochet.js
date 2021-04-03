@@ -202,7 +202,7 @@ describe('Store Test', () => {
       security: 'public',
     });
 
-    const toto = await query
+    await query
       .post(`/fakeSiteId/store/${box}/1234`)
       .send({ test: true, value: 42 })
       .expect(200);
@@ -218,6 +218,202 @@ describe('Store Test', () => {
       .get(`/${fileUrl}`)
       .buffer(false)
       .redirects(1)
+      .expect(200);
+  });
+});
+
+describe('Store Hook Tests', () => {
+  let query;
+  let backend;
+  let hooks;
+
+  beforeAll(() => {
+    const app = express();
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: true }));
+    backend = memoryBackend();
+    hooks = {};
+    app.use(
+      '/:siteId',
+      (req, _, next) => {
+        req.siteId = req.params.siteId;
+        next();
+      },
+      store({
+        backend,
+        hooks,
+      })
+    );
+    query = request(app);
+  });
+
+  it('should call hooks for list', async () => {
+    let box = 'boxId_1000';
+    await backend.createOrUpdateBox(`_fakeSiteId__${box}`, {
+      security: 'public',
+    });
+
+    hooks.before = [
+      jest.fn((context) => context),
+      jest.fn((context) => context),
+    ];
+    hooks.after = [
+      jest.fn((context) => context),
+      jest.fn((context) => context),
+    ];
+
+    await query.get(`/fakeSiteId/store/${box}/`).expect(200);
+
+    expect(hooks.before[0]).toHaveBeenCalled();
+    expect(hooks.before[1]).toHaveBeenCalled();
+    expect(hooks.after[0]).toHaveBeenCalled();
+    expect(hooks.after[1]).toHaveBeenCalled();
+  });
+
+  it('should call hooks for post & get & delete', async () => {
+    let box = 'boxId_1100';
+    await backend.createOrUpdateBox(`_fakeSiteId__${box}`, {
+      security: 'public',
+    });
+
+    hooks.before = [
+      jest.fn((context) => context),
+      jest.fn((context) => context),
+    ];
+    hooks.after = [
+      jest.fn((context) => context),
+      jest.fn((context) => context),
+    ];
+
+    await query
+      .post(`/fakeSiteId/store/${box}/1234`)
+      .send({ test: true, value: 42 })
+      .expect(200);
+
+    expect(hooks.before[0]).toHaveBeenCalledTimes(1);
+    expect(hooks.before[1]).toHaveBeenCalledTimes(1);
+    expect(hooks.after[0]).toHaveBeenCalledTimes(1);
+    expect(hooks.after[1]).toHaveBeenCalledTimes(1);
+
+    jest.clearAllMocks();
+
+    await query.get(`/fakeSiteId/store/${box}/1234`).expect(200);
+
+    expect(hooks.before[0]).toHaveBeenCalled();
+    expect(hooks.before[1]).toHaveBeenCalled();
+    expect(hooks.after[0]).toHaveBeenCalled();
+    expect(hooks.after[1]).toHaveBeenCalled();
+
+    jest.clearAllMocks();
+
+    await query.delete(`/fakeSiteId/store/${box}/1234`).expect(200);
+
+    expect(hooks.before[0]).toHaveBeenCalled();
+    expect(hooks.before[1]).toHaveBeenCalled();
+    expect(hooks.after[0]).toHaveBeenCalled();
+    expect(hooks.after[1]).toHaveBeenCalled();
+  });
+
+  it('hooks should modify post', async () => {
+    let box = 'boxId_1200';
+    await backend.createOrUpdateBox(`_fakeSiteId__${box}`, {
+      security: 'public',
+    });
+
+    hooks.before = [
+      jest.fn((context) => ({ ...context, body: { value: 256 } })),
+      jest.fn((context) => ({
+        ...context,
+        body: { ...context.body, foo: 'bar' },
+      })),
+    ];
+    hooks.after = [
+      jest.fn((context) => context),
+      jest.fn((context) => context),
+    ];
+
+    await query
+      .post(`/fakeSiteId/store/${box}/1234`)
+      .send({ test: true, value: 42 })
+      .expect(200);
+
+    const result = await query.get(`/fakeSiteId/store/${box}/1234`).expect(200);
+
+    expect(result.body).toEqual(
+      expect.objectContaining({ value: 256, foo: 'bar' })
+    );
+  });
+
+  it('hooks should modify get', async () => {
+    let box = 'boxId_1300';
+    await backend.createOrUpdateBox(`_fakeSiteId__${box}`, {
+      security: 'public',
+    });
+
+    hooks.before = [
+      jest.fn((context) => context),
+      jest.fn((context) => context),
+    ];
+    hooks.after = [
+      jest.fn((context) => ({ ...context, response: { value: 256 } })),
+      jest.fn((context) => ({
+        ...context,
+        response: { ...context.response, foo: 'bar' },
+      })),
+    ];
+
+    await query
+      .post(`/fakeSiteId/store/${box}/1234`)
+      .send({ test: true, value: 42 })
+      .expect(200);
+
+    const result = await query.get(`/fakeSiteId/store/${box}/1234`).expect(200);
+
+    expect(result.body).toEqual(
+      expect.objectContaining({ value: 256, foo: 'bar' })
+    );
+  });
+
+  it('hooks should force access to private store', async () => {
+    let box = 'boxId_1400';
+    await backend.createOrUpdateBox(`_fakeSiteId__${box}`, {
+      security: 'private',
+    });
+
+    hooks.before = [
+      jest.fn((context) => ({ ...context, allow: true })),
+      jest.fn((context) => context),
+    ];
+
+    await query
+      .post(`/fakeSiteId/store/${box}/1234`)
+      .send({ test: true, value: 42 })
+      .expect(200);
+
+    await query.get(`/fakeSiteId/store/${box}`).expect(200);
+    await query.get(`/fakeSiteId/store/${box}/1234`).expect(200);
+    await query.delete(`/fakeSiteId/store/${box}/1234`).expect(200);
+  });
+
+  it('should store even if private box', async () => {
+    let box = 'boxId_1500';
+    await backend.createOrUpdateBox(`_fakeSiteId__${box}`, {
+      security: 'private',
+    });
+
+    await query
+      .post(`/fakeSiteId/store/${box}/1234/file/`)
+      .attach('file', path.resolve(__dirname, 'testFile.txt'))
+      .expect(403);
+
+    hooks.beforeFile = [
+      jest.fn((context) => ({ ...context, allow: true })),
+      jest.fn((context) => context),
+    ];
+
+    await query
+      .post(`/fakeSiteId/store/${box}/1234/file/`)
+      .attach('file', path.resolve(__dirname, 'testFile.txt'))
       .expect(200);
   });
 });

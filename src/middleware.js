@@ -12,7 +12,7 @@ import { getStoreBackend, wrapBackend } from './storeBackends.js';
 import {
   getFileStoreBackend,
   wrapBackend as wrapFileBackend,
-} from './fileStoreBackends.js';
+} from './fileStoreBackend.js';
 
 import remote from './remote.js';
 import execute from './execute.js';
@@ -87,6 +87,8 @@ export const ricochetMiddleware = ({
   const functionsBySite = {};
   // Schedule map
   const schedulesBySite = {};
+  // Hooks map
+  const hooksBySite = {};
 
   const decryptPayload = (script, siteId) => {
     const data = JSON.parse(script);
@@ -121,11 +123,15 @@ export const ricochetMiddleware = ({
         if (!schedulesBySite[siteId]) {
           schedulesBySite[siteId] = { hourly: [], daily: [] };
         }
+        if (!hooksBySite[siteId]) {
+          hooksBySite[siteId] = {};
+        }
         return {
           store: wrappedBackend,
           fileStore: wrappedFileBackend,
           functions: functionsBySite[siteId],
           schedules: schedulesBySite[siteId],
+          hooks: hooksBySite[siteId],
         };
       },
       disableCache,
@@ -232,6 +238,10 @@ export const ricochetMiddleware = ({
       prefix: storeConfig.prefix,
       backend: storeBackend,
       fileBackend: fileStoreBackend,
+      hooks: (req) => {
+        const { siteId } = req;
+        return hooksBySite[siteId];
+      },
     })
   );
 
