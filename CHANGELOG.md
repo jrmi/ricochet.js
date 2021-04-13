@@ -1,4 +1,16 @@
 
+0.8.0 / 2021-04-13
+==================
+
+/!\ Breaking changes: start install from scratch /!\
+
+  * Add hooks
+  * Add file store under siteId prefix
+  * Add way to redirect to storage url instead of proxy it
+  * Add siteId as prefix instead of loading config from server
+  * Refactor config file reading
+  * Use lower case email
+
 0.7.1 / 2021-03-31
 ==================
 
