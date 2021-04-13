@@ -32,7 +32,7 @@ export const fileStorage = (backend = MemoryFileBackend(), { prefix }) => {
 
       const filename = await wrappedBackend.store(boxId, resourceId, file);
 
-      const pathPrefix = `${siteId}/${prefix}/${boxId}/${resourceId}/file`;
+      const pathPrefix = `${siteId}${prefix}/${boxId}/${resourceId}/file`;
 
       res.send(`${pathPrefix}/${filename}`);
     })
@@ -48,10 +48,9 @@ export const fileStorage = (backend = MemoryFileBackend(), { prefix }) => {
 
       const result = await wrappedBackend.list(boxId, resourceId);
 
-      const pathPrefix = `${siteId}/${prefix}/${boxId}/${resourceId}/file`;
+      const pathPrefix = `${siteId}${prefix}/${boxId}/${resourceId}/file`;
 
       res.json(result.map((filename) => `${pathPrefix}/${filename}`));
-      //res.json(result);
     })
   );
 
