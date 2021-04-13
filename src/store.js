@@ -34,7 +34,7 @@ const SAFE_METHOD = ['GET', 'OPTIONS', 'HEAD'];
 
 // Store Middleware
 export const store = ({
-  prefix = '/store',
+  prefix = 'store',
   backend = memoryBackend(),
   fileBackend = MemoryFileBackend(),
   hooks = {},
@@ -87,7 +87,7 @@ export const store = ({
 
   // Resource list
   router.get(
-    `${prefix}/:boxId/`,
+    `/${prefix}/:boxId/`,
     errorGuard(async (req, res) => {
       const { boxId } = req.params;
       const { siteId, authenticatedUser } = req;
@@ -149,7 +149,7 @@ export const store = ({
 
   // One object
   router.get(
-    `${prefix}/:boxId/:id`,
+    `/${prefix}/:boxId/:id`,
     errorGuard(async (req, res) => {
       const { boxId, id } = req.params;
 
@@ -189,7 +189,7 @@ export const store = ({
 
   // Create / replace object
   router.post(
-    `${prefix}/:boxId/:id?`,
+    `/${prefix}/:boxId/:id?`,
     errorGuard(async (req, res) => {
       const {
         params: { boxId, id },
@@ -227,7 +227,7 @@ export const store = ({
 
   // Update existing object
   router.put(
-    `${prefix}/:boxId/:id`,
+    `/${prefix}/:boxId/:id`,
     errorGuard(async (req, res) => {
       const { boxId, id } = req.params;
 
@@ -263,7 +263,7 @@ export const store = ({
 
   // Delete object
   router.delete(
-    `${prefix}/:boxId/:id`,
+    `/${prefix}/:boxId/:id`,
     errorGuard(async (req, res) => {
       const { boxId, id } = req.params;
 
@@ -302,7 +302,7 @@ export const store = ({
   );
 
   router.use(
-    `${prefix}/:boxId/:id/file`,
+    `/${prefix}/:boxId/:id/file`,
     errorGuard(async (req, _, next) => {
       const { boxId, id } = req.params;
 
