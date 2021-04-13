@@ -1,6 +1,6 @@
 import request from 'supertest';
 import express from 'express';
-import fileStore from '../resourceFileStore';
+import fileStore from '../fileStore';
 import {
   MemoryFileBackend,
   DiskFileBackend,
