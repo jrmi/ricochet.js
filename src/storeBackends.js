@@ -81,11 +81,11 @@ export const wrapBackend = (backend, siteId, userId) => {
     async create(boxId, data) {
       return await backend.create(getBoxId(boxId), data);
     },
-    async save(boxId, id, body) {
-      return await backend.save(getBoxId(boxId), id, body);
+    async save(boxId, id, data) {
+      return await backend.save(getBoxId(boxId), id, data);
     },
-    async update(boxId, id, body) {
-      return await backend.update(getBoxId(boxId), id, body);
+    async update(boxId, id, data) {
+      return await backend.update(getBoxId(boxId), id, data);
     },
     async delete(boxId, id) {
       return await backend.delete(getBoxId(boxId), id);
