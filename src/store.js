@@ -1,7 +1,7 @@
 import express from 'express';
 import { memoryBackend, wrapBackend } from './storeBackends.js';
 import { MemoryFileBackend } from './fileStoreBackend.js';
-import resourceFileStore from './resourceFileStore';
+import fileStore from './fileStore';
 
 // Utility functions
 
@@ -329,7 +329,7 @@ export const store = ({
       req.resourceId = id;
       next();
     }),
-    resourceFileStore(fileBackend, { prefix }),
+    fileStore(fileBackend, { prefix }),
     errorGuard(async (req, _, next) => {
       const { siteId, authenticatedUser } = req;
       const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
