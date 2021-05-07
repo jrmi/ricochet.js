@@ -44,6 +44,22 @@ describe('Remote Test', () => {
     expect(result3).toEqual('foo');
   });
 
+  it('should filter requirements', async () => {
+    const http = await remoteCode.exec(
+      SITEID,
+      REMOTE,
+      'scripts/mysetupWithRequire'
+    );
+    const httpReal = require('http');
+    expect(http).toEqual(httpReal);
+
+    try {
+      await remoteCode.exec(SITEID, REMOTE, 'scripts/mysetupWithBadRequire');
+    } catch (e) {
+      expect(e.code).toMatch('EDENIED');
+    }
+  });
+
   it("shouldn't call missing remote function", async () => {
     try {
       await remoteCode.exec(SITEID, REMOTE, 'notexisting');

@@ -1,5 +1,6 @@
-var main = ({ content }) => {
-  content.response = 42;
+const fs = require('fs');
+
+var main = () => {
   return 'foo';
 };
 

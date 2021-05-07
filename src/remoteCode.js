@@ -1,8 +1,10 @@
 import http from 'http';
 import https from 'https';
-import vm from 'vm';
+import { NodeVM } from 'vm2';
 
 import NodeCache from 'node-cache';
+
+const allowedModules = ['http', 'https', 'stream', 'url', 'zlib', 'encoding'];
 
 class RemoteCode {
   constructor({ disableCache = false, preProcess = (script) => script }) {
@@ -16,6 +18,13 @@ class RemoteCode {
       scriptCache: new NodeCache(cacheConfig),
       cacheConfig,
       preProcess,
+    });
+    this.vm = new NodeVM({
+      console: 'inherit',
+      require: {
+        builtin: allowedModules,
+        root: './',
+      },
     });
   }
 
@@ -57,13 +66,11 @@ class RemoteCode {
               }
               script += extraCommands;
               try {
-                const parsedScript = new vm.Script(script, {
-                  filename: scriptUrl,
-                });
-                cache.set(scriptName, parsedScript);
+                const scriptFunction = this.vm.run(script).default;
+                cache.set(scriptName, scriptFunction);
                 this.scriptCache.set(remote, cache);
 
-                resolve(parsedScript);
+                resolve(scriptFunction);
               } catch (e) {
                 reject({ status: 'error', error: e });
               }
@@ -79,17 +86,9 @@ class RemoteCode {
 
   async exec(siteId, remote, scriptName, context) {
     try {
-      const toRun = await this.cacheOrFetch(
-        siteId,
-        remote,
-        scriptName,
-        '\nmain(__params);'
-      );
-      const scriptContext = {
-        console,
-        __params: { ...context },
-      };
-      return await toRun.runInNewContext(scriptContext);
+      const toRun = await this.cacheOrFetch(siteId, remote, scriptName);
+
+      return toRun({ ...context });
     } catch (e) {
       if (e.status === 'not-found') {
         throw `Script ${scriptName} not found on remote ${remote}`;
