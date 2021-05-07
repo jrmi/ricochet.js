@@ -1,6 +1,7 @@
-var main = ({ content }) => {
-  content.response = 42;
-  return 'foo';
+const http = require('http');
+
+var main = () => {
+  return http;
 };
 
 Object.defineProperty(exports, '__esModule', {
