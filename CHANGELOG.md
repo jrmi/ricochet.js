@@ -1,4 +1,9 @@
 
+0.8.1 / 2021-05-07
+==================
+
+  * Allow require some modules in remote scripts
+
 0.8.0 / 2021-04-13
 ==================
 
