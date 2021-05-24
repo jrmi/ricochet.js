@@ -1,4 +1,11 @@
 
+0.9.0 / 2021-05-24
+==================
+
+  * Fix audit security
+  * Upadte pm2
+  * Update client2client.io to version 2.0.1
+
 0.8.1 / 2021-05-07
 ==================
 
