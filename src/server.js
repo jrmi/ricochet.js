@@ -16,7 +16,6 @@ import fs from 'fs';
 
 import {
   PORT,
-  API_URL,
   FILE_STORE_TYPE,
   DISK_DESTINATION,
   S3_SECRET_KEY,
@@ -109,7 +108,6 @@ const startServer = () => {
         s3Endpoint: S3_ENDPOINT,
         s3SecretKey: S3_SECRET_KEY,
         s3Region: S3_REGION,
-        apiUrl: API_URL,
       },
       disableCache: DISABLE_CACHE,
       setupFunction: SETUP_FUNCTION,
