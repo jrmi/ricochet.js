@@ -69,6 +69,7 @@ export const ricochetMiddleware = ({
     accessKey: fileStoreConfig.s3AccesKey,
     secretKey: fileStoreConfig.s3SecretKey,
     region: fileStoreConfig.s3Region,
+    proxy: fileStoreConfig.s3Proxy,
   });
 
   const site = {};
@@ -306,6 +307,7 @@ export const mainMiddleware = ({ fileStoreConfig = {}, ...rest } = {}) => {
       accessKey: fileStoreConfig.s3AccesKey,
       secretKey: fileStoreConfig.s3SecretKey,
       region: fileStoreConfig.s3Region,
+      proxy: fileStoreConfig.s3Proxy,
     })
   );
 
