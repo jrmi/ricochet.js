@@ -1,4 +1,10 @@
 
+0.9.2 / 2021-09-14
+==================
+
+  * Add s3proxy configuration flag
+  * Update documentation
+
 0.9.1 / 2021-05-30
 ==================
 
