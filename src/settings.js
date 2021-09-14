@@ -19,6 +19,7 @@ export const S3_SECRET_KEY = process.env.S3_SECRET_KEY;
 export const S3_ENDPOINT = process.env.S3_ENDPOINT;
 export const S3_BUCKET = process.env.S3_BUCKET;
 export const S3_REGION = process.env.S3_REGION;
+export const S3_PROXY = process.env.S3_PROXY === '1';
 
 // JSON store related
 export const STORE_BACKEND = process.env.STORE_BACKEND || 'memory';
