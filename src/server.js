@@ -8,7 +8,6 @@ import i18nextMiddleware from 'i18next-http-middleware';
 import i18nextBackend from 'i18next-fs-backend';
 
 import log from './log.js';
-import { defineSocket } from './socket.js';
 
 import middleware from './middleware.js';
 import path from 'path';
@@ -123,8 +122,6 @@ const startServer = () => {
       },
     })
   );
-
-  defineSocket(httpServer);
 
   httpServer.listen(PORT, () => {
     log.info(`listening on ${PORT}`);
