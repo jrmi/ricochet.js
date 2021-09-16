@@ -23,6 +23,7 @@ import {
   S3_ENDPOINT,
   S3_REGION,
   S3_PROXY,
+  S3_CDN,
   STORE_BACKEND,
   STORE_PREFIX,
   NEDB_BACKEND_DIRNAME,
@@ -35,6 +36,7 @@ import {
   EMAIL_USER,
   EMAIL_PASSWORD,
   SETUP_FUNCTION,
+  S3_SIGNED_URL,
 } from './settings.js';
 
 const startServer = () => {
@@ -109,6 +111,8 @@ const startServer = () => {
         s3SecretKey: S3_SECRET_KEY,
         s3Region: S3_REGION,
         s3Proxy: S3_PROXY,
+        s3Cdn: S3_CDN,
+        s3SignedUrl: S3_SIGNED_URL,
       },
       disableCache: DISABLE_CACHE,
       setupFunction: SETUP_FUNCTION,

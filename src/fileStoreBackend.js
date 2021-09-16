@@ -201,6 +201,8 @@ export const S3FileBackend = ({
   endpoint,
   region,
   proxy = false,
+  cdn = '',
+  signedUrl = true,
 }) => {
   aws.config.update({
     secretAccessKey: secretKey,
@@ -289,8 +291,59 @@ export const S3FileBackend = ({
         range: Range,
       }
     ) {
+      // Here we proxy the image
+      if (proxy) {
+        const params = {
+          Bucket: bucket,
+          Key: `${siteId}/${boxId}/${resourceId}/${filename}`,
+          IfNoneMatch,
+          IfUnmodifiedSince,
+          IfModifiedSince,
+          IfMatch,
+          Range,
+        };
+        return new Promise((resolve) => {
+          s3.getObject(params)
+            .on('httpHeaders', function (statusCode, headers) {
+              const length = headers['content-length'];
+              const mimetype = headers['content-type'];
+              // const acceptRanges = headers['accept-ranges'];
+              const eTag = headers['etag'];
+              const lastModified = headers['last-modified'];
+              if (statusCode === 304) {
+                resolve({
+                  mimetype,
+                  stream: null,
+                  length,
+                  eTag,
+                  lastModified,
+                  statusCode,
+                });
+              } else {
+                const stream = this.response.httpResponse.createUnbufferedStream();
+                resolve({
+                  mimetype,
+                  stream,
+                  length,
+                  eTag,
+                  lastModified,
+                  statusCode,
+                });
+              }
+            })
+            .send();
+        });
+      }
+
+      // Here we have a cdn in front
+      if (cdn) {
+        return {
+          redirectTo: `${cdn}/${siteId}/${boxId}/${resourceId}/${filename}`,
+        };
+      }
+
       // We generate a signed url and we return it
-      if (!proxy) {
+      if (signedUrl) {
         const params = {
           Bucket: bucket,
           Key: `${siteId}/${boxId}/${resourceId}/${filename}`,
@@ -308,47 +361,10 @@ export const S3FileBackend = ({
 
         return { redirectTo: url };
       }
-
-      const params = {
-        Bucket: bucket,
-        Key: `${siteId}/${boxId}/${resourceId}/${filename}`,
-        IfNoneMatch,
-        IfUnmodifiedSince,
-        IfModifiedSince,
-        IfMatch,
-        Range,
+      // Finnally we just use public URL
+      return {
+        redirectTo: `${endpoint}/${siteId}/${boxId}/${resourceId}/${filename}`,
       };
-      return new Promise((resolve) => {
-        s3.getObject(params)
-          .on('httpHeaders', function (statusCode, headers) {
-            const length = headers['content-length'];
-            const mimetype = headers['content-type'];
-            // const acceptRanges = headers['accept-ranges'];
-            const eTag = headers['etag'];
-            const lastModified = headers['last-modified'];
-            if (statusCode === 304) {
-              resolve({
-                mimetype,
-                stream: null,
-                length,
-                eTag,
-                lastModified,
-                statusCode,
-              });
-            } else {
-              const stream = this.response.httpResponse.createUnbufferedStream();
-              resolve({
-                mimetype,
-                stream,
-                length,
-                eTag,
-                lastModified,
-                statusCode,
-              });
-            }
-          })
-          .send();
-      });
     },
 
     async delete(siteId, boxId, resourceId, filename) {
