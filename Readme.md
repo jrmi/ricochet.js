@@ -36,7 +36,7 @@ When you create a web application, you nearly always need a server mainly for
   by the client for security reason.
 - You want some periodic tasks to be executed.
 
-Ricochet-js propose features to fullfill this requirements in an elegant way.
+Ricochet-js propose features to fullfil this requirements in an elegant way.
 
 First a *Rest API* to store key-values document, so you can store your structured data.
 And for each stored resource, you can associate binary files like images, or documents.
@@ -46,7 +46,7 @@ executed in secured context on server side with access to this two stores.
 
 Finally you can *schedule* hourly or daily actions.
 
-## Getting started
+## Start the server
 
 First, in your project folder, create a `site.json` file. This file should
 contains a configuration for each site you want to manage with ricochet-js.
@@ -104,8 +104,9 @@ See [server configuration](#server-configuration) for more customization.
 
 ## Initialize your project
 
-Since you have a Ricochet-js instance up and running, you can use the project
-starter to initialize your backend.
+Since you have a Ricochet-js instance up and running, you can use the
+[project starter](https://github.com/jrmi/ricochet-js-starter) to initialize
+your backend.
 
 ### Starter usage
 
@@ -344,14 +345,14 @@ Allow the client to verify if a user is authenticated. Returns `403` http code i
 You can configure your instance by settings environment variables or using
 `.env` file:
 
- | Name          | description                                                                                | default value |
- | ------------- | ------------------------------------------------------------------------------------------ | ------------- |
- | SERVER_PORT   | Server listen on this port.                                                                | 4000          |
- | SERVER_HOST   | '0.0.0.0' to listen from all interfaces                                                    | 127.0.0.1     |
- | FILE_STORAGE  | Configure file store type. Allowed values: 'memory', 'disk', 's3'                          | memory        |
- | STORE_BACKEND | Configure JSON store provider. Allowed values: 'memory', 'nedb', 'mongodb'                 | memory        |
- | SECRET        | Secret to hash password and  cookie. Keep it safe.                                         |               |
- | EMAIL_*       | To configure email provider. Put "fake" in EMAIL_HOST to log mail instead of sending them. |               |
+ | Name            | description                                                                                | default value |
+ | --------------- | ------------------------------------------------------------------------------------------ | ------------- |
+ | SERVER_PORT     | Server listen on this port.                                                                | 4000          |
+ | SERVER_HOST     | '0.0.0.0' to listen from all interfaces                                                    | 127.0.0.1     |
+ | FILE_STORAGE    | Configure file store type. Allowed values: 'memory', 'disk', 's3'                          | memory        |
+ | STORE_BACKEND   | Configure JSON store provider. Allowed values: 'memory', 'nedb', 'mongodb'                 | memory        |
+ | RICOCHET_SECRET | Secret to hash password and  cookie. Keep it safe.                                         |               |
+ | EMAIL_*         | To configure email provider. Put "fake" in EMAIL_HOST to log mail instead of sending them. |               |
 
  Note: "memory" stores are for development purpose only and remember that you
  loose all your data each time you stop the server.
@@ -364,13 +365,16 @@ If you use *disk file store* you need to configure this variables:
 
 If you use *S3 file store* configure also this variables:
 
- | Name          | description   | default value |
- | ------------- | ------------- | ------------- |
- | S3_ACCESS_KEY | S3 access key |               |
- | SB_SECRET_KEY | S3 secret key |               |
- | S3_ENDPOINT   | S3 endpoint   |               |
- | S3_BUCKET     | S3 bucket     |               |
- | S3_REGION     | S3 Region     |               |
+ | Name          | description                                                                | default value |
+ | ------------- | -------------------------------------------------------------------------- | ------------- |
+ | S3_ACCESS_KEY | S3 access key                                                              |               |
+ | SB_SECRET_KEY | S3 secret key                                                              |               |
+ | S3_ENDPOINT   | S3 endpoint                                                                |               |
+ | S3_BUCKET     | S3 bucket                                                                  |               |
+ | S3_REGION     | S3 Region                                                                  |               |
+ | S3_PROXY      | Set to "1" to enable to proxy file (otherwise it's a redirect to the file) | 0             |
+ | S3_SIGNED_URL | Set to "0" to disabled usage of signed URL                                 | true          |
+ | S3_CDN        | Set the CDN prefix to enable it                                            |               |
 
 For *nedb* JSON store provider:
 
