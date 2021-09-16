@@ -20,6 +20,8 @@ export const S3_ENDPOINT = process.env.S3_ENDPOINT;
 export const S3_BUCKET = process.env.S3_BUCKET;
 export const S3_REGION = process.env.S3_REGION;
 export const S3_PROXY = process.env.S3_PROXY === '1';
+export const S3_CDN = process.env.S3_CDN || '';
+export const S3_SIGNED_URL = process.env.S3_SIGNED_URL !== '0';
 
 // JSON store related
 export const STORE_BACKEND = process.env.STORE_BACKEND || 'memory';
@@ -28,7 +30,7 @@ export const NEDB_BACKEND_DIRNAME = process.env.NEDB_BACKEND_DIRNAME || '/tmp/';
 export const MONGODB_URI = process.env.MONGODB_URI;
 export const MONGODB_DATABASE = process.env.MONGODB_DATABASE;
 
-export const SECRET = process.env.SECRET;
+export const SECRET = process.env.SECRET || process.env.RICOCHET_SECRET;
 
 export const DISABLE_CACHE = process.env.DISABLE_CACHE === '1';
 
