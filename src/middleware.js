@@ -18,22 +18,38 @@ import remote from './remote.js';
 import execute from './execute.js';
 import auth from './authentication.js';
 
-import { decrypt } from './crypt.js';
+import { decrypt, generateKey } from './crypt.js';
 
-const loadConfigFile = (configFile) => {
+const writeConfigFile = (configFilePath, data) => {
+  return new Promise((resolve, reject) => {
+    fs.writeFile(configFilePath, JSON.stringify(data, null, 2), (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(data);
+      }
+    });
+  });
+};
+
+const loadConfigFile = (configFilePath, createIfMissing = false) => {
   return new Promise((resolve, reject) => {
     // Read config file
-    fs.readFile(configFile, 'utf-8', (err, jsonString) => {
+    fs.readFile(configFilePath, 'utf-8', (err, jsonString) => {
       if (err) {
         const { code } = err;
         if (code === 'ENOENT') {
           const data = {};
-          log.info('No config file, create default');
-          fs.writeFile(configFile, JSON.stringify(data, null, 2), () => {
-            resolve(data);
-          });
+          if (createIfMissing) {
+            log.info('No config file, create default');
+            writeConfigFile(configFilePath, data).then(() => {
+              resolve(data);
+            });
+          } else {
+            reject(`File ${configFilePath} is missing`);
+          }
         } else {
-          reject(`Failed to load ${configFile} configuration file`);
+          reject(`Failed to load ${configFilePath} configuration file`);
         }
       } else {
         try {
@@ -50,41 +66,15 @@ const loadConfigFile = (configFile) => {
 
 export const ricochetMiddleware = ({
   secret,
-  storeConfig = {},
-  fileStoreConfig = {},
+  storeBackend,
+  fileStoreBackend,
+  storePrefix,
   disableCache = false,
   setupFunction = 'setup',
   emailConfig = { host: 'fake' },
-  configFile = './site.json',
+  siteConfig,
 } = {}) => {
   const router = express.Router();
-
-  // JSON store backend
-  const storeBackend = getStoreBackend(storeConfig.type, storeConfig);
-  const fileStoreBackend = getFileStoreBackend(fileStoreConfig.type, {
-    url: fileStoreConfig.apiUrl,
-    destination: fileStoreConfig.diskDestination,
-    bucket: fileStoreConfig.s3Bucket,
-    endpoint: fileStoreConfig.s3Endpoint,
-    accessKey: fileStoreConfig.s3AccesKey,
-    secretKey: fileStoreConfig.s3SecretKey,
-    region: fileStoreConfig.s3Region,
-    proxy: fileStoreConfig.s3Proxy,
-    cdn: fileStoreConfig.s3Cdn,
-    signedUrl: fileStoreConfig.s3SignedUrl,
-  });
-
-  const site = {};
-
-  // Read config file
-  loadConfigFile(configFile)
-    .then((data) => {
-      Object.assign(site, data);
-    })
-    .catch((e) => {
-      console.log(e);
-      process.exit(-1);
-    });
 
   // Remote Function map
   const functionsBySite = {};
@@ -96,11 +86,11 @@ export const ricochetMiddleware = ({
   const decryptPayload = (script, siteId) => {
     const data = JSON.parse(script);
 
-    if (!site[siteId]) {
+    if (!siteConfig[siteId]) {
       throw `Site ${siteId} not registered on ricochet.js`;
     }
 
-    const { key } = site[siteId];
+    const { key } = siteConfig[siteId];
     const decrypted = decrypt(data, key);
     return decrypted;
   };
@@ -157,11 +147,11 @@ export const ricochetMiddleware = ({
   const onSendToken = async ({ remote, userEmail, userId, token, req }) => {
     const { siteId, t } = req;
 
-    if (!site[siteId]) {
+    if (!siteConfig[siteId]) {
       throw { error: 'Site not registered', status: 'error' };
     }
 
-    const { name: siteName, emailFrom } = site[siteId];
+    const { name: siteName, emailFrom } = siteConfig[siteId];
 
     log.debug(`Link to connect: ${remote}/login/${userId}/${token}`);
     // if fake host, link is only loggued
@@ -238,7 +228,7 @@ export const ricochetMiddleware = ({
   // JSON store
   router.use(
     store({
-      prefix: storeConfig.prefix,
+      prefix: storePrefix,
       backend: storeBackend,
       fileBackend: fileStoreBackend,
       hooks: (req) => {
@@ -296,10 +286,67 @@ export const ricochetMiddleware = ({
   return router;
 };
 
-export const mainMiddleware = ({ fileStoreConfig = {}, ...rest } = {}) => {
+export const mainMiddleware = ({
+  fileStoreConfig = {},
+  storeConfig = {},
+  configFile = './site.json',
+  ...rest
+} = {}) => {
   const router = express.Router();
 
+  // Store backends
+  const storeBackend = getStoreBackend(storeConfig.type, storeConfig);
+  const fileStoreBackend = getFileStoreBackend(fileStoreConfig.type, {
+    url: fileStoreConfig.apiUrl,
+    destination: fileStoreConfig.diskDestination,
+    bucket: fileStoreConfig.s3Bucket,
+    endpoint: fileStoreConfig.s3Endpoint,
+    accessKey: fileStoreConfig.s3AccesKey,
+    secretKey: fileStoreConfig.s3SecretKey,
+    region: fileStoreConfig.s3Region,
+    proxy: fileStoreConfig.s3Proxy,
+    cdn: fileStoreConfig.s3Cdn,
+    signedUrl: fileStoreConfig.s3SignedUrl,
+  });
+
+  const siteConfig = {};
+  let configLoaded = false;
+
+  const loadSites = async () => {
+    try {
+      const sites = await storeBackend.list('_site');
+      sites.forEach((site) => {
+        siteConfig[site._id] = site;
+      });
+      // Object.assign(siteConfig, sites);
+      console.log(siteConfig);
+      configLoaded = true;
+      console.log('Site config loaded!');
+    } catch (e) {
+      if (e.statusCode === 404 && e.message === 'Box not found') {
+        await storeBackend.createOrUpdateBox('_site');
+        try {
+          // Try to load deprecated config file if any
+          const siteConfigFile = await loadConfigFile(configFile);
+          console.log('Load deprecated config file');
+          Object.entries(siteConfigFile).forEach(async ([id, data]) => {
+            await storeBackend.save('_site', id, data);
+          });
+          await loadSites();
+        } catch (e) {
+          console.log('No deprecated config file. Ignored.', e);
+        }
+      } else {
+        console.log('Error while loading configuration', e);
+        process.exit(-1);
+      }
+    }
+  };
+
+  loadSites();
+
   // File store
+  // TO BE REMOVED
   router.use(
     oldFileStore(fileStoreConfig.type, {
       url: fileStoreConfig.apiUrl,
@@ -315,13 +362,81 @@ export const mainMiddleware = ({ fileStoreConfig = {}, ...rest } = {}) => {
     })
   );
 
+  router.post('/_register/:siteId', async (req, res) => {
+    const { siteId } = req.params;
+    if (configLoaded) {
+      console.log('un', siteConfig);
+      if (siteConfig[siteId]) {
+        // The site already exists
+        res.status(403).json({
+          status: 'error',
+          reason: 'A site with the same name already exists.',
+        });
+      } else {
+        const { name, emailFrom } = req.body;
+        const key = generateKey();
+
+        const newSite = await storeBackend.save('_site', siteId, {
+          name,
+          emailFrom,
+          key,
+        });
+        siteConfig[siteId] = newSite;
+
+        res.json({ ...siteConfig[siteId], status: 'success' });
+      }
+    } else {
+      res.status(503).json({
+        status: 'error',
+        message: 'Server not ready, try again later.',
+      });
+    }
+  });
+
+  router.patch('/_register/:siteId', async (req, res) => {
+    const { siteId } = req.params;
+    if (configLoaded) {
+      if (!siteConfig[siteId]) {
+        // The site doesn't exist
+        res.status(404).json({
+          status: 'error',
+          reason: "Site doesn't exist. Use POST to create it.",
+        });
+      } else {
+        const { name, emailFrom } = req.body;
+        const previous = await storeBackend.get('_site', siteId);
+        const updated = await storeBackend.update('_site', siteId, {
+          ...previous,
+          name,
+          emailFrom,
+        });
+        siteConfig[siteId] = updated;
+        const response = { ...updated };
+        delete response.key;
+        console.log(siteConfig);
+        res.json({ ...response, status: 'success' });
+      }
+    } else {
+      res.status(503).json({
+        status: 'error',
+        message: 'Server not ready, try again later.',
+      });
+    }
+  });
+
   router.use(
     '/:siteId',
     (req, res, next) => {
       req.siteId = req.params.siteId;
       next();
     },
-    ricochetMiddleware({ fileStoreConfig, ...rest })
+    ricochetMiddleware({
+      siteConfig,
+      storePrefix: storeConfig.prefix,
+      storeBackend,
+      fileStoreBackend,
+      ...rest,
+    })
   );
   return router;
 };
