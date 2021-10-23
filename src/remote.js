@@ -2,20 +2,7 @@ import express from 'express';
 import log from './log.js';
 import RemoteCode from './remoteCode.js';
 
-const throwError = (message, code = 400) => {
-  const errorObject = new Error(message);
-  errorObject.statusCode = code;
-  throw errorObject;
-};
-
-const errorGuard = (func) => async (req, res, next) => {
-  try {
-    return await func(req, res, next);
-  } catch (error) {
-    // console.log(error);
-    next(error);
-  }
-};
+import { throwError, errorGuard, errorMiddleware } from './error.js';
 
 const getRemoteFromQuery = ({
   headers: {

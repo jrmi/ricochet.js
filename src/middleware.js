@@ -19,6 +19,7 @@ import execute from './execute.js';
 import auth from './authentication.js';
 
 import { decrypt, generateKey } from './crypt.js';
+import { errorGuard, errorMiddleware, throwError } from './error.js';
 
 const writeConfigFile = (configFilePath, data) => {
   return new Promise((resolve, reject) => {
@@ -286,6 +287,109 @@ export const ricochetMiddleware = ({
   return router;
 };
 
+const configMiddleware = ({ siteConfig, storeBackend, configFile }) => {
+  const router = express.Router();
+
+  let configLoaded = false;
+
+  const loadSites = async () => {
+    try {
+      const sites = await storeBackend.list('_site');
+      sites.forEach((site) => {
+        siteConfig[site._id] = site;
+      });
+      configLoaded = true;
+      console.log('Site config loaded!');
+    } catch (e) {
+      if (e.statusCode === 404 && e.message === 'Box not found') {
+        await storeBackend.createOrUpdateBox('_site');
+        await storeBackend.createOrUpdateBox('_pending');
+        try {
+          // Try to load deprecated config file if any
+          const siteConfigFile = await loadConfigFile(configFile);
+          Object.entries(siteConfigFile).forEach(async ([id, data]) => {
+            await storeBackend.save('_site', id, data);
+          });
+          console.log('Migrate deprecated config file to store.');
+        } catch (e) {
+          console.log('No valid deprecated config file to load.');
+        }
+        await loadSites();
+      } else {
+        console.log('Error while loading configuration', e);
+        process.exit(-1);
+      }
+    }
+  };
+
+  loadSites();
+
+  router.post(
+    '/_register/:siteId',
+    errorGuard(async (req, res) => {
+      const { siteId } = req.params;
+      if (configLoaded) {
+        if (siteConfig[siteId]) {
+          // The site already exists
+          throwError('A site with the same name already exists.', 403);
+        } else {
+          const { name, emailFrom, owner } = req.body;
+          const key = generateKey();
+
+          const newSite = await storeBackend.save('_site', siteId, {
+            name,
+            owner,
+            emailFrom,
+            key,
+          });
+          siteConfig[siteId] = newSite;
+
+          res.json({ ...siteConfig[siteId] });
+        }
+      } else {
+        throwError('Server not ready, try again later.', 503);
+      }
+    })
+  );
+
+  router.patch(
+    '/_register/:siteId',
+    errorGuard(async (req, res) => {
+      const { siteId } = req.params;
+      if (configLoaded) {
+        if (!siteConfig[siteId]) {
+          // The site doesn't exist
+
+          throwError("Site doesn't exist. Use POST query to create it.", 403);
+        } else {
+          const { name, emailFrom } = req.body;
+          const previous = await storeBackend.get('_site', siteId);
+          const updated = await storeBackend.update('_site', siteId, {
+            ...previous,
+            name,
+            emailFrom,
+          });
+          siteConfig[siteId] = updated;
+          const response = { ...updated };
+          delete response.key;
+          res.json({ ...response });
+        }
+      } else {
+        throwError('Server not ready, try again later.', 503);
+      }
+    })
+  );
+
+  router.use((req, res, next) => {
+    req.siteConfig = siteConfig;
+    next();
+  });
+
+  router.use(errorMiddleware);
+
+  return router;
+};
+
 export const mainMiddleware = ({
   fileStoreConfig = {},
   storeConfig = {},
@@ -309,42 +413,6 @@ export const mainMiddleware = ({
     signedUrl: fileStoreConfig.s3SignedUrl,
   });
 
-  const siteConfig = {};
-  let configLoaded = false;
-
-  const loadSites = async () => {
-    try {
-      const sites = await storeBackend.list('_site');
-      sites.forEach((site) => {
-        siteConfig[site._id] = site;
-      });
-      // Object.assign(siteConfig, sites);
-      console.log(siteConfig);
-      configLoaded = true;
-      console.log('Site config loaded!');
-    } catch (e) {
-      if (e.statusCode === 404 && e.message === 'Box not found') {
-        await storeBackend.createOrUpdateBox('_site');
-        try {
-          // Try to load deprecated config file if any
-          const siteConfigFile = await loadConfigFile(configFile);
-          console.log('Load deprecated config file');
-          Object.entries(siteConfigFile).forEach(async ([id, data]) => {
-            await storeBackend.save('_site', id, data);
-          });
-          await loadSites();
-        } catch (e) {
-          console.log('No deprecated config file. Ignored.', e);
-        }
-      } else {
-        console.log('Error while loading configuration', e);
-        process.exit(-1);
-      }
-    }
-  };
-
-  loadSites();
-
   // File store
   // TO BE REMOVED
   router.use(
@@ -362,71 +430,14 @@ export const mainMiddleware = ({
     })
   );
 
-  router.post('/_register/:siteId', async (req, res) => {
-    const { siteId } = req.params;
-    if (configLoaded) {
-      console.log('un', siteConfig);
-      if (siteConfig[siteId]) {
-        // The site already exists
-        res.status(403).json({
-          status: 'error',
-          reason: 'A site with the same name already exists.',
-        });
-      } else {
-        const { name, emailFrom } = req.body;
-        const key = generateKey();
+  const siteConfig = {};
 
-        const newSite = await storeBackend.save('_site', siteId, {
-          name,
-          emailFrom,
-          key,
-        });
-        siteConfig[siteId] = newSite;
-
-        res.json({ ...siteConfig[siteId], status: 'success' });
-      }
-    } else {
-      res.status(503).json({
-        status: 'error',
-        message: 'Server not ready, try again later.',
-      });
-    }
-  });
-
-  router.patch('/_register/:siteId', async (req, res) => {
-    const { siteId } = req.params;
-    if (configLoaded) {
-      if (!siteConfig[siteId]) {
-        // The site doesn't exist
-        res.status(404).json({
-          status: 'error',
-          reason: "Site doesn't exist. Use POST to create it.",
-        });
-      } else {
-        const { name, emailFrom } = req.body;
-        const previous = await storeBackend.get('_site', siteId);
-        const updated = await storeBackend.update('_site', siteId, {
-          ...previous,
-          name,
-          emailFrom,
-        });
-        siteConfig[siteId] = updated;
-        const response = { ...updated };
-        delete response.key;
-        console.log(siteConfig);
-        res.json({ ...response, status: 'success' });
-      }
-    } else {
-      res.status(503).json({
-        status: 'error',
-        message: 'Server not ready, try again later.',
-      });
-    }
-  });
+  router.use(configMiddleware({ siteConfig, configFile, storeBackend }));
 
   router.use(
     '/:siteId',
     (req, res, next) => {
+      console.log('req', req.siteConfig);
       req.siteId = req.params.siteId;
       next();
     },

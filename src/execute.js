@@ -1,19 +1,11 @@
 import express from 'express';
+import { errorGuard } from './error.js';
 
 /* Roadmap
 - Allow to register new site
   - Return public key if no key pair is given
 - Allow to sign code
 */
-
-const errorGuard = (func) => async (req, res, next) => {
-  try {
-    return await func(req, res, next);
-  } catch (error) {
-    console.log(error);
-    next(error);
-  }
-};
 
 // Execute Middleware
 export const exec = ({
