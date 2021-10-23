@@ -1,4 +1,3 @@
-import fs from 'fs';
 import express from 'express';
 import cookieSession from 'cookie-session';
 import nodemailer from 'nodemailer';
@@ -7,6 +6,9 @@ import schedule from 'node-schedule';
 import log from './log.js';
 import oldFileStore from './oldFileStore.js';
 import store from './store.js';
+import site from './site.js';
+
+import { EMAIL_HOST } from './settings.js';
 
 import { getStoreBackend, wrapBackend } from './storeBackends.js';
 import {
@@ -18,52 +20,7 @@ import remote from './remote.js';
 import execute from './execute.js';
 import auth from './authentication.js';
 
-import { decrypt, generateKey } from './crypt.js';
-import { errorGuard, errorMiddleware, throwError } from './error.js';
-
-const writeConfigFile = (configFilePath, data) => {
-  return new Promise((resolve, reject) => {
-    fs.writeFile(configFilePath, JSON.stringify(data, null, 2), (err) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(data);
-      }
-    });
-  });
-};
-
-const loadConfigFile = (configFilePath, createIfMissing = false) => {
-  return new Promise((resolve, reject) => {
-    // Read config file
-    fs.readFile(configFilePath, 'utf-8', (err, jsonString) => {
-      if (err) {
-        const { code } = err;
-        if (code === 'ENOENT') {
-          const data = {};
-          if (createIfMissing) {
-            log.info('No config file, create default');
-            writeConfigFile(configFilePath, data).then(() => {
-              resolve(data);
-            });
-          } else {
-            reject(`File ${configFilePath} is missing`);
-          }
-        } else {
-          reject(`Failed to load ${configFilePath} configuration file`);
-        }
-      } else {
-        try {
-          const data = JSON.parse(jsonString);
-          resolve(data);
-        } catch (e) {
-          console.log('Fails to parse config file...\n', e);
-          reject('Fails to parse config file...');
-        }
-      }
-    });
-  });
-};
+import { decrypt } from './crypt.js';
 
 export const ricochetMiddleware = ({
   secret,
@@ -72,8 +29,7 @@ export const ricochetMiddleware = ({
   storePrefix,
   disableCache = false,
   setupFunction = 'setup',
-  emailConfig = { host: 'fake' },
-  siteConfig,
+  getTransporter,
 } = {}) => {
   const router = express.Router();
 
@@ -84,7 +40,7 @@ export const ricochetMiddleware = ({
   // Hooks map
   const hooksBySite = {};
 
-  const decryptPayload = (script, siteId) => {
+  const decryptPayload = (script, { siteConfig, siteId }) => {
     const data = JSON.parse(script);
 
     if (!siteConfig[siteId]) {
@@ -134,19 +90,8 @@ export const ricochetMiddleware = ({
     })
   );
 
-  let _transporter = null;
-
-  const getTransporter = () => {
-    if (_transporter === null) {
-      _transporter = nodemailer.createTransport({
-        ...emailConfig,
-      });
-    }
-    return _transporter;
-  };
-
   const onSendToken = async ({ remote, userEmail, userId, token, req }) => {
-    const { siteId, t } = req;
+    const { siteConfig, siteId, t } = req;
 
     if (!siteConfig[siteId]) {
       throw { error: 'Site not registered', status: 'error' };
@@ -156,7 +101,7 @@ export const ricochetMiddleware = ({
 
     log.debug(`Link to connect: ${remote}/login/${userId}/${token}`);
     // if fake host, link is only loggued
-    if (emailConfig.host === 'fake') {
+    if (EMAIL_HOST === 'fake') {
       log.info(
         t('Auth mail text message', {
           url: `${remote}/login/${userId}/${token}`,
@@ -164,7 +109,6 @@ export const ricochetMiddleware = ({
           interpolation: { escapeValue: false },
         })
       );
-      return;
     }
 
     await getTransporter().sendMail({
@@ -287,116 +231,33 @@ export const ricochetMiddleware = ({
   return router;
 };
 
-const configMiddleware = ({ siteConfig, storeBackend, configFile }) => {
-  const router = express.Router();
-
-  let configLoaded = false;
-
-  const loadSites = async () => {
-    try {
-      const sites = await storeBackend.list('_site');
-      sites.forEach((site) => {
-        siteConfig[site._id] = site;
-      });
-      configLoaded = true;
-      console.log('Site config loaded!');
-    } catch (e) {
-      if (e.statusCode === 404 && e.message === 'Box not found') {
-        await storeBackend.createOrUpdateBox('_site');
-        await storeBackend.createOrUpdateBox('_pending');
-        try {
-          // Try to load deprecated config file if any
-          const siteConfigFile = await loadConfigFile(configFile);
-          Object.entries(siteConfigFile).forEach(async ([id, data]) => {
-            await storeBackend.save('_site', id, data);
-          });
-          console.log('Migrate deprecated config file to store.');
-        } catch (e) {
-          console.log('No valid deprecated config file to load.');
-        }
-        await loadSites();
-      } else {
-        console.log('Error while loading configuration', e);
-        process.exit(-1);
-      }
-    }
-  };
-
-  loadSites();
-
-  router.post(
-    '/_register/:siteId',
-    errorGuard(async (req, res) => {
-      const { siteId } = req.params;
-      if (configLoaded) {
-        if (siteConfig[siteId]) {
-          // The site already exists
-          throwError('A site with the same name already exists.', 403);
-        } else {
-          const { name, emailFrom, owner } = req.body;
-          const key = generateKey();
-
-          const newSite = await storeBackend.save('_site', siteId, {
-            name,
-            owner,
-            emailFrom,
-            key,
-          });
-          siteConfig[siteId] = newSite;
-
-          res.json({ ...siteConfig[siteId] });
-        }
-      } else {
-        throwError('Server not ready, try again later.', 503);
-      }
-    })
-  );
-
-  router.patch(
-    '/_register/:siteId',
-    errorGuard(async (req, res) => {
-      const { siteId } = req.params;
-      if (configLoaded) {
-        if (!siteConfig[siteId]) {
-          // The site doesn't exist
-
-          throwError("Site doesn't exist. Use POST query to create it.", 403);
-        } else {
-          const { name, emailFrom } = req.body;
-          const previous = await storeBackend.get('_site', siteId);
-          const updated = await storeBackend.update('_site', siteId, {
-            ...previous,
-            name,
-            emailFrom,
-          });
-          siteConfig[siteId] = updated;
-          const response = { ...updated };
-          delete response.key;
-          res.json({ ...response });
-        }
-      } else {
-        throwError('Server not ready, try again later.', 503);
-      }
-    })
-  );
-
-  router.use((req, res, next) => {
-    req.siteConfig = siteConfig;
-    next();
-  });
-
-  router.use(errorMiddleware);
-
-  return router;
-};
-
 export const mainMiddleware = ({
   fileStoreConfig = {},
   storeConfig = {},
   configFile = './site.json',
+  emailConfig = { host: 'fake' },
   ...rest
 } = {}) => {
   const router = express.Router();
+
+  let _transporter = null;
+
+  const getTransporter = () => {
+    const transportConfig =
+      emailConfig.host === 'fake'
+        ? {
+            streamTransport: true,
+            newline: 'unix',
+            buffer: true,
+          }
+        : emailConfig;
+    if (_transporter === null) {
+      _transporter = nodemailer.createTransport({
+        ...transportConfig,
+      });
+    }
+    return _transporter;
+  };
 
   // Store backends
   const storeBackend = getStoreBackend(storeConfig.type, storeConfig);
@@ -430,22 +291,19 @@ export const mainMiddleware = ({
     })
   );
 
-  const siteConfig = {};
-
-  router.use(configMiddleware({ siteConfig, configFile, storeBackend }));
+  router.use(site({ configFile, storeBackend, getTransporter }));
 
   router.use(
     '/:siteId',
     (req, res, next) => {
-      console.log('req', req.siteConfig);
       req.siteId = req.params.siteId;
       next();
     },
     ricochetMiddleware({
-      siteConfig,
       storePrefix: storeConfig.prefix,
       storeBackend,
       fileStoreBackend,
+      getTransporter,
       ...rest,
     })
   );

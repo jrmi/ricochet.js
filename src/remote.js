@@ -2,7 +2,7 @@ import express from 'express';
 import log from './log.js';
 import RemoteCode from './remoteCode.js';
 
-import { throwError, errorGuard, errorMiddleware } from './error.js';
+import { throwError, errorGuard } from './error.js';
 
 const getRemoteFromQuery = ({
   headers: {
@@ -59,7 +59,7 @@ export const remote = ({
             contextAddition = context(req);
           }
 
-          await remoteCode.exec(req.siteId, remote, setupFunction, {
+          await remoteCode.exec(req, remote, setupFunction, {
             ...contextAddition,
           });
 
