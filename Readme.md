@@ -48,51 +48,13 @@ Finally you can *schedule* hourly or daily actions.
 
 ## Start the server
 
-First, you need to generate an encryption key:
-
-```sh
-# If ricochet is installed globally
-ricochet --generate-key
-# or with npx
-npx ricochet-js --generate-key
-# Should show...
-# Key : <your key is displayed here>
-```
-
-This key is used to encrypt your server side code hosted alongside with your
-frontend code so keep it for later and keep it secret.
-
-Then, in your project folder, create a `site.json` file. This file should
-contains a configuration for each site you want to manage with ricochet-js.
-
-Here's an example:
-
-```json
-{
-  "siteId": {
-    "name": "My example site",
-    "key": "<--Put generated private key here. See below-->",
-    "emailFrom": "\"Fake mail\" <fake@example.com>"
-  }
-}
-```
-
-Where `siteId` is the site identifier and will be used as url prefix for
-each later API call.
-
-`Name` is used in some email templates.
-
-`key` is the site secret key previously generated.
-
-`emailFrom` is the address displayed in the "from" field of sent emails.
-
-Then, to launch a ricochet-js server, you can use npx:
+You can start a Ricochet-js server by using npx:
 
 ```sh
 npx ricochet-js
 ```
 
-Or install it globally and launch it:
+Or install Ricochet-js globally and launch the server:
 
 ```sh
 npm install -g ricochet-js
@@ -100,12 +62,41 @@ npm install -g ricochet-js
 ricochet
 ```
 
-By default, data are stored in memory so if you restart the server, all data
-will be lost. The default configuration is for development purpose only.
-See [server configuration](#server-configuration) for more customization.
+By default, data are *stored in memory* so if you restart the server, all data
+are lost. The default configuration is for *development purpose only*.
+See [server configuration](#server-configuration) for more customization and how
+to use persistent stores.
 
-Now the server is running so you can follow the next steps to create a new site
-project.
+Now the server is running so you can create a new ricochet *site*. To do it,
+you can use the Rest API with curl:
+
+```sh
+curl --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"name":"Example site","emailFrom":"no-reply@example.com", "owner": "owner@example.com"}' \
+  http://localhost:4050/_register/exampleSite
+
+# response sample
+# {"name":"Example site","owner":"owner@example.com","emailFrom":"no-reply@example.com","key":"secretkeytokeepforlaterxxxxxxxxxxx=","_id":"exampleSite", ...}
+```
+
+More details on the content of the json you've just sent:
+
+- `Name` is used in some email templates.
+- `emailFrom` is the address displayed in the "from" field of sent emails.
+- `owner` confirmation email are sent to this email address for creation and
+  modification of the site.
+
+From the response you **MUST** save the `key` property value, this key is used to encrypt
+your server side code hosted alongside with your frontend code.
+This is the **ONLY** chance to get it so keep it for later and **keep it secret**.
+
+In the meantime you should have received a mail with a link you must visit
+to confirm the site creation. This is a security measure to prevent abuse. Click
+the link to validate the *site* creation.
+
+Now, your server is ready and a site exists. You can follow the next steps to create
+a new site project.
 
 ## Initialize your project
 
@@ -347,13 +338,46 @@ You frontend should handle this url and extract the `userId` and the `token` to 
 
 The `token` is valid during 1 hour.
 
-#### Post on /:siteId/auth/verify/:userId/:token
+### POST on /:siteId/auth/verify/:userId/:token
 
 Allow the client to verify the token and authenticate against the service.
 
-#### Get on /:siteId/auth/check
+### GET on /:siteId/auth/check
 
 Allow the client to verify if a user is authenticated. Returns `403` http code if not authenticated.
+
+### POST on /_register/:siteId
+
+To register new site. A mail is send each time you want to create a website to confirm the creation.
+
+The json content should look like this:
+
+```json
+{
+  "name": "Name displayed in mail",
+  "owner": "owner email address for security, confirmation mails are send here",
+  "emailFrom": "email address displayed in email sent for this site"
+}
+```
+
+In the response you'll get an extra `key` property. You MUST save it for later use.
+This is the ONLY chance to get it. This is the encryption key you need to crypt
+your `setup.js` file.
+
+### PATCH on /_register/:siteId
+
+To update a site configuration. To confirm the modification, a mail is send to the site owner.
+
+The json content should look like this:
+
+```json
+{
+  "name": "Name displayed in mail",
+  "emailFrom": "email address displayed in email sent for this site"
+}
+```
+
+You can't modify owner email (yet?).
 
 ## Server configuration
 
@@ -364,6 +388,7 @@ You can configure your instance by settings environment variables or using
  | --------------- | ------------------------------------------------------------------------------------------ | ------------- |
  | SERVER_PORT     | Server listen on this port.                                                                | 4000          |
  | SERVER_HOST     | '0.0.0.0' to listen from all interfaces                                                    | 127.0.0.1     |
+ | SERVER_NAME     | Server name displayed on mail for example                                                  | Ricochet-js   |
  | FILE_STORAGE    | Configure file store type. Allowed values: 'memory', 'disk', 's3'                          | memory        |
  | STORE_BACKEND   | Configure JSON store provider. Allowed values: 'memory', 'nedb', 'mongodb'                 | memory        |
  | RICOCHET_SECRET | Secret to hash password and  cookie. Keep it safe.                                         |               |
