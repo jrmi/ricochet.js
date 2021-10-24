@@ -114,6 +114,41 @@ describe('Site endpoint tests', () => {
       .expect(403);
   });
 
+  it('should not create a site with bad characters', async () => {
+    await query
+      .post('/_register/toto4+')
+      .send({
+        owner: 'test@yopmail',
+        name: 'Site test',
+        emailFrom: 'from@ricochet.net',
+      })
+      .expect(400);
+    await query
+      .post('/_register/toto4é')
+      .send({
+        owner: 'test@yopmail',
+        name: 'Site test',
+        emailFrom: 'from@ricochet.net',
+      })
+      .expect(400);
+    await query
+      .post('/_register/_toto4')
+      .send({
+        owner: 'test@yopmail',
+        name: 'Site test',
+        emailFrom: 'from@ricochet.net',
+      })
+      .expect(400);
+    await query
+      .post('/_register/toto-titi')
+      .send({
+        owner: 'test@yopmail',
+        name: 'Site test',
+        emailFrom: 'from@ricochet.net',
+      })
+      .expect(400);
+  });
+
   it('should not update a missing site', async () => {
     await query
       .patch('/_register/mytestsite')

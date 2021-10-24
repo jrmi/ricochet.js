@@ -148,8 +148,9 @@ const siteMiddleware = ({
       if (pending.token === token) {
         const toSave = { ...(previous || {}), ...pending };
         delete toSave.token;
-        await storeBackend.save('_site', siteId, toSave);
+        const saved = await storeBackend.save('_site', siteId, toSave);
         await storeBackend.delete('_pending', siteId);
+        siteConfig[siteId] = { ...saved, key: undefined };
       } else {
         // Token can be invalid if another modification is sent in the meantime
         // or if the token is already consumed.
@@ -170,6 +171,10 @@ const siteMiddleware = ({
     '/_register/:siteId',
     errorGuard(async (req, res) => {
       const { siteId } = req.params;
+
+      if (!siteId.match(/^[a-zA-Z0-9][a-zA-Z0-9_]*$/)) {
+        throwError('The site id must only contains characters.', 400);
+      }
 
       if (siteConfig[siteId]) {
         // The site already exists
@@ -209,6 +214,7 @@ const siteMiddleware = ({
     '/_register/:siteId',
     errorGuard(async (req, res) => {
       const { siteId } = req.params;
+
       if (!siteConfig[siteId]) {
         // The site doesn't exist
         throwError("Site doesn't exist. Use POST query to create it.", 403);

@@ -2,6 +2,10 @@
   "Auth mail html message": "<p>Hello,<p>\n\n<p>Here is the link that allows you to log in to {{siteName}}:</p>\n\n<a ref=\"{url}\">{{url}}</a>\n\n<p>Please click on the link or copy and paste it into your browser.</p>\n\n<p>Yours sincerely,</p>\n\n<p>{{siteName}} team.</p>",
   "Auth mail text message": "Hello,\n\nHere is the link that allows you to log in {{siteName}}:\n\n{{url}}\n\nPlease copy and paste it into your browser.\n\nYours sincerely,\n\n{{siteName}} team.",
   "Your authentication link": "[{{siteName}}] Your authentication link",
-  "Site creation text message": "{{url}} {{siteId}}",
-  "Site update text message": "{{url}} {{siteId}}"
+  "Please confirm site creation": "Confirm site creation",
+  "Site creation text message": "Hello,\n\ndo you agree to create the site \"{{siteId}}\" on {{siteName}}? Click or copy/paste into your browser the following link to confirm your action:\n\n{{url}}\n\nYours sincerely,\n\n{{siteName}} team.",
+  "Site creation html message": "<p>Hello,<p>\n\n<p>do you agree to create the site \"{{siteId}}\" on {{siteName}}? Click or copy/paste into your browser the following link to confirm your action:</p>\n\n<a ref=\"{url}\">{{url}}</a>\n\n<p>Yours sincerely,</p>\n\n<p>{{siteName}} team.</p>",
+  "Please confirm site update": "Confirm site update",
+  "Site update text message": "Hello,\n\ndo you agree to update the site \"{{siteId}}\" on {{siteName}}? Click or copy/paste into your browser the following link to confirm your action:\n\n{{url}}\n\nYours sincerely,\n\n{{siteName}} team.",
+  "Site update html message": "<p>Hello,<p>\n\n<p>do you agree to update the site \"{{siteId}}\" on {{siteName}}? Click or copy/paste into your browser the following link to confirm your action:</p>\n\n<a ref=\"{url}\">{{url}}</a>\n\n<p>Yours sincerely,</p>\n\n<p>{{siteName}} team.</p>"
 }

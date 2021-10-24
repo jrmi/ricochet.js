@@ -9,7 +9,7 @@ import store from './store.js';
 import site from './site.js';
 import origin from './origin.js';
 
-import { EMAIL_HOST, SERVER_URL } from './settings.js';
+import { EMAIL_HOST, SERVER_NAME, SERVER_FROM } from './settings.js';
 
 import { getStoreBackend, wrapBackend } from './storeBackends.js';
 import {
@@ -297,36 +297,62 @@ export const mainMiddleware = ({
     const { t } = req;
     const confirmURL = `${serverUrl}${confirmPath}`;
 
+    if (EMAIL_HOST === 'fake') {
+      log.info(
+        t('Site creation text message', {
+          url: confirmURL,
+          siteId: site._id,
+          siteName: SERVER_NAME,
+          interpolation: { escapeValue: false },
+        })
+      );
+    }
+
     await getTransporter().sendMail({
-      from: 'Ricochet', //TODO
+      from: SERVER_FROM,
       to: site.owner,
       subject: t('Please confirm site creation'),
       text: t('Site creation text message', {
         url: confirmURL,
         siteId: site._id,
+        siteName: SERVER_NAME,
       }),
       html: t('Site creation html message', {
         url: confirmURL,
         siteId: site._id,
+        siteName: SERVER_NAME,
       }),
     });
   };
 
-  const onSiteUpdate = async ({ req, site, confirmPath }) => {
+  const onSiteUpdate = async ({ req, previous, confirmPath }) => {
     const { t } = req;
     const confirmURL = `${serverUrl}${confirmPath}`;
 
+    if (EMAIL_HOST === 'fake') {
+      log.info(
+        t('Site update text message', {
+          url: confirmURL,
+          siteId: previous._id,
+          siteName: SERVER_NAME,
+          interpolation: { escapeValue: false },
+        })
+      );
+    }
+
     await getTransporter().sendMail({
-      from: 'Ricochet', //TODO
-      to: site.owner,
-      subject: t('Please confirm site creation'),
+      from: SERVER_FROM,
+      to: previous.owner,
+      subject: t('Please confirm site update'),
       text: t('Site update text message', {
         url: confirmURL,
-        siteId: site._id,
+        siteId: previous._id,
+        siteName: SERVER_NAME,
       }),
       html: t('Site update html message', {
         url: confirmURL,
-        siteId: site._id,
+        siteId: previous._id,
+        siteName: SERVER_NAME,
       }),
     });
   };
