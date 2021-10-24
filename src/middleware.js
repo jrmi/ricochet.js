@@ -9,8 +9,6 @@ import store from './store.js';
 import site from './site.js';
 import origin from './origin.js';
 
-import { EMAIL_HOST, SERVER_NAME, SERVER_FROM } from './settings.js';
-
 import { getStoreBackend, wrapBackend } from './storeBackends.js';
 import {
   getFileStoreBackend,
@@ -25,6 +23,7 @@ import { decrypt } from './crypt.js';
 
 export const ricochetMiddleware = ({
   secret,
+  fakeEmail = false,
   storeBackend,
   fileStoreBackend,
   storePrefix,
@@ -102,7 +101,7 @@ export const ricochetMiddleware = ({
 
     log.debug(`Link to connect: ${remote}/login/${userId}/${token}`);
     // if fake host, link is only loggued
-    if (EMAIL_HOST === 'fake') {
+    if (fakeEmail) {
       log.info(
         t('Auth mail text message', {
           url: `${remote}/login/${userId}/${token}`,
@@ -234,6 +233,7 @@ export const ricochetMiddleware = ({
 
 export const mainMiddleware = ({
   serverUrl,
+  serverName,
   fileStoreConfig = {},
   storeConfig = {},
   configFile = './site.json',
@@ -241,6 +241,7 @@ export const mainMiddleware = ({
   ...rest
 } = {}) => {
   const router = express.Router();
+  const fakeEmail = emailConfig.host === 'fake';
 
   let _transporter = null;
 
@@ -297,30 +298,30 @@ export const mainMiddleware = ({
     const { t } = req;
     const confirmURL = `${serverUrl}${confirmPath}`;
 
-    if (EMAIL_HOST === 'fake') {
+    if (fakeEmail) {
       log.info(
         t('Site creation text message', {
           url: confirmURL,
           siteId: site._id,
-          siteName: SERVER_NAME,
+          siteName: serverName,
           interpolation: { escapeValue: false },
         })
       );
     }
 
     await getTransporter().sendMail({
-      from: SERVER_FROM,
+      from: emailConfig.from,
       to: site.owner,
       subject: t('Please confirm site creation'),
       text: t('Site creation text message', {
         url: confirmURL,
         siteId: site._id,
-        siteName: SERVER_NAME,
+        siteName: serverName,
       }),
       html: t('Site creation html message', {
         url: confirmURL,
         siteId: site._id,
-        siteName: SERVER_NAME,
+        siteName: serverName,
       }),
     });
   };
@@ -329,30 +330,30 @@ export const mainMiddleware = ({
     const { t } = req;
     const confirmURL = `${serverUrl}${confirmPath}`;
 
-    if (EMAIL_HOST === 'fake') {
+    if (fakeEmail) {
       log.info(
         t('Site update text message', {
           url: confirmURL,
           siteId: previous._id,
-          siteName: SERVER_NAME,
+          siteName: serverName,
           interpolation: { escapeValue: false },
         })
       );
     }
 
     await getTransporter().sendMail({
-      from: SERVER_FROM,
+      from: emailConfig.from,
       to: previous.owner,
       subject: t('Please confirm site update'),
       text: t('Site update text message', {
         url: confirmURL,
         siteId: previous._id,
-        siteName: SERVER_NAME,
+        siteName: serverName,
       }),
       html: t('Site update html message', {
         url: confirmURL,
         siteId: previous._id,
-        siteName: SERVER_NAME,
+        siteName: serverName,
       }),
     });
   };
@@ -367,6 +368,7 @@ export const mainMiddleware = ({
     },
     origin(),
     ricochetMiddleware({
+      fakeEmail,
       storePrefix: storeConfig.prefix,
       storeBackend,
       fileStoreBackend,

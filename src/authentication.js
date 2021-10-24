@@ -90,7 +90,6 @@ export const authentication = ({
             res.json({ message: 'Token sent' });
           },
           (e) => {
-            console.log(e);
             log.error({ error: e }, 'Error while sending email');
             const errorObject = new Error(e);
             errorObject.statusCode = 503;
