@@ -7,8 +7,9 @@ import log from './log.js';
 import oldFileStore from './oldFileStore.js';
 import store from './store.js';
 import site from './site.js';
+import origin from './origin.js';
 
-import { EMAIL_HOST } from './settings.js';
+import { EMAIL_HOST, SERVER_URL } from './settings.js';
 
 import { getStoreBackend, wrapBackend } from './storeBackends.js';
 import {
@@ -232,6 +233,7 @@ export const ricochetMiddleware = ({
 };
 
 export const mainMiddleware = ({
+  serverUrl,
   fileStoreConfig = {},
   storeConfig = {},
   configFile = './site.json',
@@ -291,7 +293,45 @@ export const mainMiddleware = ({
     })
   );
 
-  router.use(site({ configFile, storeBackend, getTransporter }));
+  const onSiteCreation = async ({ req, site, confirmPath }) => {
+    const { t } = req;
+    const confirmURL = `${serverUrl}${confirmPath}`;
+
+    await getTransporter().sendMail({
+      from: 'Ricochet', //TODO
+      to: site.owner,
+      subject: t('Please confirm site creation'),
+      text: t('Site creation text message', {
+        url: confirmURL,
+        siteId: site._id,
+      }),
+      html: t('Site creation html message', {
+        url: confirmURL,
+        siteId: site._id,
+      }),
+    });
+  };
+
+  const onSiteUpdate = async ({ req, site, confirmPath }) => {
+    const { t } = req;
+    const confirmURL = `${serverUrl}${confirmPath}`;
+
+    await getTransporter().sendMail({
+      from: 'Ricochet', //TODO
+      to: site.owner,
+      subject: t('Please confirm site creation'),
+      text: t('Site update text message', {
+        url: confirmURL,
+        siteId: site._id,
+      }),
+      html: t('Site update html message', {
+        url: confirmURL,
+        siteId: site._id,
+      }),
+    });
+  };
+
+  router.use(site({ configFile, storeBackend, onSiteCreation, onSiteUpdate }));
 
   router.use(
     '/:siteId',
@@ -299,6 +339,7 @@ export const mainMiddleware = ({
       req.siteId = req.params.siteId;
       next();
     },
+    origin(),
     ricochetMiddleware({
       storePrefix: storeConfig.prefix,
       storeBackend,

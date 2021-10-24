@@ -250,8 +250,6 @@ following methods:
 | limit      | Limit result count.          | 50      |
 | onlyFields | Limit result to this fields. | []      |
 
-**store.create(boxId, data)**: Create new resource in this box with given data.
-
 **store.save(boxId, id, data)**: Create or update the given id resource with given data.
 
 **store.update(boxId, id, data)**: Update the resource. Fails if not existing.

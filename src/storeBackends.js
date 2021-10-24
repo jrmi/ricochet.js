@@ -73,13 +73,15 @@ export const wrapBackend = (backend, siteId, userId) => {
       return result;
     },
     async list(boxId, options) {
+      // find
       return await backend.list(getBoxId(boxId), options);
     },
+    // has
     async get(boxId, id) {
       return await backend.get(getBoxId(boxId), id);
     },
-    async create(boxId, data) {
-      return await backend.create(getBoxId(boxId), data);
+    async set(boxId, id, data) {
+      return await backend.save(getBoxId(boxId), id, data);
     },
     async save(boxId, id, data) {
       return await backend.save(getBoxId(boxId), id, data);

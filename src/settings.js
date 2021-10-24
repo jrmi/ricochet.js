@@ -6,6 +6,8 @@ dotenv.config();
 export const PORT = process.env.SERVER_PORT || process.env.PORT || 4000;
 export const HOST = process.env.SERVER_HOST || 'localhost';
 
+export const SERVER_URL = process.env.SERVER_URL || `http://${HOST}:${PORT}`;
+
 export const SOCKET_PATH =
   process.env.SOCKET_PATH || process.env.REACT_APP_SOCKET_PATH || '/socket.io';
 

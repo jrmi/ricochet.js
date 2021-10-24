@@ -4,15 +4,6 @@ import RemoteCode from './remoteCode.js';
 
 import { throwError, errorGuard } from './error.js';
 
-const getRemoteFromQuery = ({
-  headers: {
-    'x-spc-host': spcHost = '',
-    'x-ricochet-origin': ricochetOrigin,
-    origin,
-    referer,
-  },
-}) => ricochetOrigin || (referer ? new URL(referer).origin : origin || spcHost);
-
 // Remote setup Middleware
 export const remote = ({
   setupFunction = 'setup.js',
@@ -34,18 +25,8 @@ export const remote = ({
     errorGuard(async (req, res, next) => {
       const {
         query: { clearCache },
+        ricochetOrigin: remote,
       } = req;
-
-      const remote = getRemoteFromQuery(req);
-
-      if (!remote) {
-        throwError(
-          'One of X-Ricochet-Origin, Origin, Referer header is required',
-          400
-        );
-      }
-
-      req.ricochetOrigin = remote;
 
       if (clearCache) {
         remoteCode.clearCache(remote);

@@ -15,6 +15,7 @@ import fs from 'fs';
 
 import {
   PORT,
+  SERVER_URL,
   FILE_STORE_TYPE,
   DISK_DESTINATION,
   S3_SECRET_KEY,
@@ -95,6 +96,7 @@ const startServer = () => {
   app.use(
     middleware({
       secret: SECRET,
+      serverUrl: SERVER_URL,
       storeConfig: {
         type: STORE_BACKEND,
         prefix: STORE_PREFIX,
