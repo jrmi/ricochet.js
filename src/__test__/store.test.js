@@ -8,9 +8,10 @@ import { MemoryFileBackend } from '../fileStoreBackend';
 jest.mock('nanoid', () => {
   let count = 0;
   return {
-    nanoid: jest.fn(() => {
-      return 'nanoid_' + count++;
-    }),
+    customAlphabet: () =>
+      jest.fn(() => {
+        return 'nanoid_' + count++;
+      }),
   };
 });
 

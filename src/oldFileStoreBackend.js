@@ -2,10 +2,10 @@ import aws from 'aws-sdk';
 import multer from 'multer';
 import multerS3 from 'multer-s3';
 import mime from 'mime-types';
-import { nanoid } from 'nanoid';
 import path from 'path';
 import fs from 'fs';
 import { Duplex } from 'stream';
+import { uid } from './uid.js';
 
 const bufferToStream = (buffer) => {
   let stream = new Duplex();
@@ -28,7 +28,7 @@ export const MemoryFileBackend = () => {
 
     async store(namespace, file) {
       const ext = mime.extension(file.mimetype);
-      const filename = `${nanoid()}.${ext}`;
+      const filename = `${uid()}.${ext}`;
 
       file.filename = filename;
 
@@ -78,7 +78,7 @@ export const DiskFileBackend = ({ destination, pathFromReq }) => {
     },
     filename: (req, file, cb) => {
       const ext = mime.extension(file.mimetype);
-      const filename = `${nanoid()}.${ext}`;
+      const filename = `${uid()}.${ext}`;
       cb(null, filename);
     },
   });
@@ -168,7 +168,7 @@ export const S3FileBackend = ({
         const namespace = pathFromReq(req);
 
         const ext = mime.extension(file.mimetype);
-        const filename = `${nanoid()}.${ext}`;
+        const filename = `${uid()}.${ext}`;
         // Add filname to file
         file.filename = filename;
         cb(null, `${namespace}/${filename}`);

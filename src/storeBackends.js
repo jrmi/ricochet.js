@@ -1,6 +1,7 @@
-import { nanoid } from 'nanoid';
 import Datastore from 'nedb';
 import { MongoClient } from 'mongodb';
+
+import { uid } from './uid.js';
 import log from './log.js';
 
 const throwError = (message, code = 400) => {
@@ -195,7 +196,7 @@ export const memoryBackend = () => {
       delete cleanedData._createdOn;
       delete cleanedData._modifiedOn;
 
-      const actualId = id || nanoid();
+      const actualId = id || uid();
       const box = dataMemoryStore[boxId];
 
       let newRessource = null;
@@ -384,7 +385,7 @@ export const NeDBBackend = (options) => {
       }
 
       const boxDB = getBoxDB(boxId);
-      const actualId = id || nanoid();
+      const actualId = id || uid();
 
       const cleanedData = data;
       delete cleanedData._createdOn;
@@ -603,7 +604,7 @@ export const MongoDBBackend = (options) => {
       }
 
       const boxDB = await getBoxDb(boxId);
-      const actualId = id || nanoid();
+      const actualId = id || uid();
 
       const cleanedData = data;
       delete cleanedData._createdOn;

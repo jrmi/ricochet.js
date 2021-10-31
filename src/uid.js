@@ -6,7 +6,7 @@ const alpha = '23456789ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz';
 export const longUid = customAlphabet(alpha, 40);
 
 // Custom uid generator
-export const uid = customAlphabet(alpha, 10);
+export const uid = customAlphabet(alpha, 15);
 
 // Custom small uid generator
 export const smallUid = customAlphabet(alpha, 5);

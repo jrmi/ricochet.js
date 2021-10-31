@@ -10,9 +10,10 @@ import { S3_ACCESS_KEY, S3_SECRET_KEY, S3_ENDPOINT } from '../settings';
 jest.mock('nanoid', () => {
   let count = 0;
   return {
-    nanoid: jest.fn(() => {
-      return 'nanoid_' + count++;
-    }),
+    customAlphabet: () =>
+      jest.fn(() => {
+        return 'nanoid_' + count++;
+      }),
   };
 });
 
