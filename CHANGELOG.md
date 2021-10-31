@@ -1,4 +1,10 @@
 
+1.0.0 / 2021-10-31
+==================
+
+  * Rename package
+  * Add endpoints to create/update site configuration (#40)
+
 0.10.1 / 2021-09-16
 ===================
 
