@@ -1,7 +1,9 @@
-src/__test__
-.env
-node_modules/
-coverage/
-server.log
-site.json
-dist/
+/*
+
+!/dist
+# !/src
+!package.json
+!/Readme.md
+!/CHANGELOG.md
+
+/src/__test__
