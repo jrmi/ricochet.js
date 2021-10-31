@@ -33,7 +33,7 @@ class RemoteCode {
    * @param {string} scriptName script name.
    * @param {string} extraCommands to be concatened at the end of script.
    */
-  async cacheOrFetch(siteId, remote, scriptName, extraCommands = '') {
+  async cacheOrFetch(req, remote, scriptName, extraCommands = '') {
     if (!this.scriptCache.has(remote)) {
       this.scriptCache.set(remote, new NodeCache(this.cacheConfig));
     }
@@ -60,7 +60,7 @@ class RemoteCode {
             });
             resp.on('end', () => {
               try {
-                script = this.preProcess.bind(this)(script, siteId);
+                script = this.preProcess.bind(this)(script, req);
               } catch (e) {
                 reject({ status: 'error', error: e });
               }
@@ -84,9 +84,9 @@ class RemoteCode {
     }
   }
 
-  async exec(siteId, remote, scriptName, context) {
+  async exec(req, remote, scriptName, context) {
     try {
-      const toRun = await this.cacheOrFetch(siteId, remote, scriptName);
+      const toRun = await this.cacheOrFetch(req, remote, scriptName);
 
       return toRun({ ...context });
     } catch (e) {

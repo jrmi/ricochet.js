@@ -1,5 +1,11 @@
 {
   "Auth mail html message": "<p>Bonjour,<p>\n\n<p>Voici le lien qui vous permet de vous connecter à {{siteName}} :</p>\n\n<a href=\"{{url}}\">{{url}}</a>\n\n<p>Cliquez sur le lien ou copiez et collez le dans votre navigateur.</p>\n\n<p>Cordialement,</p>\n\n\n<p>L'équipe de {{siteName}}.</p>",
   "Auth mail text message": "Bonjour,\n\nVoici le lien qui vous permet de vous connecter à {{siteName}} :\n\n{{url}}\n\nVeuillez le copier-coller dans votre navigateur.\n\nCordialement,\n\nL'équipe de {{siteName}}.",
-  "Your authentication link": "[{{siteName}}] Votre lien d'authentification"
+  "Your authentication link": "[{{siteName}}] Votre lien d'authentification",
+  "Please confirm site creation": "Confirmation de création d'un site",
+  "Site creation text message": "Bonjour,\n\nÊtes-vous d'accord pour créer le site « {{siteId}} » sur {{siteName}} ? Copiez-collez dans votre navigateur pour confirmer votre action :\n\n{{url}}\n\nCordialement,\n\nL'équipe de {{siteName}}.",
+  "Site creation html message": "<p>Bonjour,<p>\n\n<p>Êtes-vous d'accord pour créer le site « {{siteId}} » sur {{siteName}} ? Cliquez ou copiez/collez le lien suivant dans votre navigateur afin de confirmer votre action :</p>\n\n<a href=\"{{url}}\">{{url}}</a>\n\n<p>Cordialement,</p>\n\n\n<p>L'équipe de {{siteName}}.</p>",
+  "Please confirm site update": "Confirmation de mise à jour d'un site",
+  "Site update text message": "Bonjour,\n\nÊtes-vous d'accord pour mettre à jour la configuration du site « {{siteId}} » sur {{siteName}} ? Copiez-collez dans votre navigateur pour confirmer votre action :\n\n{{url}}\n\nCordialement,\n\nL'équipe de {{siteName}}.",
+  "Site update html message": "<p>Bonjour,<p>\n\n<p>Êtes-vous d'accord pour mettre à jour la configuration du site « {{siteId}} » {{siteName}} ? Cliquez ou copiez/collez le lien suivant dans votre navigateur afin de confirmer votre action :</p>\n\n<a href=\"{{url}}\">{{url}}</a>\n\n<p>Cordialement,</p>\n\n\n<p>L'équipe de {{siteName}}.</p>"
 }

@@ -2,29 +2,7 @@ import express from 'express';
 import log from './log.js';
 import RemoteCode from './remoteCode.js';
 
-const throwError = (message, code = 400) => {
-  const errorObject = new Error(message);
-  errorObject.statusCode = code;
-  throw errorObject;
-};
-
-const errorGuard = (func) => async (req, res, next) => {
-  try {
-    return await func(req, res, next);
-  } catch (error) {
-    // console.log(error);
-    next(error);
-  }
-};
-
-const getRemoteFromQuery = ({
-  headers: {
-    'x-spc-host': spcHost = '',
-    'x-ricochet-origin': ricochetOrigin,
-    origin,
-    referer,
-  },
-}) => ricochetOrigin || (referer ? new URL(referer).origin : origin || spcHost);
+import { throwError, errorGuard } from './error.js';
 
 // Remote setup Middleware
 export const remote = ({
@@ -47,18 +25,8 @@ export const remote = ({
     errorGuard(async (req, res, next) => {
       const {
         query: { clearCache },
+        ricochetOrigin: remote,
       } = req;
-
-      const remote = getRemoteFromQuery(req);
-
-      if (!remote) {
-        throwError(
-          'One of X-Ricochet-Origin, Origin, Referer header is required',
-          400
-        );
-      }
-
-      req.ricochetOrigin = remote;
 
       if (clearCache) {
         remoteCode.clearCache(remote);
@@ -72,7 +40,7 @@ export const remote = ({
             contextAddition = context(req);
           }
 
-          await remoteCode.exec(req.siteId, remote, setupFunction, {
+          await remoteCode.exec(req, remote, setupFunction, {
             ...contextAddition,
           });
 

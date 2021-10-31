@@ -1,6 +1,7 @@
 import request from 'supertest';
 import express from 'express';
 import remote from '../remote';
+import origin from '../origin';
 
 describe('Remote Test', () => {
   let app;
@@ -14,6 +15,7 @@ describe('Remote Test', () => {
         req.siteId = 'mysiteid';
         next();
       },
+      origin(),
       remote({
         setupFunction: 'scripts/mysetup',
         context: { content: {} },
@@ -39,6 +41,10 @@ describe('Remote Test', () => {
     app = express();
     app.use(express.json());
     app.use(
+      (req, _, next) => {
+        req.ricochetOrigin = 'http://localhost:5000';
+        next();
+      },
       remote({
         setupFunction: 'scripts/bad',
       })

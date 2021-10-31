@@ -2,6 +2,7 @@ import express from 'express';
 import { memoryBackend, wrapBackend } from './storeBackends.js';
 import { MemoryFileBackend } from './fileStoreBackend.js';
 import fileStore from './fileStore';
+import { throwError, errorGuard, errorMiddleware } from './error.js';
 
 // Utility functions
 
@@ -14,21 +15,6 @@ import fileStore from './fileStore';
 //   - Read / Write
 //   - Read only
 //   - No access (only from execute)
-
-const throwError = (message, code = 400) => {
-  const errorObject = new Error(message);
-  errorObject.statusCode = code;
-  throw errorObject;
-};
-
-const errorGuard = (func) => async (req, res, next) => {
-  try {
-    return await func(req, res, next);
-  } catch (error) {
-    //console.log(error);
-    next(error);
-  }
-};
 
 const SAFE_METHOD = ['GET', 'OPTIONS', 'HEAD'];
 
@@ -344,12 +330,7 @@ export const store = ({
     })
   );
 
-  // Middleware to handle errors
-  // eslint-disable-next-line no-unused-vars
-  router.use((err, req, res, _next) => {
-    //console.error(err);
-    res.status(err.statusCode || 500).json({ message: err.message });
-  });
+  router.use(errorMiddleware);
 
   return router;
 };

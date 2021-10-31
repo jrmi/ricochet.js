@@ -3,20 +3,7 @@ import express from 'express';
 import crypto from 'crypto';
 import log from './log.js';
 
-const errorGuard = (func) => async (req, res, next) => {
-  try {
-    return await func(req, res, next);
-  } catch (error) {
-    // console.log(error);
-    next(error);
-  }
-};
-
-const throwError = (message, code = 400) => {
-  const errorObject = new Error(message);
-  errorObject.statusCode = code;
-  throw errorObject;
-};
+import { throwError, errorGuard, errorMiddleware } from './error.js';
 
 const sha256 = (data) => {
   return crypto.createHash('sha256').update(data, 'binary').digest('hex');
@@ -122,11 +109,7 @@ export const authentication = ({
     })
   );
 
-  // Middleware to handle errors
-  // eslint-disable-next-line no-unused-vars
-  router.use((err, req, res, _next) => {
-    res.status(err.statusCode || 500).json({ message: err.message });
-  });
+  router.use(errorMiddleware);
 
   return router;
 };

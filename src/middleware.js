@@ -1,4 +1,3 @@
-import fs from 'fs';
 import express from 'express';
 import cookieSession from 'cookie-session';
 import nodemailer from 'nodemailer';
@@ -7,6 +6,8 @@ import schedule from 'node-schedule';
 import log from './log.js';
 import oldFileStore from './oldFileStore.js';
 import store from './store.js';
+import site from './site.js';
+import origin from './origin.js';
 
 import { getStoreBackend, wrapBackend } from './storeBackends.js';
 import {
@@ -20,71 +21,17 @@ import auth from './authentication.js';
 
 import { decrypt } from './crypt.js';
 
-const loadConfigFile = (configFile) => {
-  return new Promise((resolve, reject) => {
-    // Read config file
-    fs.readFile(configFile, 'utf-8', (err, jsonString) => {
-      if (err) {
-        const { code } = err;
-        if (code === 'ENOENT') {
-          const data = {};
-          log.info('No config file, create default');
-          fs.writeFile(configFile, JSON.stringify(data, null, 2), () => {
-            resolve(data);
-          });
-        } else {
-          reject(`Failed to load ${configFile} configuration file`);
-        }
-      } else {
-        try {
-          const data = JSON.parse(jsonString);
-          resolve(data);
-        } catch (e) {
-          console.log('Fails to parse config file...\n', e);
-          reject('Fails to parse config file...');
-        }
-      }
-    });
-  });
-};
-
 export const ricochetMiddleware = ({
   secret,
-  storeConfig = {},
-  fileStoreConfig = {},
+  fakeEmail = false,
+  storeBackend,
+  fileStoreBackend,
+  storePrefix,
   disableCache = false,
   setupFunction = 'setup',
-  emailConfig = { host: 'fake' },
-  configFile = './site.json',
+  getTransporter,
 } = {}) => {
   const router = express.Router();
-
-  // JSON store backend
-  const storeBackend = getStoreBackend(storeConfig.type, storeConfig);
-  const fileStoreBackend = getFileStoreBackend(fileStoreConfig.type, {
-    url: fileStoreConfig.apiUrl,
-    destination: fileStoreConfig.diskDestination,
-    bucket: fileStoreConfig.s3Bucket,
-    endpoint: fileStoreConfig.s3Endpoint,
-    accessKey: fileStoreConfig.s3AccesKey,
-    secretKey: fileStoreConfig.s3SecretKey,
-    region: fileStoreConfig.s3Region,
-    proxy: fileStoreConfig.s3Proxy,
-    cdn: fileStoreConfig.s3Cdn,
-    signedUrl: fileStoreConfig.s3SignedUrl,
-  });
-
-  const site = {};
-
-  // Read config file
-  loadConfigFile(configFile)
-    .then((data) => {
-      Object.assign(site, data);
-    })
-    .catch((e) => {
-      console.log(e);
-      process.exit(-1);
-    });
 
   // Remote Function map
   const functionsBySite = {};
@@ -93,14 +40,14 @@ export const ricochetMiddleware = ({
   // Hooks map
   const hooksBySite = {};
 
-  const decryptPayload = (script, siteId) => {
+  const decryptPayload = (script, { siteConfig, siteId }) => {
     const data = JSON.parse(script);
 
-    if (!site[siteId]) {
+    if (!siteConfig[siteId]) {
       throw `Site ${siteId} not registered on ricochet.js`;
     }
 
-    const { key } = site[siteId];
+    const { key } = siteConfig[siteId];
     const decrypted = decrypt(data, key);
     return decrypted;
   };
@@ -143,29 +90,18 @@ export const ricochetMiddleware = ({
     })
   );
 
-  let _transporter = null;
-
-  const getTransporter = () => {
-    if (_transporter === null) {
-      _transporter = nodemailer.createTransport({
-        ...emailConfig,
-      });
-    }
-    return _transporter;
-  };
-
   const onSendToken = async ({ remote, userEmail, userId, token, req }) => {
-    const { siteId, t } = req;
+    const { siteConfig, siteId, t } = req;
 
-    if (!site[siteId]) {
+    if (!siteConfig[siteId]) {
       throw { error: 'Site not registered', status: 'error' };
     }
 
-    const { name: siteName, emailFrom } = site[siteId];
+    const { name: siteName, emailFrom } = siteConfig[siteId];
 
     log.debug(`Link to connect: ${remote}/login/${userId}/${token}`);
     // if fake host, link is only loggued
-    if (emailConfig.host === 'fake') {
+    if (fakeEmail) {
       log.info(
         t('Auth mail text message', {
           url: `${remote}/login/${userId}/${token}`,
@@ -173,7 +109,6 @@ export const ricochetMiddleware = ({
           interpolation: { escapeValue: false },
         })
       );
-      return;
     }
 
     await getTransporter().sendMail({
@@ -238,7 +173,7 @@ export const ricochetMiddleware = ({
   // JSON store
   router.use(
     store({
-      prefix: storeConfig.prefix,
+      prefix: storePrefix,
       backend: storeBackend,
       fileBackend: fileStoreBackend,
       hooks: (req) => {
@@ -296,10 +231,54 @@ export const ricochetMiddleware = ({
   return router;
 };
 
-export const mainMiddleware = ({ fileStoreConfig = {}, ...rest } = {}) => {
+export const mainMiddleware = ({
+  serverUrl,
+  serverName,
+  fileStoreConfig = {},
+  storeConfig = {},
+  configFile = './site.json',
+  emailConfig = { host: 'fake' },
+  ...rest
+} = {}) => {
   const router = express.Router();
+  const fakeEmail = emailConfig.host === 'fake';
+
+  let _transporter = null;
+
+  const getTransporter = () => {
+    const transportConfig =
+      emailConfig.host === 'fake'
+        ? {
+            streamTransport: true,
+            newline: 'unix',
+            buffer: true,
+          }
+        : emailConfig;
+    if (_transporter === null) {
+      _transporter = nodemailer.createTransport({
+        ...transportConfig,
+      });
+    }
+    return _transporter;
+  };
+
+  // Store backends
+  const storeBackend = getStoreBackend(storeConfig.type, storeConfig);
+  const fileStoreBackend = getFileStoreBackend(fileStoreConfig.type, {
+    url: fileStoreConfig.apiUrl,
+    destination: fileStoreConfig.diskDestination,
+    bucket: fileStoreConfig.s3Bucket,
+    endpoint: fileStoreConfig.s3Endpoint,
+    accessKey: fileStoreConfig.s3AccesKey,
+    secretKey: fileStoreConfig.s3SecretKey,
+    region: fileStoreConfig.s3Region,
+    proxy: fileStoreConfig.s3Proxy,
+    cdn: fileStoreConfig.s3Cdn,
+    signedUrl: fileStoreConfig.s3SignedUrl,
+  });
 
   // File store
+  // TO BE REMOVED
   router.use(
     oldFileStore(fileStoreConfig.type, {
       url: fileStoreConfig.apiUrl,
@@ -315,13 +294,87 @@ export const mainMiddleware = ({ fileStoreConfig = {}, ...rest } = {}) => {
     })
   );
 
+  const onSiteCreation = async ({ req, site, confirmPath }) => {
+    const { t } = req;
+    const confirmURL = `${serverUrl}${confirmPath}`;
+
+    if (fakeEmail) {
+      log.info(
+        t('Site creation text message', {
+          url: confirmURL,
+          siteId: site._id,
+          siteName: serverName,
+          interpolation: { escapeValue: false },
+        })
+      );
+    }
+
+    await getTransporter().sendMail({
+      from: emailConfig.from,
+      to: site.owner,
+      subject: t('Please confirm site creation'),
+      text: t('Site creation text message', {
+        url: confirmURL,
+        siteId: site._id,
+        siteName: serverName,
+      }),
+      html: t('Site creation html message', {
+        url: confirmURL,
+        siteId: site._id,
+        siteName: serverName,
+      }),
+    });
+  };
+
+  const onSiteUpdate = async ({ req, previous, confirmPath }) => {
+    const { t } = req;
+    const confirmURL = `${serverUrl}${confirmPath}`;
+
+    if (fakeEmail) {
+      log.info(
+        t('Site update text message', {
+          url: confirmURL,
+          siteId: previous._id,
+          siteName: serverName,
+          interpolation: { escapeValue: false },
+        })
+      );
+    }
+
+    await getTransporter().sendMail({
+      from: emailConfig.from,
+      to: previous.owner,
+      subject: t('Please confirm site update'),
+      text: t('Site update text message', {
+        url: confirmURL,
+        siteId: previous._id,
+        siteName: serverName,
+      }),
+      html: t('Site update html message', {
+        url: confirmURL,
+        siteId: previous._id,
+        siteName: serverName,
+      }),
+    });
+  };
+
+  router.use(site({ configFile, storeBackend, onSiteCreation, onSiteUpdate }));
+
   router.use(
     '/:siteId',
     (req, res, next) => {
       req.siteId = req.params.siteId;
       next();
     },
-    ricochetMiddleware({ fileStoreConfig, ...rest })
+    origin(),
+    ricochetMiddleware({
+      fakeEmail,
+      storePrefix: storeConfig.prefix,
+      storeBackend,
+      fileStoreBackend,
+      getTransporter,
+      ...rest,
+    })
   );
   return router;
 };

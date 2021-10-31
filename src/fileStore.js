@@ -1,18 +1,10 @@
 import express from 'express';
 import { MemoryFileBackend, wrapBackend } from './fileStoreBackend.js';
+import { errorGuard } from './error.js';
 
 /* ROADMAP
 - Add security
 */
-
-const errorGuard = (func) => async (req, res, next) => {
-  try {
-    return await func(req, res, next);
-  } catch (error) {
-    // console.log(error);
-    next(error);
-  }
-};
 
 /**
  *

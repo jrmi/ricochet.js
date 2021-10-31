@@ -6,6 +6,9 @@ dotenv.config();
 export const PORT = process.env.SERVER_PORT || process.env.PORT || 4000;
 export const HOST = process.env.SERVER_HOST || 'localhost';
 
+export const SERVER_URL = process.env.SERVER_URL || `http://${HOST}:${PORT}`;
+export const SERVER_NAME = process.env.SERVER_NAME || 'Ricochet-js';
+
 export const SOCKET_PATH =
   process.env.SOCKET_PATH || process.env.REACT_APP_SOCKET_PATH || '/socket.io';
 
@@ -38,5 +41,6 @@ export const EMAIL_HOST = process.env.EMAIL_HOST || 'fake';
 export const EMAIL_PORT = process.env.EMAIL_PORT;
 export const EMAIL_USER = process.env.EMAIL_USER;
 export const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD;
+export const EMAIL_FROM = process.env.EMAIL_FROM || 'no-reply@example.com';
 
 export const SETUP_FUNCTION = process.env.SETUP_FUNCTION || 'setup';

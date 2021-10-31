@@ -15,6 +15,7 @@ import fs from 'fs';
 
 import {
   PORT,
+  SERVER_URL,
   FILE_STORE_TYPE,
   DISK_DESTINATION,
   S3_SECRET_KEY,
@@ -37,6 +38,8 @@ import {
   EMAIL_PASSWORD,
   SETUP_FUNCTION,
   S3_SIGNED_URL,
+  SERVER_NAME,
+  EMAIL_FROM,
 } from './settings.js';
 
 const startServer = () => {
@@ -95,6 +98,7 @@ const startServer = () => {
   app.use(
     middleware({
       secret: SECRET,
+      serverName: SERVER_NAME,
       storeConfig: {
         type: STORE_BACKEND,
         prefix: STORE_PREFIX,
@@ -119,6 +123,7 @@ const startServer = () => {
       emailConfig: {
         host: EMAIL_HOST,
         port: EMAIL_PORT,
+        from: EMAIL_FROM,
         auth: {
           user: EMAIL_USER,
           pass: EMAIL_PASSWORD,
