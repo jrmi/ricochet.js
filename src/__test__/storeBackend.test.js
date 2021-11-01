@@ -5,8 +5,6 @@ import {
   wrapBackend,
 } from '../storeBackends';
 
-import { MongoClient } from 'mongodb';
-
 import { MONGODB_URI } from '../settings';
 
 const MONGODB_DATABASE_TEST = process.env.MONGODB_DATABASE_TEST;
@@ -50,6 +48,7 @@ describe.each(backends)(
       backend = wrapBackend(rawBackend, 'siteid', 'userid');
 
       if (backendName === 'MongoDB') {
+        const { MongoClient } = await import('mongodb');
         const _client = new MongoClient(MONGODB_URI, {
           useNewUrlParser: true,
           useUnifiedTopology: true,

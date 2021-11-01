@@ -17,10 +17,9 @@ export const NeDBBackend = (options) => {
         try {
           _Datastore = (await import('@seald-io/nedb')).default;
         } catch (e) {
-          console.log(
+          throw new Error(
             'You must install "nedb" package in order to be able to use the NeDBStoreBackend!'
           );
-          return undefined;
         }
       }
       db[boxId] = new _Datastore({

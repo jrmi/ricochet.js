@@ -20,10 +20,9 @@ export const MongoDBBackend = (options) => {
           useUnifiedTopology: true,
         });
       } catch (e) {
-        console.log(
+        throw new Error(
           'You must install "mongodb" package in order to be able to use the MongoDBStoreBackend!'
         );
-        return undefined;
       }
     }
     return _client;

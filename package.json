@@ -63,12 +63,10 @@
     "vm2": "^3.9.3",
     "yargs": "^16.2.0"
   },
-  "optionalDependencies": {
-    "@seald-io/nedb": "^2.2.0",
-    "mongodb": "^3.7.3"
-  },
   "peerDependencies": {
-    "webpack-sources": "~2.2.0"
+    "webpack-sources": "~2.2.0",
+    "@seald-io/nedb": "~2.2.0",
+    "mongodb": "~3.7.3"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.10",
