@@ -1,4 +1,11 @@
 
+1.1.0 / 2021-11-01
+==================
+
+  * Split store backends (#43)
+  * Support queries for list views (#42)
+  * Add endpoints to create/update site configuration (#40)
+
 1.0.0 / 2021-10-31
 ==================
 
