@@ -1,7 +1,7 @@
 import request from 'supertest';
 import express from 'express';
 import site from '../site';
-import { memoryBackend } from '../storeBackends';
+import { MemoryBackend } from '../storeBackends';
 
 jest.mock('nanoid', () => {
   let count = 0;
@@ -27,7 +27,7 @@ describe('Site endpoint tests', () => {
     onSiteUpdate = jest.fn(({ confirmPath }) => {
       lastConfirm = confirmPath;
     });
-    storeBackend = memoryBackend();
+    storeBackend = MemoryBackend();
     const app = express();
     app.use(express.json());
     app.use(

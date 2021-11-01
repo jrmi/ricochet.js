@@ -2,7 +2,7 @@ import request from 'supertest';
 import express from 'express';
 import store from '../store';
 import path from 'path';
-import { memoryBackend } from '../storeBackends';
+import { MemoryBackend } from '../storeBackends';
 import { MemoryFileBackend } from '../fileStoreBackend';
 
 jest.mock('nanoid', () => {
@@ -32,7 +32,7 @@ describe('Store Test', () => {
     const app = express();
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
-    backend = memoryBackend();
+    backend = MemoryBackend();
     app.use(
       '/:siteId',
       (req, _, next) => {
@@ -232,7 +232,7 @@ describe('Store Hook Tests', () => {
     const app = express();
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
-    backend = memoryBackend();
+    backend = MemoryBackend();
     hooks = {};
     app.use(
       '/:siteId',
@@ -428,7 +428,7 @@ describe('Store File Test', () => {
     const app = express();
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
-    backend = memoryBackend();
+    backend = MemoryBackend();
     fileBackend = MemoryFileBackend();
     app.use(
       '/:siteId',

@@ -1,5 +1,5 @@
 import {
-  memoryBackend,
+  MemoryBackend,
   NeDBBackend,
   MongoDBBackend,
   wrapBackend,
@@ -30,7 +30,7 @@ jest.spyOn(global.Date, 'now').mockImplementation(() => {
 });
 
 const backends = [
-  ['memory', memoryBackend()],
+  ['memory', MemoryBackend()],
   ['NeDb', NeDBBackend({ filename: null, inMemoryOnly: true })],
 ];
 
