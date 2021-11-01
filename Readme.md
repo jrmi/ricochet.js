@@ -1,10 +1,10 @@
-# Ricochet-js
+# Ricochet.js
 
-Ricochet-js is a multi-purpose JSON/File store with serverless capabilities.
+Ricochet.js is a multi-purpose JSON/File store with serverless capabilities.
 
 Main features are:
 
-- Deploy Ricochet-js once and for many website (multi-tenancy)
+- Deploy Ricochet.js once and for many website (multi-tenancy)
 - Use the ready to use general APIs:
   - A JSON store
   - A File store
@@ -26,7 +26,7 @@ Some use cases:
 - You want to store structured data and files
 - You want frontend and backend code to be updated at same time
 
-## Why Ricochet-js?
+## Why Ricochet.js?
 
 When you create a web application, you nearly always need a server mainly for
 3 reasons:
@@ -36,7 +36,7 @@ When you create a web application, you nearly always need a server mainly for
   by the client for security reason.
 - You want some periodic tasks to be executed.
 
-Ricochet-js propose features to fullfil this requirements in an elegant way.
+Ricochet.js propose features to fullfil this requirements in an elegant way.
 
 First a *Rest API* to store key-values document, so you can store your structured data.
 And for each stored resource, you can associate binary files like images, or documents.
@@ -48,16 +48,16 @@ Finally you can *schedule* hourly or daily actions.
 
 ## Start the server
 
-You can start a Ricochet-js server by using npx:
+You can start a Ricochet.js server by using npx:
 
 ```sh
-npx ricochet-js
+npx ricochetjs
 ```
 
-Or install Ricochet-js globally and launch the server:
+Or install Ricochet.js globally and launch the server:
 
 ```sh
-npm install -g ricochet-js
+npm install -g ricochetjs
 # then
 ricochet
 ```
@@ -100,8 +100,8 @@ a new site project.
 
 ## Initialize your project
 
-Since you have a Ricochet-js instance up and running, you can use the
-[project starter](https://github.com/jrmi/ricochet-js-starter) to initialize
+Since you have a Ricochet.js instance up and running, you can use the
+[project starter](https://github.com/jrmi/ricochetjs-starter) to initialize
 your backend.
 
 ### Starter usage
@@ -110,7 +110,7 @@ Use `degit` to make your own copy of the starter repository where you want
 (A good place can be in the backend folder of your project):
 
 ```sh
-npx degit https://github.com/jrmi/ricochet-js-starter
+npx degit https://github.com/jrmi/ricochetjs-starter
 ```
 
 Then install dependencies:
@@ -120,7 +120,7 @@ npm install
 ```
 
 Create a `.env` file from the `.env.dist` file and customize it by adding your
-previously generated key with ricochet-js.
+previously generated key with ricochet.js.
 
 You can serve the default project by executing:
 
@@ -130,7 +130,7 @@ npm run serve
 
 ### Test it with curl
 
-To test the script, the ricochet-js server should be running. You can use `curl`:
+To test the script, the ricochet.js server should be running. You can use `curl`:
 
 ```sh
 curl -X POST -H "Content-Type: application/json
@@ -197,7 +197,7 @@ This is the encrypted server side bundle that configure ricochetjs for this *sit
 This file MUST exists before being able to call any Rest API.
 
 The script must define and export a main function that has access to
-ricochet-js server context. The main function is called with an object as
+ricochet.js server context. The main function is called with an object as
 parameters that contains the following keys:
 
 - **store**: Allow to access the JSON store.
@@ -207,7 +207,7 @@ parameters that contains the following keys:
 
 All this parameters are explained in next sections.
 
-This script is executed on *Ricochet-js* server so don't rely on browser
+This script is executed on *Ricochet.js* server so don't rely on browser
 capabilities.
 
 This script allow you to configure the ricochet server for your *siteId* in a
@@ -276,7 +276,7 @@ key `daily` or `hourly`.
 
 ## Rest API
 
-This section describe the Rest api of ricochet-js.
+This section describe the Rest api of ricochet.js.
 
 ### GET on /:siteId/store/:boxId/
 
@@ -388,7 +388,7 @@ You can configure your instance by settings environment variables or using
  | --------------- | ------------------------------------------------------------------------------------------ | ------------- |
  | SERVER_PORT     | Server listen on this port.                                                                | 4000          |
  | SERVER_HOST     | '0.0.0.0' to listen from all interfaces                                                    | 127.0.0.1     |
- | SERVER_NAME     | Server name displayed on mail for example                                                  | Ricochet-js   |
+ | SERVER_NAME     | Server name displayed on mail for example                                                  | Ricochet.js   |
  | FILE_STORAGE    | Configure file store type. Allowed values: 'memory', 'disk', 's3'                          | memory        |
  | STORE_BACKEND   | Configure JSON store provider. Allowed values: 'memory', 'nedb', 'mongodb'                 | memory        |
  | RICOCHET_SECRET | Secret to hash password and  cookie. Keep it safe.                                         |               |
@@ -429,7 +429,7 @@ For *mongodb* JSON store provider:
  | MONGODB_URI      | Mongodb configuration URI |               |
  | MONGODB_DATABASE | Database to use           |               |
 
-## Prepare ricochet-js for development
+## Prepare ricochet.js for development
 
 Clone the repository then install dependencies:
 

@@ -6,7 +6,7 @@ ENV PATH=$PATH:/home/node/.npm-global/bin
 
 RUN echo "{}" > site.json && chown node:node site.json
 
-RUN npm install -g ricochet-js pino-tiny pino-tee
+RUN npm install -g ricochet.js pino-tiny pino-tee
 
 WORKDIR /home/node
 USER node

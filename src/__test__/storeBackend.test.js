@@ -14,9 +14,10 @@ const MONGODB_DATABASE_TEST = process.env.MONGODB_DATABASE_TEST;
 jest.mock('nanoid', () => {
   let count = 0;
   return {
-    nanoid: jest.fn(() => {
-      return 'nanoid_' + count++;
-    }),
+    customAlphabet: () =>
+      jest.fn(() => {
+        return 'nanoid_' + count++;
+      }),
   };
 });
 
@@ -283,6 +284,25 @@ describe.each(backends)(
       expect(filteredResources[0]).not.toEqual(
         expect.objectContaining({ test: false })
       );
+
+      // Test queries
+      const foundResources = await backend.list(box, {
+        q: 'value > 42',
+      });
+
+      expect(foundResources.length).toBe(1);
+
+      const foundResources2 = await backend.list(box, {
+        q: 'value > 42 and test = false',
+      });
+
+      expect(foundResources2.length).toBe(0);
+
+      await expect(
+        backend.list(box, {
+          q: 'value > 42 and test = false bla bl',
+        })
+      ).rejects.toThrow();
     });
 
     it('should check security', async () => {

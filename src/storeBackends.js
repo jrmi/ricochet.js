@@ -1,6 +1,10 @@
-import { nanoid } from 'nanoid';
 import Datastore from 'nedb';
 import { MongoClient } from 'mongodb';
+import parserExpression from 'pivotql-parser-expression';
+import compilerJavascript from 'pivotql-compiler-javascript';
+import compilerMongodb from 'pivotql-compiler-mongodb';
+
+import { uid } from './uid.js';
 import log from './log.js';
 
 const throwError = (message, code = 400) => {
@@ -154,7 +158,18 @@ export const memoryBackend = () => {
         throwError('Box not found', 404);
       }
 
+      let filter = () => true;
+      if (q) {
+        try {
+          filter = compilerJavascript(parserExpression(q));
+        } catch (e) {
+          throwError('Invalid query expression.', 400);
+        }
+      }
+
       let result = Object.values(dataMemoryStore[boxId]);
+
+      result = result.filter(filter);
 
       result.sort((resource1, resource2) => {
         if (resource1[sort] < resource2[sort]) {
@@ -195,7 +210,7 @@ export const memoryBackend = () => {
       delete cleanedData._createdOn;
       delete cleanedData._modifiedOn;
 
-      const actualId = id || nanoid();
+      const actualId = id || uid();
       const box = dataMemoryStore[boxId];
 
       let newRessource = null;
@@ -328,10 +343,19 @@ export const NeDBBackend = (options) => {
 
       const boxDB = getBoxDB(boxId);
 
+      let filter = {};
+      if (q) {
+        try {
+          filter = compilerMongodb(parserExpression(q));
+        } catch (e) {
+          throwError('Invalid query expression.', 400);
+        }
+      }
+
       return new Promise((resolve, reject) => {
         boxDB
           .find(
-            {},
+            filter,
             onlyFields.length
               ? onlyFields.reduce((acc, field) => {
                   acc[field] = 1;
@@ -384,7 +408,7 @@ export const NeDBBackend = (options) => {
       }
 
       const boxDB = getBoxDB(boxId);
-      const actualId = id || nanoid();
+      const actualId = id || uid();
 
       const cleanedData = data;
       delete cleanedData._createdOn;
@@ -561,6 +585,15 @@ export const MongoDBBackend = (options) => {
 
       const listOptions = {};
 
+      let filter = {};
+      if (q) {
+        try {
+          filter = compilerMongodb(parserExpression(q));
+        } catch (e) {
+          throwError('Invalid query expression.', 400);
+        }
+      }
+
       if (onlyFields.length) {
         listOptions.projection = onlyFields.reduce((acc, field) => {
           acc[field] = 1;
@@ -569,7 +602,7 @@ export const MongoDBBackend = (options) => {
       }
 
       return await boxDB
-        .find({}, listOptions)
+        .find(filter, listOptions)
         .limit(limit)
         .skip(skip)
         .sort({ [sort]: asc ? 1 : -1 })
@@ -603,7 +636,7 @@ export const MongoDBBackend = (options) => {
       }
 
       const boxDB = await getBoxDb(boxId);
-      const actualId = id || nanoid();
+      const actualId = id || uid();
 
       const cleanedData = data;
       delete cleanedData._createdOn;
