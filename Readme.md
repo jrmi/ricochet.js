@@ -48,7 +48,8 @@ Finally you can *schedule* hourly or daily actions.
 
 ## Start the server
 
-You can start a Ricochet.js server by using npx:
+You can start a Ricochet.js server by using npx (you should have npm version >=7
+to support mongodb or nedb backend):
 
 ```sh
 npx ricochetjs
@@ -396,6 +397,9 @@ You can configure your instance by settings environment variables or using
 
  Note: "memory" stores are for development purpose only and remember that you
  loose all your data each time you stop the server.
+
+ Note: for "mongodb" backend, you need to install `npm install mongodb@3`.
+ Note: for "nedb" backend, you need to install `npm install @seald-io/nedb`.
 
 If you use *disk file store* you need to configure this variables:
 
