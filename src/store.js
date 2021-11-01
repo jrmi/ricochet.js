@@ -1,8 +1,8 @@
 import express from 'express';
-import { memoryBackend, wrapBackend } from './storeBackends.js';
-import { MemoryFileBackend } from './fileStoreBackend.js';
+import { MemoryBackend, wrapBackend } from './storeBackends';
+import { MemoryFileBackend } from './fileStoreBackend';
 import fileStore from './fileStore';
-import { throwError, errorGuard, errorMiddleware } from './error.js';
+import { throwError, errorGuard, errorMiddleware } from './error';
 
 // Utility functions
 
@@ -21,7 +21,7 @@ const SAFE_METHOD = ['GET', 'OPTIONS', 'HEAD'];
 // Store Middleware
 export const store = ({
   prefix = 'store',
-  backend = memoryBackend(),
+  backend = MemoryBackend(),
   fileBackend = MemoryFileBackend(),
   hooks = {},
 } = {}) => {

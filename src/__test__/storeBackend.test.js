@@ -1,11 +1,9 @@
 import {
-  memoryBackend,
+  MemoryBackend,
   NeDBBackend,
   MongoDBBackend,
   wrapBackend,
 } from '../storeBackends';
-
-import { MongoClient } from 'mongodb';
 
 import { MONGODB_URI } from '../settings';
 
@@ -30,7 +28,7 @@ jest.spyOn(global.Date, 'now').mockImplementation(() => {
 });
 
 const backends = [
-  ['memory', memoryBackend()],
+  ['memory', MemoryBackend()],
   ['NeDb', NeDBBackend({ filename: null, inMemoryOnly: true })],
 ];
 
@@ -50,6 +48,7 @@ describe.each(backends)(
       backend = wrapBackend(rawBackend, 'siteid', 'userid');
 
       if (backendName === 'MongoDB') {
+        const { MongoClient } = await import('mongodb');
         const _client = new MongoClient(MONGODB_URI, {
           useNewUrlParser: true,
           useUnifiedTopology: true,
