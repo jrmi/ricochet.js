@@ -150,7 +150,7 @@ const siteMiddleware = ({
         delete toSave.token;
         const saved = await storeBackend.save('_site', siteId, toSave);
         await storeBackend.delete('_pending', siteId);
-        siteConfig[siteId] = { ...saved, key: undefined };
+        siteConfig[siteId] = { ...saved };
       } else {
         // Token can be invalid if another modification is sent in the meantime
         // or if the token is already consumed.
