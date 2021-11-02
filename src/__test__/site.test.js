@@ -157,7 +157,7 @@ describe('Site endpoint tests', () => {
         name: 'Site test',
         emailFrom: 'from@ricochet.net',
       })
-      .expect(403);
+      .expect(404);
   });
 
   it('should update an existing site', async () => {

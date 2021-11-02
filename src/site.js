@@ -85,6 +85,7 @@ const siteMiddleware = ({
           });
           console.log('Migrate deprecated config file to store.');
         } catch (e) {
+          // TODO be more specific
           console.log('No valid deprecated config file to load.');
         }
         await loadSites();
@@ -217,7 +218,7 @@ const siteMiddleware = ({
 
       if (!siteConfig[siteId]) {
         // The site doesn't exist
-        throwError("Site doesn't exist. Use POST query to create it.", 403);
+        throwError("Site doesn't exist. Use POST query to create it.", 404);
       } else {
         const { name, emailFrom } = req.body;
         const previous = await storeBackend.get('_site', siteId);

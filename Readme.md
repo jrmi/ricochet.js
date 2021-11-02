@@ -48,8 +48,17 @@ Finally you can *schedule* hourly or daily actions.
 
 ## Start the server
 
-You can start a Ricochet.js server by using npx (you should have npm version >=7
-to support mongodb or nedb backend):
+First you need to define a random secret string and store it the `SECRET` env
+variable or in `.env` file if you prefer.
+
+The following command helps you to create a such file.
+
+```sh
+echo SECRET=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1` > .env
+```
+
+Now you can start a Ricochet.js server by using `npx` (you should have npm version >=7
+to support *mongodb* or *nedb* backend):
 
 ```sh
 npx ricochetjs
@@ -75,11 +84,14 @@ you can use the Rest API with curl:
 curl --header "Content-Type: application/json" \
   --request POST \
   --data '{"name":"Example site","emailFrom":"no-reply@example.com", "owner": "owner@example.com"}' \
-  http://localhost:4050/_register/exampleSite
+  http://localhost:4000/_register/exampleSite
 
 # response sample
 # {"name":"Example site","owner":"owner@example.com","emailFrom":"no-reply@example.com","key":"secretkeytokeepforlaterxxxxxxxxxxx=","_id":"exampleSite", ...}
 ```
+
+By default, the server listen on port *4000* but feel free to adapt the 
+exemple to your configuration.
 
 More details on the content of the json you've just sent:
 
@@ -88,7 +100,7 @@ More details on the content of the json you've just sent:
 - `owner` confirmation email are sent to this email address for creation and
   modification of the site.
 
-From the response you **MUST** save the `key` property value, this key is used to encrypt
+From the response you **MUST save** the `key` property value, this key is used to encrypt
 your server side code hosted alongside with your frontend code.
 This is the **ONLY** chance to get it so keep it for later and **keep it secret**.
 
@@ -136,14 +148,14 @@ To test the script, the ricochet.js server should be running. You can use `curl`
 
 ```sh
 curl -X POST -H "Content-Type: application/json
-X-Ricochet-Origin: http://localhost:9000" -d '{"some":"data"}' http://localhost:4000/siteId/store/publicData/
+X-Ricochet-Origin: http://localhost:9000" -d '{"some":"data"}' http://localhost:4000/exampleSite/store/publicData/
 ```
 
 And get the of the `publicData` box:
 
 ```sh
 curl -X GET -H "Content-Type: application/json
-X-Ricochet-Origin: http://localhost:9000" http://localhost:4000/siteId/store/publicData/
+X-Ricochet-Origin: http://localhost:9000" http://localhost:4000/exampleSite/store/publicData/
 ```
 
 ### Starter customization
@@ -151,20 +163,8 @@ X-Ricochet-Origin: http://localhost:9000" http://localhost:4000/siteId/store/pub
 You can freely modify `src/index.js` file to declare your store, hooks,
 custom functions, ...
 
-Remember that the build will be encrypted and should be used by ricochet server
-with corresponding configuration in `site.json` file.
-
-Example of `site.json` file:
-
-```js
-{
-  "siteId": {
-    "name": "My example website",
-    "key": "<generated key>",
-    "emailFrom": "\"My test\" <no-reply@example.net>"
-  }
-}
-```
+Remember that the server bundle will be encrypted and should be used by
+ricochet server with corresponding *site* configuration.
 
 Remember to also define a `SECRET` environment variable for the server
 (Can be defined in same `.env` file if you start the server from here).
@@ -189,7 +189,7 @@ This bundle can now be deployed on any content delivery network and can
 Each time you call an API you should have at least one of this HTTP header:
 *x-ricochet-origin*, *referer*, *origin*. These headers are used to determine the website
 where the backend code is stored. Let's call it the `<ricochetOrigin>`. By default
-if you use a classic *browser*, *referer* or *origin* should be included by default.
+if you use a *browser*, *referer* or *origin* should be included by default.
 
 On the first call of any API endpoint for a specific *siteId*, the file
 `<ricochetOrigin>/setup.js` is downloaded, decrypted and executed.
