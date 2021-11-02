@@ -5,5 +5,6 @@
 !package.json
 !/Readme.md
 !/CHANGELOG.md
+!/locales
 
 /src/__test__
