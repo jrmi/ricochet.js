@@ -9,6 +9,7 @@
     "ricochet-js": "dist/cli.es5.js"
   },
   "scripts": {
+    "clean": "rimraf dist",
     "dev": "nodemon  --exec babel-node src/cli.js | pino-tiny",
     "cli": "babel-node src/cli.js",
     "start": "pm2 start 'babel-node src/cli.js > server.log' --name ricochet-server",
@@ -17,7 +18,7 @@
     "test:server": "npx serve src/__test__/test.files",
     "coverage": "jest --coverage",
     "generateKey": "babel-node src/cli.js --generate-key",
-    "build": "babel src -d dist --ignore 'src/**/__test__/'",
+    "build": "npm run clean && babel src -d dist --ignore 'src/**/__test__/'",
     "shebang": "echo '#!/usr/bin/env node' > dist/cli.es5.js && cat dist/cli.js >> dist/cli.es5.js",
     "prepare": "npm run build && npm run shebang",
     "watch": "npm run prepare && babel src -d dist --ignore 'src/**/__test__/' --watch",
@@ -85,6 +86,7 @@
     "pino-tiny": "^1.0.0",
     "pm2": "^4.5.6",
     "prettier": "^2.2.1",
+    "rimraf": "^3.0.2",
     "supertest": "^4.0.2",
     "tempy": "^0.7.1"
   },

@@ -9,7 +9,7 @@ import store from './store.js';
 import site from './site.js';
 import origin from './origin.js';
 
-import { getStoreBackend, wrapBackend } from './storeBackends.js';
+import { getStoreBackend, wrapBackend } from './storeBackends';
 import {
   getFileStoreBackend,
   wrapBackend as wrapFileBackend,
