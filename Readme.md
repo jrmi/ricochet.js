@@ -66,7 +66,7 @@ ricochet
 By default, data are *stored in memory* so if you restart the server, all data
 are lost. The default configuration is for *development purpose only*.
 See [server configuration](#server-configuration) for more customization and how
-to use persistent stores.
+to use persistent storages.
 
 Now the server is running so you can create a new ricochet *site*. To do it,
 you can use the Rest API with curl:
@@ -94,7 +94,8 @@ This is the **ONLY** chance to get it so keep it for later and **keep it secret*
 
 In the meantime you should have received a mail with a link you must visit
 to confirm the site creation. This is a security measure to prevent abuse. Click
-the link to validate the *site* creation.
+the link to validate the *site* creation. If you've not yet configured any mail
+provider, check out the server logs to read the confirmation link.
 
 Now, your server is ready and a site exists. You can follow the next steps to create
 a new site project.
