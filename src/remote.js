@@ -2,7 +2,7 @@ import express from 'express';
 import log from './log.js';
 import RemoteCode from './remoteCode.js';
 
-import { throwError, errorGuard } from './error.js';
+import { throwError, errorGuard, errorMiddleware } from './error.js';
 
 // Remote setup Middleware
 export const remote = ({
@@ -60,12 +60,7 @@ export const remote = ({
     res.send('ok');
   });
 
-  // eslint-disable-next-line no-unused-vars
-  router.use((err, req, res, _next) => {
-    res
-      .status(err.statusCode || 500)
-      .json({ message: err.message, stackTrace: err.stack });
-  });
+  router.use(errorMiddleware);
 
   return router;
 };

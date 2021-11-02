@@ -99,6 +99,7 @@ const startServer = () => {
     middleware({
       secret: SECRET,
       serverName: SERVER_NAME,
+      serverUrl: SERVER_URL,
       storeConfig: {
         type: STORE_BACKEND,
         prefix: STORE_PREFIX,

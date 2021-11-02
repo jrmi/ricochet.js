@@ -3,6 +3,7 @@ import cookieSession from 'cookie-session';
 import nodemailer from 'nodemailer';
 import schedule from 'node-schedule';
 
+import { throwError } from './error.js';
 import log from './log.js';
 import oldFileStore from './oldFileStore.js';
 import store from './store.js';
@@ -44,12 +45,24 @@ export const ricochetMiddleware = ({
     const data = JSON.parse(script);
 
     if (!siteConfig[siteId]) {
-      throw `Site ${siteId} not registered on ricochet.js`;
+      throwError(`Site ${siteId} not registered on ricochet.js`, 404);
     }
 
     const { key } = siteConfig[siteId];
-    const decrypted = decrypt(data, key);
-    return decrypted;
+    try {
+      const decrypted = decrypt(data, key);
+
+      return decrypted;
+    } catch (e) {
+      log.warn(
+        { error: e },
+        `Fails to decrypt setup from ${remote}. Please check your encryption key.`
+      );
+      throwError(
+        `Fails to decrypt setup from ${remote}. Please check your encryption key.`,
+        500
+      );
+    }
   };
 
   // Remote code
@@ -94,7 +107,7 @@ export const ricochetMiddleware = ({
     const { siteConfig, siteId, t } = req;
 
     if (!siteConfig[siteId]) {
-      throw { error: 'Site not registered', status: 'error' };
+      throwError(`Site ${siteId} not registered on ricochet.js`, 404);
     }
 
     const { name: siteName, emailFrom } = siteConfig[siteId];

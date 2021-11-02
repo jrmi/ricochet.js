@@ -56,7 +56,7 @@ describe('Remote Test', () => {
       .set('X-Ricochet-Origin', 'http://localhost:5000')
       .expect(500);
 
-    expect(result.body.stackTrace).toEqual(
+    expect(result.body.message).toEqual(
       expect.stringContaining('Unexpected identifier')
     );
   });
