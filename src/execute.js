@@ -1,5 +1,5 @@
 import express from 'express';
-import { errorGuard } from './error.js';
+import { errorGuard, errorMiddleware } from './error.js';
 
 /* Roadmap
 - Allow to register new site
@@ -55,12 +55,7 @@ export const exec = ({
     })
   );
 
-  // eslint-disable-next-line no-unused-vars
-  router.use((err, req, res, _next) => {
-    res
-      .status(err.statusCode || 500)
-      .json({ message: err.message, stackTrace: err.stack });
-  });
+  router.use(errorMiddleware);
 
   return router;
 };

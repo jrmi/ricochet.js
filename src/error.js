@@ -16,6 +16,5 @@ export const errorGuard = (func) => async (req, res, next) => {
 // Middleware to handle errors
 // eslint-disable-next-line no-unused-vars
 export const errorMiddleware = (err, req, res, _next) => {
-  //console.error(err);
   res.status(err.statusCode || 500).json({ message: err.message });
 };
