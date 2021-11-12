@@ -1,4 +1,5 @@
 import fs from 'fs';
+import path from 'path';
 import express from 'express';
 
 import log from './log.js';
@@ -6,6 +7,11 @@ import log from './log.js';
 import { generateKey } from './crypt.js';
 import { errorGuard, errorMiddleware, throwError } from './error.js';
 import { longUid } from './uid.js';
+
+const validateEmail = (email) => {
+  let res = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+  return res.test(email);
+};
 
 const writeConfigFile = (configFilePath, data) => {
   return new Promise((resolve, reject) => {
@@ -169,20 +175,36 @@ const siteMiddleware = ({
   );
 
   router.post(
-    '/_register/:siteId',
+    '/_register/',
     errorGuard(async (req, res) => {
-      const { siteId } = req.params;
+      const { siteId, name, emailFrom, owner } = req.body;
 
-      if (!siteId.match(/^[a-zA-Z0-9][a-zA-Z0-9_]*$/)) {
-        throwError('The site id must only contains characters.', 400);
+      if (!siteId || !name || !emailFrom || !owner) {
+        throwError(
+          'The following data are required for site creation: siteId, name, emailFrom, owner.',
+          400
+        );
+      }
+
+      if (siteId.length < 3 || !siteId.match(/^[a-zA-Z0-9][a-zA-Z0-9_]*$/)) {
+        throwError(
+          "The siteId must contains at least 3 letters or '_' and can't start with '_'.",
+          400
+        );
+      }
+
+      if (!validateEmail(emailFrom)) {
+        throwError('emailFrom must be a valid email.', 400);
+      }
+
+      if (!validateEmail(owner)) {
+        throwError('emailFrom must be a valid email.', 400);
       }
 
       if (siteConfig[siteId]) {
         // The site already exists
         throwError('A site with the same name already exists.', 403);
       } else {
-        const { name, emailFrom, owner } = req.body;
-
         if (!owner) {
           throwError('Missing owner email parameters.', 400);
         }
@@ -215,36 +237,55 @@ const siteMiddleware = ({
     '/_register/:siteId',
     errorGuard(async (req, res) => {
       const { siteId } = req.params;
+      const { name, emailFrom } = req.body;
 
-      if (!siteConfig[siteId]) {
+      if (!siteId || !siteConfig[siteId]) {
         // The site doesn't exist
-        throwError("Site doesn't exist. Use POST query to create it.", 404);
-      } else {
-        const { name, emailFrom } = req.body;
-        const previous = await storeBackend.get('_site', siteId);
-
-        const token = longUid();
-
-        const updated = await storeBackend.save('_pending', siteId, {
-          name,
-          emailFrom,
-          token,
-        });
-
-        await onSiteUpdate({
-          req,
-          site: { ...updated },
-          previous: { ...previous },
-          confirmPath: getConfirmPath(siteId, token),
-        });
-
-        const response = { ...updated };
-        delete response.key;
-        delete response.token;
-        res.json({ ...response });
+        throwError(
+          `Site '${siteId}' doesn't exist. You must create it before.`,
+          404
+        );
       }
+
+      if (!name || !emailFrom) {
+        throwError(
+          'The following data are required for site update: name, emailFrom.',
+          400
+        );
+      }
+
+      if (!validateEmail(emailFrom)) {
+        throwError('emailFrom must be a valid email.', 400);
+      }
+
+      const previous = await storeBackend.get('_site', siteId);
+
+      const token = longUid();
+
+      const updated = await storeBackend.save('_pending', siteId, {
+        name,
+        emailFrom,
+        token,
+      });
+
+      await onSiteUpdate({
+        req,
+        site: { ...updated },
+        previous: { ...previous },
+        confirmPath: getConfirmPath(siteId, token),
+      });
+
+      const response = { ...updated };
+      delete response.key;
+      delete response.token;
+      res.json({ ...response });
     })
   );
+
+  // Static files
+  const root = path.join(__dirname, 'frontend');
+  console.log(root);
+  router.use('/frontend', express.static(root));
 
   router.use(errorMiddleware);
 
