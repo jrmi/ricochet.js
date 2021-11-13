@@ -78,29 +78,15 @@ See [server configuration](#server-configuration) for more customization and how
 to use persistent storages.
 
 Now the server is running so you can create a new ricochet *site*. To do it,
-you can use the Rest API with curl:
+visit the Ricochet.js URL with a browser. By default `http://localhost:4000`.
 
-```sh
-curl --header "Content-Type: application/json" \
-  --request POST \
-  --data '{"name":"Example site","emailFrom":"no-reply@example.com", "owner": "owner@example.com"}' \
-  http://localhost:4000/_register/exampleSite
+Fill the left form with wanted information and click the `Create` button.
 
-# response sample
-# {"name":"Example site","owner":"owner@example.com","emailFrom":"no-reply@example.com","key":"secretkeytokeepforlaterxxxxxxxxxxx=","_id":"exampleSite", ...}
-```
+The result should look like the following image:
 
-By default, the server listen on port *4000* but feel free to adapt the 
-exemple to your configuration.
+![](images/key.png)
 
-More details on the content of the json you've just sent:
-
-- `Name` is used in some email templates.
-- `emailFrom` is the address displayed in the "from" field of sent emails.
-- `owner` confirmation email are sent to this email address for creation and
-  modification of the site.
-
-From the response you **MUST save** the `key` property value, this key is used to encrypt
+From the response you **MUST save** the `key` value, this key is used to encrypt
 your server side code hosted alongside with your frontend code.
 This is the **ONLY** chance to get it so keep it for later and **keep it secret**.
 
@@ -192,15 +178,16 @@ where the backend code is stored. Let's call it the `<ricochetOrigin>`. By defau
 if you use a *browser*, *referer* or *origin* should be included by default.
 
 On the first call of any API endpoint for a specific *siteId*, the file
-`<ricochetOrigin>/setup.js` is downloaded, decrypted and executed.
+`<ricochetOrigin>/setup.js` is downloaded, decrypted and executed by the 
+Ricochet.js server.
 
-This is the encrypted server side bundle that configure ricochetjs for this *siteid*.
+This is the encrypted server side bundle that configure Ricochet.js for this *siteId*.
 
 This file MUST exists before being able to call any Rest API.
 
 The script must define and export a main function that has access to
-ricochet.js server context. The main function is called with an object as
-parameters that contains the following keys:
+Ricochet.js server context. The main function is called with an object as
+parameters that contains the following properties:
 
 - **store**: Allow to access the JSON store.
 - **hooks**: Add some hooks to the store.
@@ -235,13 +222,14 @@ following methods:
 
 **store.list(boxId, options)**: list box content. Options are:
 
-| Name       | Description                  | Default |
-| ---------- | ---------------------------- | ------- |
-| sort       | Name of sort field           | "_id"   |
-| asc        | Ascending order ?            | true    |
-| skip       | How many result to skip      | 0       |
-| limit      | Limit result count.          | 50      |
-| onlyFields | Limit result to this fields. | []      |
+| Name       | Description                                                                                                             | Default |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------- | ------- |
+| sort       | Name of sort field                                                                                                      | "_id"   |
+| asc        | Ascending order ?                                                                                                       | true    |
+| skip       | How many result to skip                                                                                                 | 0       |
+| limit      | Limit result count.                                                                                                     | 50      |
+| onlyFields | Limit result to this fields.                                                                                            | []      |
+| q          | A query to filter results. The query must be written in the [pivotql](https://github.com/jrmi/pivotql/) query language. | ""      |
 
 **store.save(boxId, id, data)**: Create or update the given id resource with given data.
 
@@ -265,7 +253,7 @@ The key will be the endpoint and the value the executed callback. The key is the
 name of the function and the value must be a function executed when the query
 is received.
 
-Then you can call the function later
+Then you can call the function later using the following endpoint.
 
 ### ANY on /:siteId/execute/:functionName/
 
@@ -275,6 +263,8 @@ Returns the value returned by the function.
 
 Define daily or hourly schedules by pushing functions to this object for the
 key `daily` or `hourly`.
+
+[More details coming soon...]
 
 ## Rest API
 
@@ -348,7 +338,7 @@ Allow the client to verify the token and authenticate against the service.
 
 Allow the client to verify if a user is authenticated. Returns `403` http code if not authenticated.
 
-### POST on /_register/:siteId
+### POST on /_register/
 
 To register new site. A mail is send each time you want to create a website to confirm the creation.
 
@@ -356,6 +346,7 @@ The json content should look like this:
 
 ```json
 {
+  "siteId": "the new site Id",
   "name": "Name displayed in mail",
   "owner": "owner email address for security, confirmation mails are send here",
   "emailFrom": "email address displayed in email sent for this site"
@@ -386,15 +377,16 @@ You can't modify owner email (yet?).
 You can configure your instance by settings environment variables or using
 `.env` file:
 
- | Name            | description                                                                                | default value |
- | --------------- | ------------------------------------------------------------------------------------------ | ------------- |
- | SERVER_PORT     | Server listen on this port.                                                                | 4000          |
- | SERVER_HOST     | '0.0.0.0' to listen from all interfaces                                                    | 127.0.0.1     |
- | SERVER_NAME     | Server name displayed on mail for example                                                  | Ricochet.js   |
- | FILE_STORAGE    | Configure file store type. Allowed values: 'memory', 'disk', 's3'                          | memory        |
- | STORE_BACKEND   | Configure JSON store provider. Allowed values: 'memory', 'nedb', 'mongodb'                 | memory        |
- | RICOCHET_SECRET | Secret to hash password and  cookie. Keep it safe.                                         |               |
- | EMAIL_*         | To configure email provider. Put "fake" in EMAIL_HOST to log mail instead of sending them. |               |
+ | Name                      | description                                                                                | default value |
+ | ------------------------- | ------------------------------------------------------------------------------------------ | ------------- |
+ | SERVER_HOST               | '0.0.0.0' to listen from all interfaces.                                                   | 127.0.0.1     |
+ | SERVER_PORT               | Server listen on this port.                                                                | 4000          |
+ | SERVER_NAME               | Server name displayed on mail for example.                                                 | Ricochet.js   |
+ | RICOCHET_SECRET           | Secret to hash password and  cookie. Keep it safe.                                         |               |
+ | SITE_REGISTRATION_ENABLED | Set to `0` to disable site registration.                                                   | 1             |
+ | FILE_STORAGE              | Configure file store type. Allowed values: 'memory', 'disk', 's3'.                         | memory        |
+ | STORE_BACKEND             | Configure JSON store provider. Allowed values: 'memory', 'nedb', 'mongodb'.                | memory        |
+ | EMAIL_*                   | To configure email provider. Put "fake" in EMAIL_HOST to log mail instead of sending them. |               |
 
  Note: "memory" stores are for development purpose only and remember that you
  loose all your data each time you stop the server.
