@@ -97,7 +97,6 @@ const startServer = () => {
 
   // Static files
   const root = path.join(__dirname, '../public');
-  console.log(root);
   app.use(express.static(root));
 
   app.use(

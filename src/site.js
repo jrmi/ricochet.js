@@ -7,6 +7,7 @@ import log from './log.js';
 import { generateKey } from './crypt.js';
 import { errorGuard, errorMiddleware, throwError } from './error.js';
 import { longUid } from './uid.js';
+import { NEW_SITE_REGISTRATION_ENABLED } from './settings.js';
 
 const validateEmail = (email) => {
   let res = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
@@ -112,102 +113,102 @@ const siteMiddleware = ({
     next();
   });
 
-  router.get(
-    '/_register/:siteId/confirm/:token',
-    errorGuard(async (req, res) => {
-      const { siteId, token } = req.params;
+  // Enable site registration
+  if (NEW_SITE_REGISTRATION_ENABLED) {
+    router.get(
+      '/_register/:siteId/confirm/:token',
+      errorGuard(async (req, res) => {
+        const { siteId, token } = req.params;
 
-      let pending;
-      let previous;
+        let pending;
+        let previous;
 
-      try {
-        // Check if pending exists
-        pending = await storeBackend.get('_pending', siteId);
-      } catch (e) {
-        if (e.statusCode === 404) {
-          try {
-            // Pending missing, check if site already exists
-            await storeBackend.get('_site', siteId);
-            // Yes, so token is already consumed
-            throwError('Token already used.', 403);
-          } catch (e) {
-            if (e.statusCode === 404) {
-              // If site not found so URL is wrong
-              throwError('Bad site.', 404);
-            } else {
-              throw e;
+        try {
+          // Check if pending exists
+          pending = await storeBackend.get('_pending', siteId);
+        } catch (e) {
+          if (e.statusCode === 404) {
+            try {
+              // Pending missing, check if site already exists
+              await storeBackend.get('_site', siteId);
+              // Yes, so token is already consumed
+              throwError('Token already used.', 403);
+            } catch (e) {
+              if (e.statusCode === 404) {
+                // If site not found so URL is wrong
+                throwError('Bad site.', 404);
+              } else {
+                throw e;
+              }
             }
+          } else {
+            throw e;
           }
+        }
+
+        try {
+          // Get previous site if exists
+          previous = await storeBackend.get('_site', siteId);
+        } catch (e) {
+          if (e.statusCode !== 404) {
+            throw e;
+          }
+        }
+
+        if (pending.token === token) {
+          const toSave = { ...(previous || {}), ...pending };
+          delete toSave.token;
+          const saved = await storeBackend.save('_site', siteId, toSave);
+          await storeBackend.delete('_pending', siteId);
+          siteConfig[siteId] = { ...saved };
         } else {
-          throw e;
+          // Token can be invalid if another modification is sent in the meantime
+          // or if the token is already consumed.
+          throwError('Token invalid or already used.', 403);
         }
-      }
 
-      try {
-        // Get previous site if exists
-        previous = await storeBackend.get('_site', siteId);
-      } catch (e) {
-        if (e.statusCode !== 404) {
-          throw e;
+        if (previous) {
+          // If previous, then we have just updated the site
+          res.json({ message: 'Site updated' });
+        } else {
+          // otherwise we have created a new site
+          res.json({ message: 'Site created' });
         }
-      }
+      })
+    );
 
-      if (pending.token === token) {
-        const toSave = { ...(previous || {}), ...pending };
-        delete toSave.token;
-        const saved = await storeBackend.save('_site', siteId, toSave);
-        await storeBackend.delete('_pending', siteId);
-        siteConfig[siteId] = { ...saved };
-      } else {
-        // Token can be invalid if another modification is sent in the meantime
-        // or if the token is already consumed.
-        throwError('Token invalid or already used.', 403);
-      }
+    router.post(
+      '/_register/',
+      errorGuard(async (req, res) => {
+        const { siteId, name, emailFrom, owner } = req.body;
 
-      if (previous) {
-        // If previous, then we have just updated the site
-        res.json({ message: 'Site updated' });
-      } else {
-        // otherwise we have created a new site
-        res.json({ message: 'Site created' });
-      }
-    })
-  );
-
-  router.post(
-    '/_register/',
-    errorGuard(async (req, res) => {
-      const { siteId, name, emailFrom, owner } = req.body;
-
-      if (!siteId || !name || !emailFrom || !owner) {
-        throwError(
-          'The following data are required for site creation: siteId, name, emailFrom, owner.',
-          400
-        );
-      }
-
-      if (siteId.length < 3 || !siteId.match(/^[a-zA-Z0-9][a-zA-Z0-9_]*$/)) {
-        throwError(
-          "The siteId must contains at least 3 letters or '_' and can't start with '_'.",
-          400
-        );
-      }
-
-      if (!validateEmail(emailFrom)) {
-        throwError('emailFrom must be a valid email.', 400);
-      }
-
-      if (!validateEmail(owner)) {
-        throwError('emailFrom must be a valid email.', 400);
-      }
-
-      if (siteConfig[siteId]) {
-        // The site already exists
-        throwError('A site with the same name already exists.', 403);
-      } else {
-        if (!owner) {
-          throwError('Missing owner email parameters.', 400);
+        if (!siteId || !name || !emailFrom || !owner) {
+          throwError(
+            'The following data are required for site creation: siteId, name, emailFrom, owner.',
+            400
+          );
         }
+
+        if (siteId.length < 3 || !siteId.match(/^[a-zA-Z0-9][a-zA-Z0-9_]*$/)) {
+          throwError(
+            "The siteId must contains at least 3 letters or '_' and can't start with '_'.",
+            400
+          );
+        }
+
+        if (siteConfig[siteId]) {
+          // The site already exists
+          throwError('A site with the same name already exists.', 403);
+        }
+
+        if (!validateEmail(emailFrom)) {
+          throwError('emailFrom must be a valid email.', 400);
+        }
+
+        if (!validateEmail(owner)) {
+          throwError('emailFrom must be a valid email.', 400);
+        }
+
         const key = generateKey();
         const token = longUid();
 
@@ -229,63 +230,65 @@ const siteMiddleware = ({
         delete response.token;
 
         res.json(response);
-      }
-    })
-  );
+      })
+    );
 
-  router.patch(
-    '/_register/:siteId',
+    router.patch(
+      '/_register/:siteId',
+      errorGuard(async (req, res) => {
+        const { siteId } = req.params;
+        const { name, emailFrom } = req.body;
+
+        if (!siteId || !siteConfig[siteId]) {
+          // The site doesn't exist
+          throwError(
+            `Site '${siteId}' doesn't exist. You must create it before.`,
+            404
+          );
+        }
+
+        if (!name || !emailFrom) {
+          throwError(
+            'The following data are required for site update: name, emailFrom.',
+            400
+          );
+        }
+
+        if (!validateEmail(emailFrom)) {
+          throwError('emailFrom must be a valid email.', 400);
+        }
+
+        const previous = await storeBackend.get('_site', siteId);
+
+        const token = longUid();
+
+        const updated = await storeBackend.save('_pending', siteId, {
+          name,
+          emailFrom,
+          token,
+        });
+
+        await onSiteUpdate({
+          req,
+          site: { ...updated },
+          previous: { ...previous },
+          confirmPath: getConfirmPath(siteId, token),
+        });
+
+        const response = { ...updated };
+        delete response.key;
+        delete response.token;
+        res.json({ ...response });
+      })
+    );
+  }
+
+  router.get(
+    '/site/settings',
     errorGuard(async (req, res) => {
-      const { siteId } = req.params;
-      const { name, emailFrom } = req.body;
-
-      if (!siteId || !siteConfig[siteId]) {
-        // The site doesn't exist
-        throwError(
-          `Site '${siteId}' doesn't exist. You must create it before.`,
-          404
-        );
-      }
-
-      if (!name || !emailFrom) {
-        throwError(
-          'The following data are required for site update: name, emailFrom.',
-          400
-        );
-      }
-
-      if (!validateEmail(emailFrom)) {
-        throwError('emailFrom must be a valid email.', 400);
-      }
-
-      const previous = await storeBackend.get('_site', siteId);
-
-      const token = longUid();
-
-      const updated = await storeBackend.save('_pending', siteId, {
-        name,
-        emailFrom,
-        token,
-      });
-
-      await onSiteUpdate({
-        req,
-        site: { ...updated },
-        previous: { ...previous },
-        confirmPath: getConfirmPath(siteId, token),
-      });
-
-      const response = { ...updated };
-      delete response.key;
-      delete response.token;
-      res.json({ ...response });
+      res.json({ registrationEnabled: NEW_SITE_REGISTRATION_ENABLED });
     })
   );
-
-  // Static files
-  const root = path.join(__dirname, 'frontend');
-  console.log(root);
-  router.use('/frontend', express.static(root));
 
   router.use(errorMiddleware);
 

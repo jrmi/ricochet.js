@@ -2,7 +2,10 @@ import {
   html,
   render,
 } from 'https://unpkg.com/htm@latest/preact/index.mjs?module';
-import { useState } from 'https://unpkg.com/preact@latest/hooks/dist/hooks.module.js?module';
+import {
+  useState,
+  useEffect,
+} from 'https://unpkg.com/preact@latest/hooks/dist/hooks.module.js?module';
 
 function SiteForm({ create = false }) {
   const [newSite, setNewSite] = useState({});
@@ -140,12 +143,26 @@ function SiteForm({ create = false }) {
 }
 
 function App() {
+  const [settings, setSettings] = useState({});
+
+  useEffect(() => {
+    let mounted = true;
+    const updateRegistration = async () => {
+      const result = await (await fetch('/site/settings')).json();
+      console.log(result);
+      if (mounted) setSettings(result);
+    };
+    updateRegistration();
+    return () => (mounted = false);
+  }, []);
+
   return html`<div class="container">
     <div class="row">
       <div class="col-4" />
       <div class="col"><h1>Ricochet.js admin</h1></div>
     </div>
-    <div class="row">
+    ${settings.registrationEnabled &&
+    html`<div class="row">
       <div class="col-2" />
       <div class="col-4">
         <${SiteForm} create />
@@ -153,7 +170,14 @@ function App() {
       <div class="col-4">
         <${SiteForm} />
       </div>
-    </div>
+    </div>`}
+    ${settings.registrationEnabled === false &&
+    html`<div class="row">
+      <div class="col-4" />
+      <div class="col">
+        <h2 class="text-error">Site registration is disabled</h2>
+      </div>
+    </div>`}
   </div>`;
 }
 
