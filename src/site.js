@@ -62,7 +62,7 @@ const siteMiddleware = ({
   configFile,
   onSiteCreation,
   onSiteUpdate,
-  siteRegistrationEnabled,
+  siteRegistrationEnabled = true,
 }) => {
   const router = express.Router();
 
@@ -79,7 +79,6 @@ const siteMiddleware = ({
         siteConfig[site._id] = site;
       });
       configLoaded = true;
-      console.log('Site config loaded!');
     } catch (e) {
       if (e.statusCode === 404 && e.message === 'Box not found') {
         await storeBackend.createOrUpdateBox('_site');
@@ -90,10 +89,12 @@ const siteMiddleware = ({
           Object.entries(siteConfigFile).forEach(async ([id, data]) => {
             await storeBackend.save('_site', id, data);
           });
-          console.log('Migrate deprecated config file to store.');
+          fs.renameSync(configFile, `${configFile}.bak`);
+          console.log('Migrate deprecated config file data to store.');
         } catch (e) {
-          // TODO be more specific
-          console.log('No valid deprecated config file to load.');
+          if (!e.includes('missing')) {
+            console.log('Deprecated config file appears to be invalid.');
+          }
         }
         await loadSites();
       } else {
