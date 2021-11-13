@@ -9,8 +9,8 @@ export const HOST = process.env.SERVER_HOST || 'localhost';
 export const SERVER_URL = process.env.SERVER_URL || `http://${HOST}:${PORT}`;
 export const SERVER_NAME = process.env.SERVER_NAME || 'Ricochet.js';
 
-export const NEW_SITE_REGISTRATION_ENABLED =
-  process.env.NEW_SITE_REGISTRATION_ENABLED !== '0';
+export const SITE_REGISTRATION_ENABLED =
+  process.env.SITE_REGISTRATION_ENABLED !== '0';
 
 export const SOCKET_PATH =
   process.env.SOCKET_PATH || process.env.REACT_APP_SOCKET_PATH || '/socket.io';

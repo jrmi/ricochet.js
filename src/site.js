@@ -1,5 +1,4 @@
 import fs from 'fs';
-import path from 'path';
 import express from 'express';
 
 import log from './log.js';
@@ -7,7 +6,7 @@ import log from './log.js';
 import { generateKey } from './crypt.js';
 import { errorGuard, errorMiddleware, throwError } from './error.js';
 import { longUid } from './uid.js';
-import { NEW_SITE_REGISTRATION_ENABLED } from './settings.js';
+import { SITE_REGISTRATION_ENABLED } from './settings.js';
 
 const validateEmail = (email) => {
   let res = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
@@ -63,6 +62,7 @@ const siteMiddleware = ({
   configFile,
   onSiteCreation,
   onSiteUpdate,
+  siteRegistrationEnabled,
 }) => {
   const router = express.Router();
 
@@ -114,7 +114,7 @@ const siteMiddleware = ({
   });
 
   // Enable site registration
-  if (NEW_SITE_REGISTRATION_ENABLED) {
+  if (siteRegistrationEnabled) {
     router.get(
       '/_register/:siteId/confirm/:token',
       errorGuard(async (req, res) => {
@@ -286,7 +286,7 @@ const siteMiddleware = ({
   router.get(
     '/site/settings',
     errorGuard(async (req, res) => {
-      res.json({ registrationEnabled: NEW_SITE_REGISTRATION_ENABLED });
+      res.json({ registrationEnabled: siteRegistrationEnabled });
     })
   );
 
