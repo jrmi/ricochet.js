@@ -1,4 +1,4 @@
-# Ricochet.js
+# 💡 Ricochet.js
 
 Ricochet.js is a multi-purpose JSON/File store with serverless capabilities.
 
@@ -10,7 +10,7 @@ Main features are:
   - A File store
 - Ability to calls remote javascript functions like [Serverless](https://en.wikipedia.org/wiki/Serverless_computing) or [FaaS](https://en.wikipedia.org/wiki/Function_as_a_service)
     application
-- Avoid frontend/backend version diconnect by deploy your backend code alongside
+- Avoid frontend/backend version disconnect by deploy your backend code alongside
   to your frontend code on the same CDN.
 - 0 knowledge password-less authentification service
 - Cloud ready, choose your stores:
@@ -18,15 +18,16 @@ Main features are:
   - File : Memory, Disk, S3 compatible, more coming...
 - Can manage multiple site with only one backend
 - Easily scalable
+- Works on edges
 
 Some use cases:
 
-- You don't want to deploy your server each time you make a backend modification
+- You don't want to deploy your backend server each time you make a backend modification
 - You need a simple backend with only some specific code
 - You want to store structured data and files
 - You want frontend and backend code to be updated at same time
 
-## Why Ricochet.js?
+## ❓Why Ricochet.js?
 
 When you create a web application, you nearly always need a server mainly for
 3 reasons:
@@ -46,19 +47,24 @@ executed in secured context on server side with access to this two stores.
 
 Finally you can *schedule* hourly or daily actions.
 
-## Start the server
+To use Ricochet.js you need a running instance of the server. You have two option:
 
-First you need to define a random secret string and store it the `SECRET` env
-variable or in `.env` file if you prefer.
+- Using an hosted version (jump to [project initialization](#⚡-initialize-your-project) section)
+- Running your own instance, continue with the next section
 
-The following command helps you to create a such file.
+## 💫 Start your own local instance of Ricochet.js
+
+First you need to define a random secret string and store it the
+`RICOCHET_SECRET` env variable or in `.env` file if you prefer.
+
+The following command helps you to create such a file.
 
 ```sh
-echo SECRET=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1` > .env
+echo RICOCHET_SECRET=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1` > .env
 ```
 
-Now you can start a Ricochet.js server by using `npx` (you should have npm version >=7
-to support *mongodb* or *nedb* backend):
+Now you can start a Ricochet.js server by using `npx` (🚨 you should have npm version >=7
+to support *mongodb* or *nedb* store backend):
 
 ```sh
 npx ricochetjs
@@ -69,7 +75,7 @@ Or install Ricochet.js globally and launch the server:
 ```sh
 npm install -g ricochetjs
 # then
-ricochet
+ricochetjs
 ```
 
 By default, data are *stored in memory* so if you restart the server, all data
@@ -98,7 +104,7 @@ provider, check out the server logs to read the confirmation link.
 Now, your server is ready and a site exists. You can follow the next steps to create
 a new site project.
 
-## Initialize your project
+## ⚡ Initialize your backend project
 
 Since you have a Ricochet.js instance up and running, you can use the
 [project starter](https://github.com/jrmi/ricochetjs-starter) to initialize
@@ -120,7 +126,7 @@ npm install
 ```
 
 Create a `.env` file from the `.env.dist` file and customize it by adding your
-previously generated key with ricochet.js.
+previously generated site key with Ricochet.js.
 
 You can serve the default project by executing:
 
@@ -128,9 +134,23 @@ You can serve the default project by executing:
 npm run serve
 ```
 
-### Test it with curl
+or if you use an external instance of Ricochet.js, you can use the tunnel version:
 
-To test the script, the ricochet.js server should be running. You can use `curl`:
+```sh
+npm run tunnel
+```
+
+### Test with curl
+
+To test the script, a Ricochet.js server must be running.
+
+In the following example we assume that you use your local Ricochet.js instance
+available on `http://localhost:4000` but you can replace this URL by any ricochet
+instance that have access to your backend package server. We also assume that your
+backend server is on `http://localhost:9000` but if you use a tunnel, use the
+address given by the npm command.
+
+You can use `curl` to test the API:
 
 ```sh
 curl -X POST -H "Content-Type: application/json
@@ -170,7 +190,7 @@ Yes, that's true, you are bundling the backend code with webpack!
 This bundle can now be deployed on any content delivery network and can
 (should?) be deployed alongside with your frontend code.
 
-## How does it work?
+## 💪 How does it work?
 
 Each time you call an API you should have at least one of this HTTP header:
 *x-ricochet-origin*, *referer*, *origin*. These headers are used to determine the website
@@ -178,7 +198,7 @@ where the backend code is stored. Let's call it the `<ricochetOrigin>`. By defau
 if you use a *browser*, *referer* or *origin* should be included by default.
 
 On the first call of any API endpoint for a specific *siteId*, the file
-`<ricochetOrigin>/setup.js` is downloaded, decrypted and executed by the 
+`<ricochetOrigin>/setup.js` is downloaded, decrypted and executed by the
 Ricochet.js server.
 
 This is the encrypted server side bundle that configure Ricochet.js for this *siteId*.
@@ -202,10 +222,10 @@ capabilities.
 This script allow you to configure the ricochet server for your *siteId* in a
 declarative way.
 
-Once you have initialized your site with the setup script you can use the rest API
-(described later) to store data, files or call custom functions.
+Once you have initialized your site with the setup script you can use the [rest API](#🔌-rest-api)
+to store data, files or call custom functions.
 
-## Server API
+## 📞 Server API
 
 ### Store
 
@@ -266,7 +286,7 @@ key `daily` or `hourly`.
 
 [More details coming soon...]
 
-## Rest API
+## 🔌 Rest API
 
 This section describe the Rest api of ricochet.js.
 
@@ -372,7 +392,7 @@ The json content should look like this:
 
 You can't modify owner email (yet?).
 
-## Server configuration
+## ⚙️ Server configuration
 
 You can configure your instance by settings environment variables or using
 `.env` file:
@@ -426,7 +446,7 @@ For *mongodb* JSON store provider:
  | MONGODB_URI      | Mongodb configuration URI |               |
  | MONGODB_DATABASE | Database to use           |               |
 
-## Prepare ricochet.js for development
+## 🛠 Prepare ricochet.js for development
 
 Clone the repository then install dependencies:
 

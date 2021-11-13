@@ -68,7 +68,7 @@ const startServer = () => {
 
   if (!SECRET) {
     console.log(
-      'You must define "SECRET" environnement variable (tips: use .env file)'
+      'You must define "RICOCHET_SECRET" environnement variable (tip: use .env file)'
     );
     process.exit(-1);
   }
