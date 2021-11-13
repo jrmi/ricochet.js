@@ -44,9 +44,10 @@ describe('Site endpoint tests', () => {
 
   it('should create a site', async () => {
     const result = await query
-      .post('/_register/test')
+      .post('/_register/')
       .send({
-        owner: 'test@yopmail',
+        siteId: 'test',
+        owner: 'test@yopmail.com',
         name: 'Site test',
         emailFrom: 'from@ricochet.net',
         extraData: 'data',
@@ -56,7 +57,7 @@ describe('Site endpoint tests', () => {
     expect(result.body).toEqual(
       expect.objectContaining({
         name: 'Site test',
-        owner: 'test@yopmail',
+        owner: 'test@yopmail.com',
         emailFrom: 'from@ricochet.net',
       })
     );
@@ -84,7 +85,7 @@ describe('Site endpoint tests', () => {
     expect(sitesAfter[0]).toEqual(
       expect.objectContaining({
         name: 'Site test',
-        owner: 'test@yopmail',
+        owner: 'test@yopmail.com',
         emailFrom: 'from@ricochet.net',
       })
     );
@@ -105,8 +106,9 @@ describe('Site endpoint tests', () => {
     });
 
     await query
-      .post('/_register/mytestsite')
+      .post('/_register')
       .send({
+        siteId: 'mytestsite',
         owner: 'test@yopmail',
         name: 'Site test',
         emailFrom: 'from@ricochet.net',
@@ -116,32 +118,36 @@ describe('Site endpoint tests', () => {
 
   it('should not create a site with bad characters', async () => {
     await query
-      .post('/_register/toto4+')
+      .post('/_register/')
       .send({
+        siteId: 'toto4+',
         owner: 'test@yopmail',
         name: 'Site test',
         emailFrom: 'from@ricochet.net',
       })
       .expect(400);
     await query
-      .post('/_register/toto4é')
+      .post('/_register/')
       .send({
+        siteId: 'toto4é',
         owner: 'test@yopmail',
         name: 'Site test',
         emailFrom: 'from@ricochet.net',
       })
       .expect(400);
     await query
-      .post('/_register/_toto4')
+      .post('/_register/')
       .send({
+        siteId: '_toto',
         owner: 'test@yopmail',
         name: 'Site test',
         emailFrom: 'from@ricochet.net',
       })
       .expect(400);
     await query
-      .post('/_register/toto-titi')
+      .post('/_register/')
       .send({
+        siteId: 'toto-titi',
         owner: 'test@yopmail',
         name: 'Site test',
         emailFrom: 'from@ricochet.net',

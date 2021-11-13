@@ -9,6 +9,9 @@ export const HOST = process.env.SERVER_HOST || 'localhost';
 export const SERVER_URL = process.env.SERVER_URL || `http://${HOST}:${PORT}`;
 export const SERVER_NAME = process.env.SERVER_NAME || 'Ricochet.js';
 
+export const SITE_REGISTRATION_ENABLED =
+  process.env.SITE_REGISTRATION_ENABLED !== '0';
+
 export const SOCKET_PATH =
   process.env.SOCKET_PATH || process.env.REACT_APP_SOCKET_PATH || '/socket.io';
 
@@ -33,7 +36,7 @@ export const NEDB_BACKEND_DIRNAME = process.env.NEDB_BACKEND_DIRNAME || '/tmp/';
 export const MONGODB_URI = process.env.MONGODB_URI;
 export const MONGODB_DATABASE = process.env.MONGODB_DATABASE;
 
-export const SECRET = process.env.SECRET || process.env.RICOCHET_SECRET;
+export const SECRET = process.env.RICOCHET_SECRET || process.env.SECRET;
 
 export const DISABLE_CACHE = process.env.DISABLE_CACHE === '1';
 

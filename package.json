@@ -15,7 +15,7 @@
     "start": "pm2 start 'babel-node src/cli.js > server.log' --name ricochet-server",
     "stop": "pm2 stop ricochet-server",
     "test": "jest --watch",
-    "test:server": "npx serve src/__test__/test.files",
+    "test:server": "PORT=5000 npx serve src/__test__/test.files",
     "coverage": "jest --coverage",
     "generateKey": "babel-node src/cli.js --generate-key",
     "build": "npm run clean && babel src -d dist --ignore 'src/**/__test__/'",

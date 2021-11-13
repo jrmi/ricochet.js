@@ -247,6 +247,7 @@ export const ricochetMiddleware = ({
 export const mainMiddleware = ({
   serverUrl,
   serverName,
+  siteRegistrationEnabled,
   fileStoreConfig = {},
   storeConfig = {},
   configFile = './site.json',
@@ -371,7 +372,15 @@ export const mainMiddleware = ({
     });
   };
 
-  router.use(site({ configFile, storeBackend, onSiteCreation, onSiteUpdate }));
+  router.use(
+    site({
+      configFile,
+      storeBackend,
+      siteRegistrationEnabled,
+      onSiteCreation,
+      onSiteUpdate,
+    })
+  );
 
   router.use(
     '/:siteId',

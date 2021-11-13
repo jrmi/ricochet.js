@@ -1,0 +1,45 @@
+:root {
+  --bg-color: #ffffff;
+  --bg-secondary-color: #f3f3f6;
+  --color-primary: #14854f;
+  --color-lightGrey: #d2d6dd;
+  --color-grey: #747681;
+  --color-darkGrey: #3f4144;
+  --color-error: #d43939;
+  --color-success: #28bd14;
+  --grid-maxWidth: 120rem;
+  --grid-gutter: 2rem;
+  --font-size: 1.6rem;
+  --font-color: #333333;
+  --font-family-sans: sans-serif;
+  --font-family-mono: monaco, 'Consolas', 'Lucida Console', monospace;
+}
+
+body.dark {
+  --bg-color: #04293a;
+  --bg-secondary-color: #131316;
+  --font-color: #f5f5f5;
+  --color-grey: rgb(37, 102, 90);
+  --color-darkGrey: #777;
+}
+
+.card .content {
+  margin-bottom: 1em;
+}
+
+.card .text-error {
+  padding: 1em;
+}
+
+.card form {
+  padding-bottom: 1em;
+}
+
+.card .field {
+  margin-bottom: 0.5em;
+}
+
+.card .help-text {
+  font-size: 1em;
+  color: var(--color-darkGrey);
+}

@@ -40,6 +40,7 @@ import {
   S3_SIGNED_URL,
   SERVER_NAME,
   EMAIL_FROM,
+  SITE_REGISTRATION_ENABLED,
 } from './settings.js';
 
 const startServer = () => {
@@ -95,11 +96,16 @@ const startServer = () => {
 
   app.use(bodyParser.urlencoded({ extended: true }));
 
+  // Static files
+  const root = path.join(__dirname, '../public');
+  app.use(express.static(root));
+
   app.use(
     middleware({
       secret: SECRET,
       serverName: SERVER_NAME,
       serverUrl: SERVER_URL,
+      siteRegistrationEnabled: SITE_REGISTRATION_ENABLED,
       storeConfig: {
         type: STORE_BACKEND,
         prefix: STORE_PREFIX,
