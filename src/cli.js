@@ -15,7 +15,7 @@ yargs(hideBin(process.argv))
   .usage('Usage: $0 [options]')
   .command(
     '$0',
-    'Start the ricochetjs server',
+    'Start the Ricochet.js server',
     () => {},
     (argv) => {
       if (argv.generateKey) {

@@ -36,11 +36,12 @@ import {
   EMAIL_PORT,
   EMAIL_USER,
   EMAIL_PASSWORD,
-  SETUP_FUNCTION,
+  SETUP_PATH,
   S3_SIGNED_URL,
   SERVER_NAME,
   EMAIL_FROM,
   SITE_REGISTRATION_ENABLED,
+  USE_PINO,
 } from './settings.js';
 
 const startServer = () => {
@@ -68,7 +69,7 @@ const startServer = () => {
 
   if (!SECRET) {
     console.log(
-      'You must define "SECRET" environnement variable (tips: use .env file)'
+      'You must define "RICOCHET_SECRET" environnement variable (tip: use .env file)'
     );
     process.exit(-1);
   }
@@ -85,7 +86,11 @@ const startServer = () => {
   };
 
   app.use(cors(corsOption));
-  app.use(pinoHttp({ logger: log }));
+
+  if (USE_PINO) {
+    app.use(pinoHttp({ logger: log }));
+  }
+
   app.use(
     bodyParser.json({
       limit: '50mb',
@@ -126,7 +131,7 @@ const startServer = () => {
         s3SignedUrl: S3_SIGNED_URL,
       },
       disableCache: DISABLE_CACHE,
-      setupFunction: SETUP_FUNCTION,
+      setupPath: SETUP_PATH,
       emailConfig: {
         host: EMAIL_HOST,
         port: EMAIL_PORT,

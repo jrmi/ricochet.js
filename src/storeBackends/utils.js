@@ -30,7 +30,7 @@ export const wrapBackend = (backend, siteId, userId) => {
 
     for (const key of Object.keys(migrationToApply)) {
       if (!migrations.includes(key)) {
-        log.info(`Apply ${key} migration on box ${boxId}`);
+        log.debug(`Apply ${key} migration on box ${boxId}`);
         await migrationToApply[key](boxId);
         migrationApplied.push(key);
       }

@@ -30,6 +30,7 @@ export const MongoDBBackend = (options) => {
 
   const close = async () => {
     const client = await getClient();
+    // TODO isConnected is deprecated
     if (client.isConnected()) {
       database = undefined;
       await client.close();
@@ -58,8 +59,9 @@ export const MongoDBBackend = (options) => {
     async createOrUpdateBox(boxId, options = { ...DEFAULT_BOX_OPTIONS }) {
       const prevOptions = (await getBoxOption(boxId)) || {};
 
-      // TODO boxes should be prefixed ?
+      // TODO boxes should be prefixed with _?
       const boxes = await getBoxDb('boxes');
+      // TODO returnOriginal is deprecated
       return await boxes.findOneAndUpdate(
         { box: boxId },
         { $set: { ...prevOptions, ...options, box: boxId } },

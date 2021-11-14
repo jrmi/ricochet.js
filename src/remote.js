@@ -6,7 +6,7 @@ import { throwError, errorGuard, errorMiddleware } from './error.js';
 
 // Remote setup Middleware
 export const remote = ({
-  setupFunction = 'setup.js',
+  setupPath = 'setup.js',
   context = {},
   disableCache,
   preProcess,
@@ -40,7 +40,7 @@ export const remote = ({
             contextAddition = context(req);
           }
 
-          await remoteCode.exec(req, remote, setupFunction, {
+          await remoteCode.exec(req, remote, setupPath, {
             ...contextAddition,
           });
 
