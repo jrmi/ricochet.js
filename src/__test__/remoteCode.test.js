@@ -20,7 +20,7 @@ describe('Remote Test', () => {
 
   it('should call remote function', async () => {
     const content = { hello: true };
-    const result = await remoteCode.exec(SITEID, REMOTE, 'scripts/mysetup', {
+    const result = await remoteCode.exec(SITEID, REMOTE, 'scripts/mysetup.js', {
       content,
     });
     expect(result).toEqual('foo');
@@ -30,17 +30,27 @@ describe('Remote Test', () => {
     );
 
     // Hit cache
-    const result2 = await remoteCode.exec(SITEID, REMOTE, 'scripts/mysetup', {
-      content,
-    });
+    const result2 = await remoteCode.exec(
+      SITEID,
+      REMOTE,
+      'scripts/mysetup.js',
+      {
+        content,
+      }
+    );
     expect(result2).toEqual('foo');
 
     // Clear cache
     remoteCode.clearCache(REMOTE);
 
-    const result3 = await remoteCode.exec(SITEID, REMOTE, 'scripts/mysetup', {
-      content,
-    });
+    const result3 = await remoteCode.exec(
+      SITEID,
+      REMOTE,
+      'scripts/mysetup.js',
+      {
+        content,
+      }
+    );
     expect(result3).toEqual('foo');
   });
 
@@ -48,13 +58,13 @@ describe('Remote Test', () => {
     const http = await remoteCode.exec(
       SITEID,
       REMOTE,
-      'scripts/mysetupWithRequire'
+      'scripts/mysetupWithRequire.js'
     );
     const httpReal = require('http');
     expect(http).toEqual(httpReal);
 
     try {
-      await remoteCode.exec(SITEID, REMOTE, 'scripts/mysetupWithBadRequire');
+      await remoteCode.exec(SITEID, REMOTE, 'scripts/mysetupWithBadRequire.js');
     } catch (e) {
       expect(e.code).toMatch('EDENIED');
     }

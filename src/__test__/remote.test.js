@@ -17,7 +17,7 @@ describe('Remote Test', () => {
       },
       origin(),
       remote({
-        setupFunction: 'scripts/mysetup',
+        setupPath: 'scripts/mysetup.js',
         context: { content: {} },
       })
     );
@@ -46,7 +46,7 @@ describe('Remote Test', () => {
         next();
       },
       remote({
-        setupFunction: 'scripts/bad',
+        setupPath: 'scripts/bad.js',
       })
     );
     query = request(app);

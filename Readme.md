@@ -10,8 +10,8 @@ Main features are:
   - A File store
 - Ability to calls remote javascript functions like [Serverless](https://en.wikipedia.org/wiki/Serverless_computing) or [FaaS](https://en.wikipedia.org/wiki/Function_as_a_service)
     application
-- Avoid frontend/backend version disconnect by deploy your backend code alongside
-  to your frontend code on the same CDN.
+- Avoid frontend/backend version disconnect by deploying your backend code alongside
+  to your frontend code on the same CDN/Server.
 - 0 knowledge password-less authentification service
 - Cloud ready, choose your stores:
   - JSON : Memory, NeDB (Disk), MongoDB, more coming...
@@ -198,7 +198,7 @@ where the backend code is stored. Let's call it the `<ricochetOrigin>`. By defau
 if you use a *browser*, *referer* or *origin* should be included by default.
 
 On the first call of any API endpoint for a specific *siteId*, the file
-`<ricochetOrigin>/setup.js` is downloaded, decrypted and executed by the
+`<ricochetOrigin>/ricochet.json` is downloaded, decrypted and executed by the
 Ricochet.js server.
 
 This is the encrypted server side bundle that configure Ricochet.js for this *siteId*.
@@ -222,14 +222,15 @@ capabilities.
 This script allow you to configure the ricochet server for your *siteId* in a
 declarative way.
 
-Once you have initialized your site with the setup script you can use the [rest API](#🔌-rest-api)
-to store data, files or call custom functions.
+Once you have initialized your site with the setup script (the `ricochet.json` file)
+you can use the [rest API](#🔌-rest-api) to store data, files or call
+custom functions.
 
 ## 📞 Server API
 
 ### Store
 
-To access JSON store from the *setup* function, you can use the `store` parameter.
+To access JSON store from the *setup* function in your `ricochet.json` file, you can use the `store` parameter.
 
 This a store instance scoped to the current *siteId*. You have access to the
 following methods:
@@ -288,7 +289,7 @@ key `daily` or `hourly`.
 
 ## 🔌 Rest API
 
-This section describe the Rest api of ricochet.js.
+This section describe the Rest api of Ricochet.js.
 
 ### GET on /:siteId/store/:boxId/
 
@@ -375,7 +376,7 @@ The json content should look like this:
 
 In the response you'll get an extra `key` property. You MUST save it for later use.
 This is the ONLY chance to get it. This is the encryption key you need to crypt
-your `setup.js` file.
+your `ricochet.json` file.
 
 ### PATCH on /_register/:siteId
 
@@ -455,9 +456,6 @@ npm ci
 ```
 
 Create `.env` file from `.env.dist` file and change the values.
-
-Create `site.json` file. This file should contains the site configuration
-(see above).
 
 and start the instance in dev mode:
 

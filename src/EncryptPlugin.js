@@ -10,8 +10,8 @@ class EncryptPlugin {
   apply(compiler) {
     compiler.hooks.compilation.tap('EncryptPlugin', (compilation) => {
       compilation.hooks.afterProcessAssets.tap('EncryptPlugin', () => {
-        console.log('Encrypt setup.js content.');
-        compilation.updateAsset('setup.js', (rawSource) => {
+        console.log('Encrypt ricochet.json content.');
+        compilation.updateAsset('ricochet.json', (rawSource) => {
           return new RawSource(
             JSON.stringify(
               encrypt(rawSource.buffer(), this.key, this.algorithm)

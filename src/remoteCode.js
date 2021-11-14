@@ -30,22 +30,22 @@ class RemoteCode {
 
   /**
    * Get and cache the script designed by name from remote
-   * @param {string} scriptName script name.
+   * @param {string} scriptPath script name.
    * @param {string} extraCommands to be concatened at the end of script.
    */
-  async cacheOrFetch(req, remote, scriptName, extraCommands = '') {
+  async cacheOrFetch(req, remote, scriptPath, extraCommands = '') {
     if (!this.scriptCache.has(remote)) {
       this.scriptCache.set(remote, new NodeCache(this.cacheConfig));
     }
 
     const cache = this.scriptCache.get(remote);
 
-    if (cache.has(scriptName) && !this.disableCache) {
-      return cache.get(scriptName);
+    if (cache.has(scriptPath) && !this.disableCache) {
+      return cache.get(scriptPath);
     } else {
       const httpClient = remote.startsWith('https') ? https : http;
       return new Promise((resolve, reject) => {
-        const scriptUrl = `${remote}/${scriptName}.js`.replace('//', '/');
+        const scriptUrl = `${remote}/${scriptPath}`.replace('//', '/');
 
         httpClient
           .get(scriptUrl, (resp) => {
@@ -67,7 +67,7 @@ class RemoteCode {
               script += extraCommands;
               try {
                 const scriptFunction = this.vm.run(script).default;
-                cache.set(scriptName, scriptFunction);
+                cache.set(scriptPath, scriptFunction);
                 this.scriptCache.set(remote, cache);
 
                 resolve(scriptFunction);
@@ -84,14 +84,14 @@ class RemoteCode {
     }
   }
 
-  async exec(req, remote, scriptName, context) {
+  async exec(req, remote, scriptPath, context) {
     try {
-      const toRun = await this.cacheOrFetch(req, remote, scriptName);
+      const toRun = await this.cacheOrFetch(req, remote, scriptPath);
 
       return toRun({ ...context });
     } catch (e) {
       if (e.status === 'not-found') {
-        throw `Script ${scriptName} not found on remote ${remote}`;
+        throw `Script ${scriptPath} not found on remote ${remote}`;
       } else {
         if (e.error) {
           throw e.error;

@@ -46,4 +46,6 @@ export const EMAIL_USER = process.env.EMAIL_USER;
 export const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD;
 export const EMAIL_FROM = process.env.EMAIL_FROM || 'no-reply@example.com';
 
-export const SETUP_FUNCTION = process.env.SETUP_FUNCTION || 'setup';
+export const SETUP_PATH = process.env.SETUP_PATH || 'ricochet.js';
+
+export const USE_PINO = process.env.USE_PINO === '1';

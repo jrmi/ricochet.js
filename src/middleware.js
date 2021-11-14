@@ -29,7 +29,7 @@ export const ricochetMiddleware = ({
   fileStoreBackend,
   storePrefix,
   disableCache = false,
-  setupFunction = 'setup',
+  setupPath,
   getTransporter,
 } = {}) => {
   const router = express.Router();
@@ -56,10 +56,10 @@ export const ricochetMiddleware = ({
     } catch (e) {
       log.warn(
         { error: e },
-        `Fails to decrypt setup from ${remote}. Please check your encryption key.`
+        `Fails to decrypt Ricochet setup file from ${remote}. Please check your encryption key.`
       );
       throwError(
-        `Fails to decrypt setup from ${remote}. Please check your encryption key.`,
+        `Fails to decrypt Ricochet setup file from ${remote}. Please check your encryption key.`,
         500
       );
     }
@@ -98,7 +98,7 @@ export const ricochetMiddleware = ({
         };
       },
       disableCache,
-      setupFunction,
+      setupPath,
       preProcess: decryptPayload,
     })
   );

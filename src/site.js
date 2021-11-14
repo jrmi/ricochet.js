@@ -6,7 +6,6 @@ import log from './log.js';
 import { generateKey } from './crypt.js';
 import { errorGuard, errorMiddleware, throwError } from './error.js';
 import { longUid } from './uid.js';
-import { SITE_REGISTRATION_ENABLED } from './settings.js';
 
 const validateEmail = (email) => {
   let res = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;

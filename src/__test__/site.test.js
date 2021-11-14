@@ -32,7 +32,7 @@ describe('Site endpoint tests', () => {
     app.use(express.json());
     app.use(
       site({
-        configFile: './setup.js',
+        configFile: './site.json',
         storeBackend,
         onSiteCreation,
         onSiteUpdate,
