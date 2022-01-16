@@ -145,7 +145,7 @@ const startServer = () => {
   );
 
   httpServer.listen(PORT, () => {
-    log.info(`listening on ${PORT}`);
+    log.info(`Ricochet.js is listening on ${PORT}`);
   });
   return app;
 };

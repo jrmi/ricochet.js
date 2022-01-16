@@ -35,7 +35,7 @@ export const STORE_BACKEND =
   process.env.JSON_STORE_BACKEND || process.env.STORE_BACKEND || 'memory';
 export const STORE_PREFIX = process.env.STORE_PREFIX || 'store';
 export const NEDB_BACKEND_DIRNAME =
-  process.env.NEDB_DIRNAME || process.env.NEDB_BACKEND_DIRNAME || '/tmp/';
+  process.env.NEDB_BACKEND_DIRNAME || process.env.NEDB_DIRNAME || '/tmp/';
 export const MONGODB_URI = process.env.MONGODB_URI;
 export const MONGODB_DATABASE = process.env.MONGODB_DATABASE;
 
