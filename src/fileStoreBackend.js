@@ -292,7 +292,7 @@ export const S3FileBackend = ({
         range: Range,
       }
     ) {
-      // Here we proxy the image
+      // Here we proxy the file if needed
       if (proxy) {
         const params = {
           Bucket: bucket,
@@ -362,7 +362,7 @@ export const S3FileBackend = ({
 
         return { redirectTo: url };
       }
-      // Finnally we just use public URL
+      // Finally we just use public URL
       return {
         redirectTo: `${endpoint}/${siteId}/${boxId}/${resourceId}/${filename}`,
       };

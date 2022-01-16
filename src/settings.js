@@ -16,7 +16,8 @@ export const SOCKET_PATH =
   process.env.SOCKET_PATH || process.env.REACT_APP_SOCKET_PATH || '/socket.io';
 
 // File store related
-export const FILE_STORE_TYPE = process.env.FILE_STORAGE || 'memory';
+export const FILE_STORE_TYPE =
+  process.env.FILE_STORE_BACKEND || process.env.FILE_STORAGE || 'memory';
 export const DISK_DESTINATION =
   process.env.DISK_DESTINATION || '/tmp/ricochet_file';
 
@@ -30,9 +31,11 @@ export const S3_CDN = process.env.S3_CDN || '';
 export const S3_SIGNED_URL = process.env.S3_SIGNED_URL !== '0';
 
 // JSON store related
-export const STORE_BACKEND = process.env.STORE_BACKEND || 'memory';
+export const STORE_BACKEND =
+  process.env.JSON_STORE_BACKEND || process.env.STORE_BACKEND || 'memory';
 export const STORE_PREFIX = process.env.STORE_PREFIX || 'store';
-export const NEDB_BACKEND_DIRNAME = process.env.NEDB_BACKEND_DIRNAME || '/tmp/';
+export const NEDB_BACKEND_DIRNAME =
+  process.env.NEDB_DIRNAME || process.env.NEDB_BACKEND_DIRNAME || '/tmp/';
 export const MONGODB_URI = process.env.MONGODB_URI;
 export const MONGODB_DATABASE = process.env.MONGODB_DATABASE;
 
