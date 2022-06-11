@@ -12,8 +12,6 @@
     "clean": "rimraf dist",
     "dev": "nodemon  --exec babel-node src/cli.js | pino-tiny",
     "cli": "babel-node src/cli.js",
-    "start": "pm2 start 'babel-node src/cli.js > server.log' --name ricochet-server",
-    "stop": "pm2 stop ricochet-server",
     "test": "jest --watch",
     "test:server": "PORT=5000 npx serve src/__test__/test.files",
     "coverage": "jest --coverage",
@@ -61,7 +59,7 @@
     "pivotql-compiler-mongodb": "^0.3.1",
     "pivotql-parser-expression": "^0.3.0",
     "socket.io": "^4.1.2",
-    "vm2": "^3.9.3",
+    "vm2": "^3.9.9",
     "yargs": "^17.5.1"
   },
   "peerDependencies": {
@@ -84,7 +82,6 @@
     "nodemon": "^2.0.6",
     "pino-pretty": "^4.3.0",
     "pino-tiny": "^1.0.0",
-    "pm2": "^4.5.6",
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
     "supertest": "^4.0.2",
