@@ -13,9 +13,12 @@ const sha256 = (data) => {
 export const authentication = ({
   prefix = 'auth',
   secret,
+  // eslint-disable-next-line no-unused-vars
   onSendToken = ({ remote, userEmail, userId, token, req }) =>
     Promise.resolve(),
+  // eslint-disable-next-line no-unused-vars
   onLogin = (req, userId) => {},
+  // eslint-disable-next-line no-unused-vars
   onLogout = (req) => {},
 } = {}) => {
   const router = express.Router();

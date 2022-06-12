@@ -33,7 +33,9 @@ describe('Execute Test', () => {
       const result = { hello: true, method, query, body, console, id };
       try {
         result.response = response;
-      } catch {}
+      } catch {
+        console.log('-');
+      }
       return result;
     });
     const functions = { mytestfunction: execFunction };

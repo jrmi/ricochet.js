@@ -102,7 +102,7 @@ export const DiskFileBackend = ({ destination, pathFromReq }) => {
       });
     },
 
-    async store(namespace, file) {
+    async store() {
       // Nothing to do here. Already done by upload manager
       return;
     },
@@ -199,7 +199,7 @@ export const S3FileBackend = ({
       });
     },
 
-    async store(namespace, file) {
+    async store() {
       return;
     },
 

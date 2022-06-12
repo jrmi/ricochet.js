@@ -26,7 +26,7 @@ export const getFileStoreBackend = (type, backendConfig) => {
   }
 };
 
-export const wrapBackend = (backend, siteId, userId) => {
+export const wrapBackend = (backend, siteId) => {
   return {
     async store(boxId, resourceId, file) {
       return await backend.store(siteId, boxId, resourceId, file);

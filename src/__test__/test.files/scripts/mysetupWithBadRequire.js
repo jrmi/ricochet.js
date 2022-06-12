@@ -1,6 +1,7 @@
 const fs = require('fs');
 
 var main = () => {
+  console.log('fs');
   return 'foo';
 };
 

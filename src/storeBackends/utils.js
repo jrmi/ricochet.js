@@ -2,7 +2,7 @@ import log from '../log.js';
 
 export const DEFAULT_BOX_OPTIONS = { security: 'private', personal: false };
 
-export const wrapBackend = (backend, siteId, userId) => {
+export const wrapBackend = (backend, siteId) => {
   const getBoxId = (userBoxId) => {
     return `_${siteId}__${userBoxId}`;
   };
