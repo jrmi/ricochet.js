@@ -1,4 +1,4 @@
-import log from '../log.js';
+import log from '../../log.js';
 
 export const DEFAULT_BOX_OPTIONS = { security: 'private', personal: false };
 

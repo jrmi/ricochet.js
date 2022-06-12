@@ -3,7 +3,7 @@ import {
   NeDBBackend,
   MongoDBBackend,
   wrapBackend,
-} from '../storeBackends';
+} from '../store/backends';
 
 import { MONGODB_URI } from '../settings';
 

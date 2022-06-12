@@ -2,7 +2,7 @@ import request from 'supertest';
 import express from 'express';
 import store from '../store';
 import path from 'path';
-import { MemoryBackend } from '../storeBackends';
+import { MemoryBackend } from '../store/backends';
 import { MemoryFileBackend } from '../fileStore/backends';
 
 jest.mock('nanoid', () => {

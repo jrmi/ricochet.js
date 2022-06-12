@@ -6,7 +6,7 @@ import schedule from 'node-schedule';
 import { throwError } from './error.js';
 import log from './log.js';
 import oldFileStore from './fileStore/oldFileStore.js';
-import store from './store.js';
+import store from './store';
 import site from './site.js';
 import origin from './origin.js';
 

@@ -1,8 +1,8 @@
 import parserExpression from 'pivotql-parser-expression';
 import compilerJavascript from 'pivotql-compiler-javascript';
 
-import { throwError } from '../error';
-import { uid } from '../uid';
+import { throwError } from '../../error';
+import { uid } from '../../uid';
 
 import { DEFAULT_BOX_OPTIONS } from './utils';
 
