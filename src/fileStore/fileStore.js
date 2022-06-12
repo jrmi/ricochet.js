@@ -1,5 +1,5 @@
 import express from 'express';
-import { MemoryFileBackend, wrapBackend } from './fileStoreBackend.js';
+import { MemoryFileBackend, wrapBackend } from './backends';
 import { errorGuard } from '../error.js';
 
 /* ROADMAP

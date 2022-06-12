@@ -5,7 +5,7 @@ import {
   MemoryFileBackend,
   DiskFileBackend,
   S3FileBackend,
-} from '../fileStore/fileStoreBackend';
+} from '../fileStore/backends';
 import path from 'path';
 import fs from 'fs';
 import tempy from 'tempy';

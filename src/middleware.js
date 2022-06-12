@@ -14,7 +14,7 @@ import { getStoreBackend, wrapBackend } from './storeBackends';
 import {
   getFileStoreBackend,
   wrapBackend as wrapFileBackend,
-} from './fileStore/fileStoreBackend.js';
+} from './fileStore/backends';
 
 import remote from './remote.js';
 import execute from './execute.js';

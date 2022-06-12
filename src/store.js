@@ -1,6 +1,6 @@
 import express from 'express';
 import { MemoryBackend, wrapBackend } from './storeBackends';
-import { MemoryFileBackend } from './fileStore/fileStoreBackend';
+import { MemoryFileBackend } from './fileStore/backends';
 import fileStore from './fileStore/fileStore';
 import { throwError, errorGuard, errorMiddleware } from './error';
 
