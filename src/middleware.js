@@ -5,7 +5,6 @@ import schedule from 'node-schedule';
 
 import { throwError } from './error.js';
 import log from './log.js';
-import oldFileStore from './fileStore/oldFileStore.js';
 import store from './store';
 import site from './site.js';
 import origin from './origin.js';
@@ -290,23 +289,6 @@ export const mainMiddleware = ({
     cdn: fileStoreConfig.s3Cdn,
     signedUrl: fileStoreConfig.s3SignedUrl,
   });
-
-  // File store
-  // TO BE REMOVED
-  router.use(
-    oldFileStore(fileStoreConfig.type, {
-      url: fileStoreConfig.apiUrl,
-      destination: fileStoreConfig.diskDestination,
-      bucket: fileStoreConfig.s3Bucket,
-      endpoint: fileStoreConfig.s3Endpoint,
-      accessKey: fileStoreConfig.s3AccesKey,
-      secretKey: fileStoreConfig.s3SecretKey,
-      region: fileStoreConfig.s3Region,
-      proxy: fileStoreConfig.s3Proxy,
-      cdn: fileStoreConfig.s3Cdn,
-      signedUrl: fileStoreConfig.s3SignedUrl,
-    })
-  );
 
   const onSiteCreation = async ({ req, site, confirmPath }) => {
     const { t } = req;
