@@ -5,7 +5,7 @@ import schedule from 'node-schedule';
 
 import { throwError } from './error.js';
 import log from './log.js';
-import oldFileStore from './oldFileStore.js';
+import oldFileStore from './fileStore/oldFileStore.js';
 import store from './store.js';
 import site from './site.js';
 import origin from './origin.js';
@@ -14,7 +14,7 @@ import { getStoreBackend, wrapBackend } from './storeBackends';
 import {
   getFileStoreBackend,
   wrapBackend as wrapFileBackend,
-} from './fileStoreBackend.js';
+} from './fileStore/fileStoreBackend.js';
 
 import remote from './remote.js';
 import execute from './execute.js';

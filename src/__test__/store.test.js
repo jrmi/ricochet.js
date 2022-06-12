@@ -3,7 +3,7 @@ import express from 'express';
 import store from '../store';
 import path from 'path';
 import { MemoryBackend } from '../storeBackends';
-import { MemoryFileBackend } from '../fileStoreBackend';
+import { MemoryFileBackend } from '../fileStore/fileStoreBackend';
 
 jest.mock('nanoid', () => {
   let count = 0;

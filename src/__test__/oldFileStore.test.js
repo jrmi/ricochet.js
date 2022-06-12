@@ -1,6 +1,6 @@
 import request from 'supertest';
 import express from 'express';
-import fileStore from '../oldFileStore';
+import fileStore from '../fileStore/oldFileStore';
 import path from 'path';
 import fs from 'fs';
 import tempy from 'tempy';

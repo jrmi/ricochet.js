@@ -5,7 +5,7 @@ import mime from 'mime-types';
 import path from 'path';
 import fs from 'fs';
 import { Duplex } from 'stream';
-import { uid } from './uid.js';
+import { uid } from '../uid.js';
 
 const bufferToStream = (buffer) => {
   let stream = new Duplex();

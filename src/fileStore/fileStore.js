@@ -1,6 +1,6 @@
 import express from 'express';
 import { MemoryFileBackend, wrapBackend } from './fileStoreBackend.js';
-import { errorGuard } from './error.js';
+import { errorGuard } from '../error.js';
 
 /* ROADMAP
 - Add security
