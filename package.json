@@ -60,7 +60,6 @@
     "pivotql-compiler-javascript": "^0.1.0",
     "pivotql-compiler-mongodb": "^0.3.1",
     "pivotql-parser-expression": "^0.3.0",
-    "socket.io": "^4.5.1",
     "vm2": "^3.9.9",
     "yargs": "^17.5.1"
   },

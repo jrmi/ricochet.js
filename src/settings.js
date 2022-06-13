@@ -12,9 +12,6 @@ export const SERVER_NAME = process.env.SERVER_NAME || 'Ricochet.js';
 export const SITE_REGISTRATION_ENABLED =
   process.env.SITE_REGISTRATION_ENABLED !== '0';
 
-export const SOCKET_PATH =
-  process.env.SOCKET_PATH || process.env.REACT_APP_SOCKET_PATH || '/socket.io';
-
 // File store related
 export const FILE_STORE_TYPE =
   process.env.FILE_STORE_BACKEND || process.env.FILE_STORAGE || 'memory';
