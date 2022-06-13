@@ -3,7 +3,7 @@ import { hideBin } from 'yargs/helpers';
 import startServer from './server.js';
 import { generateKey } from './crypt.js';
 import repl from 'repl';
-import { getStoreBackend, wrapBackend } from './storeBackends';
+import { getStoreBackend, wrapBackend } from './store/backends';
 
 import {
   STORE_BACKEND,

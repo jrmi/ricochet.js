@@ -1,7 +1,15 @@
-import aws from 'aws-sdk';
+// import aws from 'aws-sdk';
+import {
+  S3Client,
+  ListObjectsCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+  HeadObjectCommand,
+} from '@aws-sdk/client-s3';
 import multer from 'multer';
 import multerS3 from 'multer-s3';
 import mime from 'mime-types';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 import { uid } from '../../uid.js';
 
@@ -16,14 +24,12 @@ const S3FileBackend = ({
   cdn = '',
   signedUrl = true,
 }) => {
-  aws.config.update({
+  const s3 = new S3Client({
     secretAccessKey: secretKey,
     accessKeyId: accessKey,
     endpoint,
     region,
   });
-
-  const s3 = new aws.S3();
 
   const upload = multer({
     storage: multerS3({
@@ -39,7 +45,7 @@ const S3FileBackend = ({
 
         const ext = mime.extension(file.mimetype);
         const filename = `${uid()}.${ext}`;
-        // Add filname to file
+        // Add filename to file
         file.filename = filename;
         cb(null, `${keyPath}/${filename}`);
       },
@@ -57,16 +63,12 @@ const S3FileBackend = ({
         Prefix: `${siteId}/${boxId}/${resourceId}/`,
       };
 
-      return new Promise((resolve, reject) => {
-        s3.listObjects(params, (err, data) => {
-          if (err) {
-            /* istanbul ignore next */
-            reject(err);
-          }
-          const toRemove = new RegExp(`^${siteId}/${boxId}/${resourceId}/`);
-          resolve(data.Contents.map(({ Key }) => Key.replace(toRemove, '')));
-        });
-      });
+      const data = await s3.send(new ListObjectsCommand(params));
+      if (data.Contents === undefined) {
+        return [];
+      }
+      const toRemove = new RegExp(`^${siteId}/${boxId}/${resourceId}/`);
+      return data.Contents.map(({ Key }) => Key.replace(toRemove, ''));
     },
 
     async store(siteId, boxId, resourceId, file) {
@@ -80,10 +82,10 @@ const S3FileBackend = ({
       };
 
       try {
-        await s3.headObject(headParams).promise();
+        await s3.send(new HeadObjectCommand(headParams));
         return true;
       } catch (headErr) {
-        if (headErr.code === 'NotFound') {
+        if (headErr.name === 'NotFound') {
           return false;
         }
         throw headErr;
@@ -114,37 +116,17 @@ const S3FileBackend = ({
           IfMatch,
           Range,
         };
-        return new Promise((resolve) => {
-          s3.getObject(params)
-            .on('httpHeaders', function (statusCode, headers) {
-              const length = headers['content-length'];
-              const mimetype = headers['content-type'];
-              // const acceptRanges = headers['accept-ranges'];
-              const eTag = headers['etag'];
-              const lastModified = headers['last-modified'];
-              if (statusCode === 304) {
-                resolve({
-                  mimetype,
-                  stream: null,
-                  length,
-                  eTag,
-                  lastModified,
-                  statusCode,
-                });
-              } else {
-                const stream = this.response.httpResponse.createUnbufferedStream();
-                resolve({
-                  mimetype,
-                  stream,
-                  length,
-                  eTag,
-                  lastModified,
-                  statusCode,
-                });
-              }
-            })
-            .send();
-        });
+
+        const { Body } = await s3.send(new GetObjectCommand(params));
+
+        return {
+          length: Body.headers['content-length'],
+          mimetype: Body.headers['content-type'],
+          eTag: Body.headers['etag'],
+          lastModified: Body.headers['last-modified'],
+          statusCode: Body.statusCode,
+          stream: Body.statusCode === 304 ? null : Body,
+        };
       }
 
       // Here we have a cdn in front
@@ -159,17 +141,9 @@ const S3FileBackend = ({
         const params = {
           Bucket: bucket,
           Key: `${siteId}/${boxId}/${resourceId}/${filename}`,
-          Expires: 60 * 5,
         };
-        const url = await new Promise((resolve, reject) => {
-          s3.getSignedUrl('getObject', params, (err, url) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(url);
-            }
-          });
-        });
+        const command = new GetObjectCommand(params);
+        const url = await getSignedUrl(s3, command, { expiresIn: 60 * 5 });
 
         return { redirectTo: url };
       }
@@ -187,7 +161,7 @@ const S3FileBackend = ({
         Key: key,
       };
 
-      await s3.deleteObject(headParams).promise();
+      await s3.send(new DeleteObjectCommand(headParams));
     },
   };
 };

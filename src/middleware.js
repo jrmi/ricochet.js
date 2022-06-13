@@ -9,7 +9,7 @@ import store from './store';
 import site from './site.js';
 import origin from './origin.js';
 
-import { getStoreBackend, wrapBackend } from './storeBackends';
+import { getStoreBackend, wrapBackend } from './store/backends';
 import {
   getFileStoreBackend,
   wrapBackend as wrapFileBackend,
@@ -282,7 +282,7 @@ export const mainMiddleware = ({
     destination: fileStoreConfig.diskDestination,
     bucket: fileStoreConfig.s3Bucket,
     endpoint: fileStoreConfig.s3Endpoint,
-    accessKey: fileStoreConfig.s3AccesKey,
+    accessKey: fileStoreConfig.s3AccessKey,
     secretKey: fileStoreConfig.s3SecretKey,
     region: fileStoreConfig.s3Region,
     proxy: fileStoreConfig.s3Proxy,
