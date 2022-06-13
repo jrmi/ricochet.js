@@ -66,7 +66,7 @@
   },
   "peerDependencies": {
     "@seald-io/nedb": "~2.2.0",
-    "mongodb": "~3.7.3",
+    "mongodb": "^4.0.0",
     "webpack-sources": "~2.2.0"
   },
   "devDependencies": {
@@ -80,7 +80,7 @@
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.0.0",
     "jest": "^26.6.3",
-    "mongodb": "^3.7.3",
+    "mongodb": "^4.7.0",
     "nodemon": "^2.0.6",
     "pino-pretty": "^4.3.0",
     "pino-tiny": "^1.0.0",
@@ -95,6 +95,7 @@
     },
     "transformIgnorePatterns": [
       "node_modules/(?!(pivotql-parser-expression|pivotql-compiler-javascript|pivotql-compiler-mongodb)/)"
-    ]
+    ],
+    "testEnvironment": "node"
   }
 }

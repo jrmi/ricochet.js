@@ -14,10 +14,9 @@ export const MongoDBBackend = (options) => {
   const getClient = async () => {
     if (!_client) {
       try {
-        const { MongoClient } = await import('mongodb');
+        const { MongoClient, ServerApiVersion } = await import('mongodb');
         _client = new MongoClient(options.uri, {
-          useNewUrlParser: true,
-          useUnifiedTopology: true,
+          serverApi: ServerApiVersion.v1,
         });
       } catch (e) {
         throw new Error(
@@ -30,16 +29,13 @@ export const MongoDBBackend = (options) => {
 
   const close = async () => {
     const client = await getClient();
-    // TODO isConnected is deprecated
-    if (client.isConnected()) {
-      database = undefined;
-      await client.close();
-    }
+    database = undefined;
+    await client.close();
   };
 
   const getBoxDb = async (boxId) => {
     const client = await getClient();
-    if (!client.isConnected()) {
+    if (!database) {
       await client.connect();
       database = await client.db(options.database);
     }
@@ -144,31 +140,29 @@ export const MongoDBBackend = (options) => {
 
       const cleanedData = data;
       delete cleanedData._createdOn;
-      delete cleanedData._modifiedOn;
+      cleanedData._updatedOn = Date.now();
 
       const found = await boxDB.findOne({ _id: actualId });
 
       if (!found) {
-        return (
-          await boxDB.insertOne({
-            ...cleanedData,
-            _createdOn: Date.now(),
-            _id: actualId,
-          })
-        ).ops[0];
+        const toBeInserted = {
+          ...cleanedData,
+          _createdOn: Date.now(),
+          _id: actualId,
+        };
+        await boxDB.insertOne(toBeInserted);
+        return toBeInserted;
       } else {
-        return (
-          await boxDB.findOneAndReplace(
-            { _id: actualId },
-            {
-              ...cleanedData,
-              _updatedOn: Date.now(),
-              _createdOn: found._createdOn,
-              _id: actualId,
-            },
-            { returnOriginal: false }
-          )
-        ).value;
+        const response = await boxDB.findOneAndReplace(
+          { _id: actualId },
+          {
+            ...cleanedData,
+            _createdOn: found._createdOn,
+            _id: actualId,
+          },
+          { returnDocument: 'after' }
+        );
+        return response.value;
       }
     },
 
@@ -191,19 +185,18 @@ export const MongoDBBackend = (options) => {
         throw newError;
       }
 
-      return (
-        await boxDB.findOneAndUpdate(
-          { _id: id },
-          {
-            $set: {
-              ...cleanedData,
-              _updatedOn: Date.now(),
-              _id: id,
-            },
+      const response = await boxDB.findOneAndUpdate(
+        { _id: id },
+        {
+          $set: {
+            ...cleanedData,
+            _updatedOn: Date.now(),
+            _id: id,
           },
-          { returnOriginal: false }
-        )
-      ).value;
+        },
+        { returnDocument: 'after' }
+      );
+      return response.value;
     },
 
     async delete(boxId, id) {

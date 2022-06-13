@@ -48,10 +48,9 @@ describe.each(backends)(
       backend = wrapBackend(rawBackend, 'siteid', 'userid');
 
       if (backendName === 'MongoDB') {
-        const { MongoClient } = await import('mongodb');
+        const { MongoClient, ServerApiVersion } = await import('mongodb');
         const _client = new MongoClient(MONGODB_URI, {
-          useNewUrlParser: true,
-          useUnifiedTopology: true,
+          serverApi: ServerApiVersion.v1,
         });
 
         await _client.connect();

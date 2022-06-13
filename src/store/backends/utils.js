@@ -1,5 +1,3 @@
-import log from '../../log.js';
-
 export const DEFAULT_BOX_OPTIONS = { security: 'private', personal: false };
 
 export const wrapBackend = (backend, siteId) => {
@@ -30,7 +28,6 @@ export const wrapBackend = (backend, siteId) => {
 
     for (const key of Object.keys(migrationToApply)) {
       if (!migrations.includes(key)) {
-        log.debug(`Apply ${key} migration on box ${boxId}`);
         await migrationToApply[key](boxId);
         migrationApplied.push(key);
       }
