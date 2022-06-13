@@ -1,7 +1,7 @@
 import request from 'supertest';
 import express from 'express';
 import site from '../site';
-import { MemoryBackend } from '../storeBackends';
+import { MemoryBackend } from '../store/backends';
 
 jest.mock('nanoid', () => {
   let count = 0;

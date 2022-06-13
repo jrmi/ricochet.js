@@ -1,10 +1,13 @@
 import express from 'express';
-import { MemoryFileBackend, wrapBackend } from './fileStoreBackend.js';
-import { errorGuard } from './error.js';
+import { MemoryFileBackend, wrapBackend } from './backends';
+import { errorGuard } from '../error.js';
 
 /* ROADMAP
 - Add security
 */
+
+// In ms
+//const FILE_CACHE_EXPIRATION = 60_000;
 
 /**
  *
@@ -70,7 +73,7 @@ export const fileStorage = (backend = MemoryFileBackend(), { prefix }) => {
         redirectTo,
         mimetype,
         length,
-        lastModifield,
+        lastModified,
         eTag,
         statusCode = 200,
       } = await wrappedBackend.get(boxId, resourceId, filename, req.headers);
@@ -84,13 +87,23 @@ export const fileStorage = (backend = MemoryFileBackend(), { prefix }) => {
       if (length !== undefined) {
         res.set('Content-Length', length);
       }
-      if (lastModifield !== undefined) {
-        res.set('Last-Modified', lastModifield);
+      if (lastModified !== undefined) {
+        res.set('Last-Modified', lastModified);
       }
       if (eTag !== undefined) {
         res.set('ETag', eTag);
       }
       res.set('Content-Type', mimetype);
+
+      // Set a minimal cache
+      /* res.setHeader(
+        'Cache-Control',
+        'public, max-age=' + FILE_CACHE_EXPIRATION / 1000
+      );
+      res.setHeader(
+        'Expires',
+        new Date(Date.now() + FILE_CACHE_EXPIRATION).toUTCString()
+      );*/
 
       if (statusCode < 300) {
         res.status(statusCode);
@@ -101,7 +114,7 @@ export const fileStorage = (backend = MemoryFileBackend(), { prefix }) => {
           res.end();
         } else {
           res.status(statusCode);
-          res.end('Unknow Error');
+          res.end('Unknown Error');
         }
       }
     })

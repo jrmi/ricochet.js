@@ -9,9 +9,7 @@ describe('Authentication test', () => {
   let onLogout;
 
   beforeEach(() => {
-    onSendToken = jest.fn(({ remote, userEmail, userId, token, req }) =>
-      Promise.resolve()
-    );
+    onSendToken = jest.fn(() => Promise.resolve());
     onLogin = jest.fn();
     onLogout = jest.fn();
     const app = express();
@@ -37,9 +35,7 @@ describe('Authentication test', () => {
     const userId = onSendToken.mock.calls[0][0].userId;
     const token = onSendToken.mock.calls[0][0].token;
 
-    const result = await query
-      .get(`/auth/verify/${userId}/${token}`)
-      .expect(200);
+    await query.get(`/auth/verify/${userId}/${token}`).expect(200);
 
     expect(onLogin).toHaveBeenCalled();
   });

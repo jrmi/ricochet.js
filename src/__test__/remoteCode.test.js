@@ -66,7 +66,7 @@ describe('Remote Test', () => {
     try {
       await remoteCode.exec(SITEID, REMOTE, 'scripts/mysetupWithBadRequire.js');
     } catch (e) {
-      expect(e.code).toMatch('EDENIED');
+      expect(e.code).toMatch('ENOTFOUND');
     }
   });
 

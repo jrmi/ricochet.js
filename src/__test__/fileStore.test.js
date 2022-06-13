@@ -5,11 +5,16 @@ import {
   MemoryFileBackend,
   DiskFileBackend,
   S3FileBackend,
-} from '../fileStoreBackend';
+} from '../fileStore/backends';
+
 import path from 'path';
 import fs from 'fs';
 import tempy from 'tempy';
-import aws from 'aws-sdk';
+import {
+  S3,
+  DeleteObjectsCommand,
+  ListObjectsCommand,
+} from '@aws-sdk/client-s3';
 import { S3_ACCESS_KEY, S3_SECRET_KEY, S3_ENDPOINT } from '../settings';
 
 jest.mock('nanoid', () => {
@@ -75,7 +80,7 @@ describe.each(fileStores)(
       query = request(app);
     });
 
-    afterAll((done) => {
+    afterAll(async (done) => {
       // Clean files
       if (backendType === 'disk') {
         try {
@@ -95,30 +100,30 @@ describe.each(fileStores)(
           endpoint: S3_ENDPOINT,
         };
 
-        aws.config.update({
+        const s3 = new S3({
           secretAccessKey: secretKey,
           accessKeyId: accessKey,
           endpoint: endpoint,
         });
 
-        const s3 = new aws.S3();
-
         const params = {
           Bucket: bucket,
         };
 
-        s3.listObjects(params, (err, data) => {
+        const data = await s3.send(new ListObjectsCommand(params));
+        if (data.Contents) {
           const deleteParams = {
             Bucket: bucket,
             Delete: { Objects: data.Contents.map(({ Key }) => ({ Key })) },
           };
-          s3.deleteObjects(deleteParams, (err, deleteData) => {
-            done();
-          });
-        });
-        return;
+          await s3.send(new DeleteObjectsCommand(deleteParams));
+          done();
+        }
       }
-      done();
+
+      if (backendType === 'memory') {
+        done();
+      }
     });
 
     it('should store file', async () => {
