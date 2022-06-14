@@ -6,12 +6,13 @@ import pinoHttp from 'pino-http';
 import i18next from 'i18next';
 import i18nextMiddleware from 'i18next-http-middleware';
 import i18nextBackend from 'i18next-fs-backend';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 
 import log from './log.js';
 
 import middleware from './middleware.js';
-import path from 'path';
-import fs from 'fs';
 
 import {
   PORT,
@@ -43,6 +44,9 @@ import {
   SITE_REGISTRATION_ENABLED,
   USE_PINO,
 } from './settings.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const startServer = () => {
   i18next

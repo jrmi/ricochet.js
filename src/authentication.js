@@ -1,8 +1,8 @@
 import easyNoPassword from 'easy-no-password';
 import express from 'express';
 import crypto from 'crypto';
-import log from './log.js';
 
+import log from './log.js';
 import { throwError, errorGuard, errorMiddleware } from './error.js';
 
 const sha256 = (data) => {

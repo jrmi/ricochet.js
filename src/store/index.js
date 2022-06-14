@@ -1,8 +1,8 @@
 import express from 'express';
-import { MemoryBackend, wrapBackend } from './backends';
-import { MemoryFileBackend } from '../fileStore/backends';
-import fileStore from '../fileStore';
-import { throwError, errorGuard, errorMiddleware } from '../error';
+import { MemoryBackend, wrapBackend } from './backends/index.js';
+import { MemoryFileBackend } from '../fileStore/backends/index.js';
+import fileStore from '../fileStore/index.js';
+import { throwError, errorGuard, errorMiddleware } from '../error.js';
 
 // Utility functions
 

@@ -1,10 +1,10 @@
 import parserExpression from 'pivotql-parser-expression';
 import compilerMongodb from 'pivotql-compiler-mongodb';
 
-import { throwError } from '../../error';
-import { uid } from '../../uid';
+import { throwError } from '../../error.js';
+import { uid } from '../../uid.js';
 
-import { DEFAULT_BOX_OPTIONS } from './utils';
+import { DEFAULT_BOX_OPTIONS } from './utils.js';
 
 // Nedb backend for proof of concept
 export const NeDBBackend = (options) => {

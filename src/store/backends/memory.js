@@ -1,10 +1,10 @@
 import parserExpression from 'pivotql-parser-expression';
 import compilerJavascript from 'pivotql-compiler-javascript';
 
-import { throwError } from '../../error';
-import { uid } from '../../uid';
+import { throwError } from '../../error.js';
+import { uid } from '../../uid.js';
 
-import { DEFAULT_BOX_OPTIONS } from './utils';
+import { DEFAULT_BOX_OPTIONS } from './utils.js';
 
 // Memory backend for proof of concept
 export const MemoryBackend = () => {

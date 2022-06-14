@@ -5,15 +5,15 @@ import schedule from 'node-schedule';
 
 import { throwError } from './error.js';
 import log from './log.js';
-import store from './store';
+import store from './store/index.js';
 import site from './site.js';
 import origin from './origin.js';
 
-import { getStoreBackend, wrapBackend } from './store/backends';
+import { getStoreBackend, wrapBackend } from './store/backends/index.js';
 import {
   getFileStoreBackend,
   wrapBackend as wrapFileBackend,
-} from './fileStore/backends';
+} from './fileStore/backends/index.js';
 
 import remote from './remote.js';
 import execute from './execute.js';

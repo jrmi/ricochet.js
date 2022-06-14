@@ -1,11 +1,11 @@
-import NeDBBackend from './nedb';
-import MongoDBBackend from './mongodb';
-import MemoryBackend from './memory';
+import NeDBBackend from './nedb.js';
+import MongoDBBackend from './mongodb.js';
+import MemoryBackend from './memory.js';
 
-export { default as NeDBBackend } from './nedb';
-export { default as MongoDBBackend } from './mongodb';
-export { default as MemoryBackend } from './memory';
-export { wrapBackend } from './utils';
+export { default as NeDBBackend } from './nedb.js';
+export { default as MongoDBBackend } from './mongodb.js';
+export { default as MemoryBackend } from './memory.js';
+export { wrapBackend } from './utils.js';
 
 export const getStoreBackend = (type, options = {}) => {
   switch (type) {
