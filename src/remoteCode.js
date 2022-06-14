@@ -1,8 +1,10 @@
 import http from 'http';
 import https from 'https';
-import { NodeVM } from 'vm2';
+import vm2 from 'vm2';
 
 import NodeCache from 'node-cache';
+
+const { NodeVM } = vm2;
 
 const allowedModules = ['http', 'https', 'stream', 'url', 'zlib', 'encoding'];
 

@@ -1,3 +1,5 @@
+import { jest } from '@jest/globals';
+
 import {
   MemoryBackend,
   NeDBBackend,
@@ -285,7 +287,7 @@ describe.each(backends)(
 
       // Test queries
       const foundResources = await backend.list(box, {
-        q: 'value > 42',
+        q: 'value  > 42',
       });
 
       expect(foundResources.length).toBe(1);

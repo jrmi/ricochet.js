@@ -1,3 +1,5 @@
+import { jest } from '@jest/globals';
+
 import RemoteCode from '../remoteCode';
 
 const REMOTE = 'http://localhost:5000/';
@@ -60,8 +62,8 @@ describe('Remote Test', () => {
       REMOTE,
       'scripts/mysetupWithRequire.js'
     );
-    const httpReal = require('http');
-    expect(http).toEqual(httpReal);
+    const httpReal = await import('http');
+    expect(http['STATUS_CODES']).toEqual(httpReal['STATUS_CODES']);
 
     try {
       await remoteCode.exec(SITEID, REMOTE, 'scripts/mysetupWithBadRequire.js');

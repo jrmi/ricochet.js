@@ -1,5 +1,7 @@
 import request from 'supertest';
 import express from 'express';
+import { jest } from '@jest/globals';
+
 import auth from '../authentication';
 
 describe('Authentication test', () => {

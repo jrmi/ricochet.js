@@ -1,5 +1,7 @@
 import request from 'supertest';
 import express from 'express';
+import { jest } from '@jest/globals';
+
 import site from '../site';
 import { MemoryBackend } from '../store/backends';
 
@@ -69,7 +71,9 @@ describe('Site endpoint tests', () => {
     expect(onSiteCreation).toHaveBeenCalled();
     expect(onSiteUpdate).not.toHaveBeenCalled();
 
-    expect(lastConfirm).toBe('/_register/test/confirm/nanoid_0');
+    expect(lastConfirm).toEqual(
+      expect.stringContaining('/_register/test/confirm/')
+    );
 
     const sites = await storeBackend.list('_site');
     expect(sites.length).toBe(0);
@@ -188,7 +192,9 @@ describe('Site endpoint tests', () => {
     expect(result.body.token).toBeUndefined();
     expect(result.body.key).toBeUndefined();
 
-    expect(lastConfirm).toBe('/_register/mytestsite/confirm/nanoid_1');
+    expect(lastConfirm).toEqual(
+      expect.stringContaining('/_register/mytestsite/confirm/')
+    );
 
     const pending = await storeBackend.list('_pending');
     expect(pending.length).toBe(1);
