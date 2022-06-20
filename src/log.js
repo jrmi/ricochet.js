@@ -1,5 +1,6 @@
 import pino from 'pino';
-import { USE_PINO } from './settings';
+
+import { USE_PINO } from './settings.js';
 
 const defaultLog = {
   debug: console.log,

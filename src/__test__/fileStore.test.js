@@ -1,5 +1,12 @@
 import request from 'supertest';
 import express from 'express';
+import { jest } from '@jest/globals';
+import path from 'path';
+import fs from 'fs';
+import tempy from 'tempy';
+import aws from '@aws-sdk/client-s3';
+
+import { getDirname } from '../utils.js';
 import fileStore from '../fileStore';
 import {
   MemoryFileBackend,
@@ -7,15 +14,11 @@ import {
   S3FileBackend,
 } from '../fileStore/backends';
 
-import path from 'path';
-import fs from 'fs';
-import tempy from 'tempy';
-import {
-  S3,
-  DeleteObjectsCommand,
-  ListObjectsCommand,
-} from '@aws-sdk/client-s3';
 import { S3_ACCESS_KEY, S3_SECRET_KEY, S3_ENDPOINT } from '../settings';
+
+const { S3, DeleteObjectsCommand, ListObjectsCommand } = aws;
+
+const __dirname = getDirname(import.meta.url);
 
 jest.mock('nanoid', () => {
   let count = 0;
@@ -80,7 +83,7 @@ describe.each(fileStores)(
       query = request(app);
     });
 
-    afterAll(async (done) => {
+    afterAll(async () => {
       // Clean files
       if (backendType === 'disk') {
         try {
@@ -88,7 +91,6 @@ describe.each(fileStores)(
         } catch (e) {
           console.log(e);
         }
-        done();
         return;
       }
       // Clean bucket
@@ -117,12 +119,12 @@ describe.each(fileStores)(
             Delete: { Objects: data.Contents.map(({ Key }) => ({ Key })) },
           };
           await s3.send(new DeleteObjectsCommand(deleteParams));
-          done();
+          return;
         }
       }
 
       if (backendType === 'memory') {
-        done();
+        return;
       }
     });
 
@@ -134,7 +136,7 @@ describe.each(fileStores)(
         .expect(200);
 
       expect(res.text).toEqual(
-        expect.stringContaining(`mysiteid/pref/${boxId}/1234/file/nanoid_`)
+        expect.stringContaining(`mysiteid/pref/${boxId}/1234/file/`)
       );
     });
 
@@ -203,7 +205,7 @@ describe.each(fileStores)(
       expect(Array.isArray(fileList.body)).toBe(true);
       expect(fileList.body.length).toBe(2);
       expect(fileList.body[0]).toEqual(
-        expect.stringContaining(`mysiteid/pref/${boxId}/1235/file/nanoid_`)
+        expect.stringContaining(`mysiteid/pref/${boxId}/1235/file/`)
       );
     });
 

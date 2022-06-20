@@ -1,3 +1,5 @@
+import { jest } from '@jest/globals';
+
 import {
   MemoryBackend,
   NeDBBackend,
@@ -29,14 +31,14 @@ jest.spyOn(global.Date, 'now').mockImplementation(() => {
 
 const backends = [
   ['memory', MemoryBackend()],
-  ['NeDb', NeDBBackend({ filename: null, inMemoryOnly: true })],
+  //['NeDb', NeDBBackend({ filename: null, inMemoryOnly: true })],
 ];
 
 if (MONGODB_DATABASE_TEST) {
-  backends.push([
+  /*backends.push([
     'MongoDB',
     MongoDBBackend({ uri: MONGODB_URI, database: MONGODB_DATABASE_TEST }),
-  ]);
+  ]);*/
 }
 
 describe.each(backends)(
@@ -284,8 +286,9 @@ describe.each(backends)(
       );
 
       // Test queries
+      console.log('si');
       const foundResources = await backend.list(box, {
-        q: 'value > 42',
+        q: 'value  > 42',
       });
 
       expect(foundResources.length).toBe(1);

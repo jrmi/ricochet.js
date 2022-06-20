@@ -2,25 +2,26 @@
   "name": "ricochetjs",
   "version": "1.4.0",
   "description": "Multi-purpose deploy once prototyping backend",
-  "main": "dist/index.js",
   "bin": {
-    "ricochet": "dist/cli.es5.js",
-    "ricochetjs": "dist/cli.es5.js",
-    "ricochet-js": "dist/cli.es5.js"
+    "ricochetjs": "src/cli.js"
+  },
+  "engines": {
+    "node": "^14 || ^16 || >=18"
+  },
+  "type": "module",
+  "module": "src/index.js",
+  "exports": {
+    "import": "./src/index.js"
   },
   "scripts": {
     "clean": "rimraf dist",
     "lint": "eslint src",
-    "dev": "nodemon  --exec babel-node src/cli.js | pino-tiny",
-    "cli": "babel-node src/cli.js",
-    "test": "jest --watch",
+    "dev": "nodemon  src/cli.js | pino-tiny",
+    "cli": "node src/cli.js",
+    "test": "NODE_OPTIONS=--experimental-vm-modules npx jest --watch",
     "test:server": "PORT=5000 npx serve src/__test__/test.files",
-    "coverage": "jest --coverage",
-    "generateKey": "babel-node src/cli.js --generate-key",
-    "build": "npm run clean && babel src -d dist --ignore 'src/**/__test__/'",
-    "shebang": "echo '#!/usr/bin/env node' > dist/cli.es5.js && cat dist/cli.js >> dist/cli.es5.js",
-    "prepare": "npm run build && npm run shebang",
-    "watch": "npm run prepare && babel src -d dist --ignore 'src/**/__test__/' --watch",
+    "coverage": "NODE_OPTIONS=--experimental-vm-modules npx jest --coverage",
+    "generateKey": "node src/cli.js --generate-key",
     "version": "git changelog -n -t $npm_package_version && git add CHANGELOG.md",
     "ci": "npx start-server-and-test test:server http://localhost:5000 coverage",
     "i18n:parser": "npx i18next-parser 'src/**/*.js'"
@@ -57,9 +58,9 @@
     "nodemailer": "^6.7.5",
     "pino": "^6.7.0",
     "pino-http": "^5.3.0",
-    "pivotql-compiler-javascript": "^0.1.0",
-    "pivotql-compiler-mongodb": "^0.3.1",
-    "pivotql-parser-expression": "^0.3.0",
+    "pivotql-compiler-javascript": "^0.2.1",
+    "pivotql-compiler-mongodb": "^0.4.2",
+    "pivotql-parser-expression": "^0.4.2",
     "vm2": "^3.9.9",
     "yargs": "^17.5.1"
   },
@@ -69,12 +70,7 @@
     "webpack-sources": "~2.2.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.17.10",
-    "@babel/core": "^7.18.2",
-    "@babel/node": "^7.17.10",
-    "@babel/preset-env": "^7.18.2",
     "@seald-io/nedb": "^2.2.0",
-    "babel-jest": "^26.6.3",
     "eslint": "^8.17.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.0.0",
@@ -89,12 +85,7 @@
     "tempy": "^0.7.1"
   },
   "jest": {
-    "transform": {
-      "\\.[jt]sx?$": "babel-jest"
-    },
-    "transformIgnorePatterns": [
-      "node_modules/(?!(pivotql-parser-expression|pivotql-compiler-javascript|pivotql-compiler-mongodb)/)"
-    ],
+    "transform": {},
     "testEnvironment": "node"
   }
 }

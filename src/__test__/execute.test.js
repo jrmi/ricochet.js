@@ -1,16 +1,8 @@
 import request from 'supertest';
 import express from 'express';
-import execute from '../execute';
+import { jest } from '@jest/globals';
 
-jest.mock('nanoid', () => {
-  let count = 0;
-  return {
-    customAlphabet: () =>
-      jest.fn(() => {
-        return 'nanoid_' + count++;
-      }),
-  };
-});
+import execute from '../execute';
 
 let delta = 0;
 

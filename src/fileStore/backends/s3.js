@@ -1,17 +1,19 @@
-// import aws from 'aws-sdk';
-import {
+import aws from '@aws-sdk/client-s3';
+import multer from 'multer';
+import multerS3 from 'multer-s3';
+import mime from 'mime-types';
+import s3RequestPresigner from '@aws-sdk/s3-request-presigner';
+
+import { uid } from '../../uid.js';
+
+const {
   S3Client,
   ListObjectsCommand,
   GetObjectCommand,
   DeleteObjectCommand,
   HeadObjectCommand,
-} from '@aws-sdk/client-s3';
-import multer from 'multer';
-import multerS3 from 'multer-s3';
-import mime from 'mime-types';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-
-import { uid } from '../../uid.js';
+} = aws;
+const { getSignedUrl } = s3RequestPresigner;
 
 // Help here https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html
 const S3FileBackend = ({

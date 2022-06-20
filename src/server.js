@@ -6,12 +6,12 @@ import pinoHttp from 'pino-http';
 import i18next from 'i18next';
 import i18nextMiddleware from 'i18next-http-middleware';
 import i18nextBackend from 'i18next-fs-backend';
-
-import log from './log.js';
-
-import middleware from './middleware.js';
 import path from 'path';
 import fs from 'fs';
+
+import log from './log.js';
+import { getDirname } from './utils.js';
+import middleware from './middleware.js';
 
 import {
   PORT,
@@ -43,6 +43,8 @@ import {
   SITE_REGISTRATION_ENABLED,
   USE_PINO,
 } from './settings.js';
+
+const __dirname = getDirname(import.meta.url);
 
 const startServer = () => {
   i18next

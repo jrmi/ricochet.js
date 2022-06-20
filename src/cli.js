@@ -1,9 +1,11 @@
+#!/usr/bin/env node
+
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import startServer from './server.js';
 import { generateKey } from './crypt.js';
 import repl from 'repl';
-import { getStoreBackend, wrapBackend } from './store/backends';
+import { getStoreBackend, wrapBackend } from './store/backends/index.js';
 
 import {
   STORE_BACKEND,

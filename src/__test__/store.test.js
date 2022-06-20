@@ -1,11 +1,14 @@
 import request from 'supertest';
 import express from 'express';
-import store from '../store';
 import path from 'path';
+import { jest } from '@jest/globals';
+
+import { getDirname } from '../utils.js';
+import store from '../store';
 import { MemoryBackend } from '../store/backends';
 import { MemoryFileBackend } from '../fileStore/backends';
 
-jest.mock('nanoid', () => {
+/*jest.mock('nanoid', () => {
   let count = 0;
   return {
     customAlphabet: () =>
@@ -13,7 +16,9 @@ jest.mock('nanoid', () => {
         return 'nanoid_' + count++;
       }),
   };
-});
+});*/
+
+const __dirname = getDirname(import.meta.url);
 
 let delta = 0;
 
@@ -72,7 +77,7 @@ describe('Store Test', () => {
     expect(res.body).toEqual(
       expect.objectContaining({ test: true, value: 42 })
     );
-    expect(res.body._id).toEqual(expect.stringContaining('nanoid'));
+    expect(typeof res.body._id).toEqual('string');
     expect(res.body._createdOn).toBeGreaterThanOrEqual(1584183661135);
 
     const res2 = await query
