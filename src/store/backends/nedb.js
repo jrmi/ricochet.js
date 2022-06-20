@@ -1,5 +1,5 @@
-import parserExpression from 'pivotql-parser-expression';
-import compilerMongodb from 'pivotql-compiler-mongodb';
+import { parse as parserExpression } from 'pivotql-parser-expression';
+import { compile as compilerMongodb } from 'pivotql-compiler-mongodb';
 
 import { throwError } from '../../error.js';
 import { uid } from '../../uid.js';

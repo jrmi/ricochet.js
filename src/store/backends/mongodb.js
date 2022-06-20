@@ -1,5 +1,5 @@
-import parserExpression from 'pivotql-parser-expression';
-import compilerMongodb from 'pivotql-compiler-mongodb';
+import { parse as parserExpression } from 'pivotql-parser-expression';
+import { compile as compilerMongodb } from 'pivotql-compiler-mongodb';
 
 import { throwError } from '../../error.js';
 import { uid } from '../../uid.js';
@@ -57,11 +57,10 @@ export const MongoDBBackend = (options) => {
 
       // TODO boxes should be prefixed with _?
       const boxes = await getBoxDb('boxes');
-      // TODO returnOriginal is deprecated
       return await boxes.findOneAndUpdate(
         { box: boxId },
         { $set: { ...prevOptions, ...options, box: boxId } },
-        { upsert: true, returnOriginal: false }
+        { upsert: true, returnDocument: 'after' }
       ).value;
     },
     async list(
@@ -140,14 +139,15 @@ export const MongoDBBackend = (options) => {
 
       const cleanedData = data;
       delete cleanedData._createdOn;
-      cleanedData._updatedOn = Date.now();
+      const now = Date.now();
+      cleanedData._updatedOn = now;
 
       const found = await boxDB.findOne({ _id: actualId });
 
       if (!found) {
         const toBeInserted = {
           ...cleanedData,
-          _createdOn: Date.now(),
+          _createdOn: now,
           _id: actualId,
         };
         await boxDB.insertOne(toBeInserted);

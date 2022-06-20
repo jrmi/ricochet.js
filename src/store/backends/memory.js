@@ -1,5 +1,5 @@
-import parserExpression from 'pivotql-parser-expression';
-import compilerJavascript from 'pivotql-compiler-javascript';
+import { parse as parserExpression } from 'pivotql-parser-expression';
+import { compile as compilerJavascript } from 'pivotql-compiler-javascript';
 
 import { throwError } from '../../error.js';
 import { uid } from '../../uid.js';
