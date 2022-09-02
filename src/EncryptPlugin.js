@@ -1,5 +1,7 @@
-import { RawSource } from 'webpack-sources';
+import webpackSources from 'webpack-sources';
 import { encrypt } from './crypt.js';
+
+const { RawSource } = webpackSources;
 
 export const RICOCHET_FILE = process.env.RICOCHET_FILE || 'ricochet.json';
 
