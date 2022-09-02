@@ -11,7 +11,9 @@
   "type": "module",
   "module": "src/index.js",
   "exports": {
-    "import": "./src/index.js"
+    ".": "./src/index.js",
+    "./EncryptPlugin.js": "./src/EncryptPlugin.js",
+    "./ricochetjs-encrypt-webpack-plugin.js": "./src/EncryptPlugin.js"
   },
   "scripts": {
     "clean": "rimraf dist",
