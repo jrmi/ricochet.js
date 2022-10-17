@@ -7,9 +7,10 @@ import { generateKey } from './crypt.js';
 import { errorGuard, errorMiddleware, throwError } from './error.js';
 import { longUid } from './uid.js';
 
+const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+
 const validateEmail = (email) => {
-  let res = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
-  return res.test(email);
+  return emailRegex.test(email);
 };
 
 const writeConfigFile = (configFilePath, data) => {
