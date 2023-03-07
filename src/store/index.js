@@ -1,6 +1,9 @@
 import express from 'express';
 import { MemoryBackend, wrapBackend } from './backends/index.js';
-import { MemoryFileBackend } from '../fileStore/backends/index.js';
+import {
+  MemoryFileBackend,
+  wrapBackend as wrapFileBackend,
+} from '../fileStore/backends/index.js';
 import fileStore from '../fileStore/index.js';
 import { throwError, errorGuard, errorMiddleware } from '../error.js';
 
@@ -79,9 +82,15 @@ export const store = ({
       const { siteId, authenticatedUser } = req;
 
       const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
+      const wrappedFileBackend = wrapFileBackend(
+        fileBackend,
+        siteId,
+        authenticatedUser
+      );
 
       const { query, allow = false } = await applyHooks('before', req, {
         store: wrappedBackend,
+        fileStore: wrappedFileBackend,
       });
 
       if (!allow && !(await wrappedBackend.checkSecurity(boxId, null))) {
@@ -125,6 +134,7 @@ export const store = ({
         {
           query,
           store: wrappedBackend,
+          fileStore: wrappedFileBackend,
         },
         { response }
       );
@@ -142,6 +152,11 @@ export const store = ({
       const { siteId, authenticatedUser } = req;
 
       const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
+      const wrappedFileBackend = wrapFileBackend(
+        fileBackend,
+        siteId,
+        authenticatedUser
+      );
 
       if (boxId[0] === '_') {
         throwError(
@@ -152,6 +167,7 @@ export const store = ({
 
       const { allow = false } = await applyHooks('before', req, {
         store: wrappedBackend,
+        fileStore: wrappedFileBackend,
       });
 
       if (!allow && !(await wrappedBackend.checkSecurity(boxId, id))) {
@@ -165,6 +181,7 @@ export const store = ({
         req,
         {
           store: wrappedBackend,
+          fileStore: wrappedFileBackend,
         },
         { response }
       );
@@ -184,6 +201,11 @@ export const store = ({
       } = req;
 
       const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
+      const wrappedFileBackend = wrapBackend(
+        fileBackend,
+        siteId,
+        authenticatedUser
+      );
 
       if (boxId[0] === '_') {
         throwError(
@@ -194,6 +216,7 @@ export const store = ({
 
       const { body, allow = false } = await applyHooks('before', req, {
         store: wrappedBackend,
+        fileStore: wrappedFileBackend,
       });
 
       if (!allow && !(await wrappedBackend.checkSecurity(boxId, id, true))) {
@@ -205,6 +228,7 @@ export const store = ({
       const { response: hookedResponse } = await applyHooks('after', req, {
         response,
         store: wrappedBackend,
+        fileStore: wrappedFileBackend,
       });
 
       return res.json(hookedResponse);
@@ -220,6 +244,11 @@ export const store = ({
       const { siteId, authenticatedUser } = req;
 
       const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
+      const wrappedFileBackend = wrapFileBackend(
+        fileBackend,
+        siteId,
+        authenticatedUser
+      );
 
       if (boxId[0] === '_') {
         throwError(
@@ -230,6 +259,7 @@ export const store = ({
 
       const { body, allow = false } = await applyHooks('before', req, {
         store: wrappedBackend,
+        fileStore: wrappedFileBackend,
       });
 
       if (!allow && !(await wrappedBackend.checkSecurity(boxId, id, true))) {
@@ -241,6 +271,7 @@ export const store = ({
       const { response: hookedResponse } = await applyHooks('after', req, {
         response,
         store: wrappedBackend,
+        fileStore: wrappedFileBackend,
       });
 
       return res.json(hookedResponse);
@@ -251,11 +282,16 @@ export const store = ({
   router.delete(
     `/${prefix}/:boxId/:id`,
     errorGuard(async (req, res) => {
-      const { boxId, id } = req.params;
+      const { boxId, id: resourceId } = req.params;
 
       const { siteId, authenticatedUser } = req;
 
       const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
+      const wrappedFileBackend = wrapFileBackend(
+        fileBackend,
+        siteId,
+        authenticatedUser
+      );
 
       if (boxId[0] === '_') {
         throwError(
@@ -266,16 +302,30 @@ export const store = ({
 
       const { allow = false } = await applyHooks('before', req, {
         store: wrappedBackend,
+        fileStore: wrappedFileBackend,
       });
 
-      if (!allow && !(await wrappedBackend.checkSecurity(boxId, id, true))) {
+      if (
+        !allow &&
+        !(await wrappedBackend.checkSecurity(boxId, resourceId, true))
+      ) {
         throwError('You need write access for this resource', 403);
       }
 
-      const result = await wrappedBackend.delete(boxId, id);
+      const result = await wrappedBackend.delete(boxId, resourceId);
+
+      if (result === 1) {
+        // Also delete the files
+        await Promise.all(
+          (await wrappedFileBackend.list(boxId, resourceId)).map((filename) => {
+            return wrappedFileBackend.delete(boxId, resourceId, filename);
+          })
+        );
+      }
 
       await applyHooks('after', req, {
         store: wrappedBackend,
+        fileStore: wrappedFileBackend,
       });
 
       if (result === 1) {
@@ -295,9 +345,18 @@ export const store = ({
       const { siteId, authenticatedUser } = req;
 
       const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
+      const wrappedFileBackend = wrapFileBackend(
+        fileBackend,
+        siteId,
+        authenticatedUser
+      );
+
+      // Just check the boxId exists
+      await wrappedBackend.get(boxId, id);
 
       const { allow = false } = await applyHooks('beforeFile', req, {
         store: wrappedBackend,
+        fileStore: wrappedFileBackend,
       });
 
       if (
@@ -319,11 +378,15 @@ export const store = ({
     errorGuard(async (req, _, next) => {
       const { siteId, authenticatedUser } = req;
       const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
-
-      console.log('execute after file hooks');
+      const wrappedFileBackend = wrapFileBackend(
+        fileBackend,
+        siteId,
+        authenticatedUser
+      );
 
       await applyHooks('afterFile', req, {
         store: wrappedBackend,
+        fileStore: wrappedFileBackend,
       });
 
       next();

@@ -112,7 +112,7 @@ export const ricochetMiddleware = ({
     const { name: siteName, emailFrom } = siteConfig[siteId];
 
     log.debug(`Link to connect: ${remote}/login/${userId}/${token}`);
-    // if fake host, link is only loggued
+    // if fake host, link is only logged
     if (fakeEmail) {
       log.info(
         t('Auth mail text message', {

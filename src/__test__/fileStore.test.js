@@ -87,7 +87,7 @@ describe.each(fileStores)(
       // Clean files
       if (backendType === 'disk') {
         try {
-          fs.rmdirSync(tempDestination, { recursive: true });
+          fs.rmSync(tempDestination, { recursive: true });
         } catch (e) {
           console.log(e);
         }

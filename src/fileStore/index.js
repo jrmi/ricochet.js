@@ -3,8 +3,7 @@ import { MemoryFileBackend, wrapBackend } from './backends/index.js';
 import { errorGuard } from '../error.js';
 
 /* ROADMAP
-- Add security
-*/
+ */
 
 // In ms
 //const FILE_CACHE_EXPIRATION = 60_000;

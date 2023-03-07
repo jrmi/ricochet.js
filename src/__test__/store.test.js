@@ -401,14 +401,19 @@ describe('Store Hook Tests', () => {
     await query.delete(`/fakeSiteId/store/${box}/1234`).expect(200);
   });
 
-  it('should store even if private box', async () => {
+  it('should store even if private box when allowing', async () => {
     let box = 'boxId_1500';
     await backend.createOrUpdateBox(`_fakeSiteId__${box}`, {
       security: 'private',
     });
 
+    const res = await backend.save(`_fakeSiteId__${box}`, null, {
+      value: 42,
+      test: true,
+    });
+
     await query
-      .post(`/fakeSiteId/store/${box}/1234/file/`)
+      .post(`/fakeSiteId/store/${box}/${res._id}/file/`)
       .attach('file', path.resolve(__dirname, 'testFile.txt'))
       .expect(403);
 
@@ -418,7 +423,7 @@ describe('Store Hook Tests', () => {
     ];
 
     await query
-      .post(`/fakeSiteId/store/${box}/1234/file/`)
+      .post(`/fakeSiteId/store/${box}/${res._id}/file/`)
       .attach('file', path.resolve(__dirname, 'testFile.txt'))
       .expect(200);
   });
@@ -449,7 +454,7 @@ describe('Store File Test', () => {
     query = request(app);
   });
 
-  it('should store even if resource missing', async () => {
+  it("shouldn't store a file if the resource is missing", async () => {
     let box = 'boxId_600';
     await backend.createOrUpdateBox(`_fakeSiteId__${box}`, {
       security: 'public',
@@ -458,11 +463,7 @@ describe('Store File Test', () => {
     const res = await query
       .post(`/fakeSiteId/store/${box}/1234/file/`)
       .attach('file', path.resolve(__dirname, 'testFile.txt'))
-      .expect(200);
-
-    const fileUrl = res.text;
-
-    await query.get(`/${fileUrl}`).buffer(false).redirects(1).expect(200);
+      .expect(404);
   });
 
   it('should store and get a file', async () => {
@@ -538,5 +539,42 @@ describe('Store File Test', () => {
       .buffer(false)
       .redirects(1)
       .expect(403);
+  });
+
+  it('should delete a resource and all its files', async () => {
+    const box = 'boxId_700';
+    const fullBox = `_fakeSiteId__${box}`;
+    await backend.createOrUpdateBox(fullBox, {
+      security: 'public',
+    });
+
+    const res = await backend.save(fullBox, null, { value: 42, test: true });
+
+    const resourceId = res._id;
+
+    const fakeFile = { filename: 'test.txt', mimetype: 'text/plain' };
+
+    const fileName1 = await fileBackend.store(
+      'fakeSiteId',
+      box,
+      resourceId,
+      fakeFile
+    );
+
+    const fileName2 = await fileBackend.store(
+      'fakeSiteId',
+      box,
+      resourceId,
+      fakeFile
+    );
+
+    const res2 = await query
+      .del(`/fakeSiteId/store/${box}/${resourceId}`)
+      .expect(200)
+      .expect('Content-Type', /json/);
+
+    const result = await fileBackend.list('fakeSiteId', box, resourceId);
+
+    expect(result).toEqual([]);
   });
 });

@@ -286,7 +286,6 @@ describe.each(backends)(
       );
 
       // Test queries
-      console.log('si');
       const foundResources = await backend.list(box, {
         q: 'value  > 42',
       });
