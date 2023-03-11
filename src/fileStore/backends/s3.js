@@ -1,8 +1,10 @@
 import aws from '@aws-sdk/client-s3';
 import multer from 'multer';
+import stream from 'stream';
 import multerS3 from 'multer-s3';
 import mime from 'mime-types';
 import s3RequestPresigner from '@aws-sdk/s3-request-presigner';
+import { guessContentType } from './utils.js';
 
 import { uid } from '../../uid.js';
 
@@ -14,6 +16,38 @@ const {
   HeadObjectCommand,
 } = aws;
 const { getSignedUrl } = s3RequestPresigner;
+
+const autoContentType = (req, file, cb) => {
+  file.stream.once('data', async (firstChunk) => {
+    const mimetype = await guessContentType(firstChunk, file.mimetype);
+
+    const outStream = new stream.PassThrough();
+
+    outStream.write(firstChunk);
+    file.stream.pipe(outStream);
+
+    cb(null, mimetype, outStream);
+  });
+};
+
+const getKey = (req, file, cb) => {
+  const keyPath = `${req.siteId}/${req.boxId}/${req.resourceId}`;
+
+  let mimetype = file.mimetype;
+
+  // If the mime type sent by the server is too wide
+  // try to be a bit more precise.
+  if (file.mimetype === 'application/octet-stream') {
+    mimetype = mime.lookup(file.originalname) || 'application/octet-stream';
+  }
+
+  const ext = mime.extension(mimetype);
+  const filename = `${uid()}.${ext}`;
+
+  // Add filename to file
+  file.filename = filename;
+  cb(null, `${keyPath}/${filename}`);
+};
 
 // Help here https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html
 const S3FileBackend = ({
@@ -38,21 +72,10 @@ const S3FileBackend = ({
       s3: s3,
       acl: 'public-read',
       bucket: bucket,
-      //contentType: multerS3.AUTO_CONTENT_TYPE,
-      contentType: (req, file, cb) => {
-        cb(null, file.mimetype);
-      },
-      key: (req, file, cb) => {
-        const keyPath = `${req.siteId}/${req.boxId}/${req.resourceId}`;
-
-        const ext = mime.extension(file.mimetype);
-        const filename = `${uid()}.${ext}`;
-        // Add filename to file
-        file.filename = filename;
-        cb(null, `${keyPath}/${filename}`);
-      },
+      contentType: autoContentType,
+      key: getKey,
     }),
-    limits: { fileSize: 1024 * 1024 * 5 }, // 5MB
+    limits: { fileSize: 1024 * 1024 * 10 }, // 10MB
   });
 
   return {
@@ -149,6 +172,7 @@ const S3FileBackend = ({
 
         return { redirectTo: url };
       }
+
       // Finally we just use public URL
       return {
         redirectTo: `${endpoint}/${siteId}/${boxId}/${resourceId}/${filename}`,

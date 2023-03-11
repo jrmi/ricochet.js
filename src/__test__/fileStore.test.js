@@ -140,7 +140,7 @@ describe.each(fileStores)(
       );
     });
 
-    it('should retreive image file', async () => {
+    it('should retrieve image file', async () => {
       const boxId = 'box020';
       const res = await query
         .post(`/mysiteid/pref/${boxId}/1234/file/`)
@@ -159,7 +159,7 @@ describe.each(fileStores)(
       expect(fileRes.body.length).toBe(6174);
     });
 
-    it('should retreive text file', async () => {
+    it('should retrieve text file', async () => {
       const boxId = 'box025';
       const res = await query
         .post(`/mysiteid/pref/${boxId}/1234/file/`)
