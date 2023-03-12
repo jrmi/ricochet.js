@@ -1,4 +1,11 @@
 
+1.7.0 / 2023-03-12
+==================
+
+  * Delete related file when a resource is deleted (#52)
+  * Improve mimetype detection
+  * Update github actions
+
 1.6.0 / 2022-10-17
 ==================
 
