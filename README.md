@@ -1,55 +1,66 @@
 # 💡 Ricochet.js
 
-Ricochet.js is a multi-purpose JSON/File store with serverless capabilities.
+Ricochet.js is a backend tool designed for frontend developers, allowing you to
+host your backend code alongside your frontend code. It provides a document and
+file store with serverless capabilities, simplifying your application's
+architecture and data storage needs.
 
-Main features are:
+With Ricochet.js, you can integrate your frontend and backend seamlessly,
+enabling you to focus on building a great user experience. This eliminates the
+need for a separate backend server and improves your workflow.
 
-- Deploy Ricochet.js once and for many website (multi-tenancy)
-- Use the ready to use general APIs:
-  - A JSON store
-  - A File store
-- Ability to calls remote javascript functions like [Serverless](https://en.wikipedia.org/wiki/Serverless_computing) or [FaaS](https://en.wikipedia.org/wiki/Function_as_a_service)
-    application
-- Avoid frontend/backend version disconnect by deploying your backend code alongside
-  to your frontend code on the same CDN/Server.
-- 0 knowledge password-less authentification service
-- Cloud ready, choose your stores:
-  - JSON : Memory, NeDB (Disk), MongoDB, more coming...
-  - File : Memory, Disk, S3 compatible, more coming...
-- Can manage multiple site with only one backend
-- Easily scalable
-- Works on edges
+Ricochet.js comes packed with a range of useful features, including:
+
+- Multi-tenancy: Deploy Ricochet.js once and use it for multiple websites.
+- General APIs: A JSON document store and a file store are ready to use.
+- Remote function calls: Call remote JavaScript functions like a
+  [Serverless](https://en.wikipedia.org/wiki/Serverless_computing) backend or
+  function-as-a-service
+  ([FaaS](https://en.wikipedia.org/wiki/Function_as_a_service)) application.
+- Frontend-backend version alignment: Avoid version mismatch by deploying your
+  backend code alongside your frontend code on the same CDN or server.
+- Password-less authentication: A secure authentication service that requires
+  zero knowledge from users.
+- Cloud compatibility: Choose from a variety of stores, including Memory, NeDB
+  (Disk), MongoDB, S3-compatible, and more.
+- Scalability: Easily scale your application to meet growing demand.
+- Edge compatibility: Works seamlessly on edges, enabling you to deliver your
+  content to users quickly and efficiently.
 
 Some use cases:
 
-- You don't want to deploy your backend server each time you make a backend modification
+- You don't want to deploy your backend server each time you make a backend
+  modification
 - You need a simple backend with only some specific code
 - You want to store structured data and files
 - You want frontend and backend code to be updated at same time
 
 ## ❓Why Ricochet.js?
 
-When you create a web application, you nearly always need a server mainly for
-3 reasons:
+Creating a web application typically requires a server for three main reasons:
 
-- you need to persist structured and binary data
-- you need to execute some code that can't be modified or must not be accessible
-  by the client for security reason.
-- You want some periodic tasks to be executed.
+- Data persistence: Structured and binary data must be stored and managed, which
+  can be accomplished with a server.
+- Server-side code execution: Certain code needs to be executed on the
+  server-side, which cannot be modified or accessed by the client for security
+  reasons.
+- Periodic task execution: Tasks such as automated emails or large data
+  processing often require a server to perform in a timely manner.
 
-Ricochet.js propose features to fullfil this requirements in an elegant way.
+Ricochet.js fulfills these requirements with the following features:
 
-First a *Rest API* to store key-values document, so you can store your structured data.
-And for each stored resource, you can associate binary files like images, or documents.
+- A REST API to store key-value documents, allowing for structured data storage.
+  Binary files, such as images and documents, can also be associated with each
+  stored resource.
+- The ability to bundle custom JavaScript code that can be executed in a secured
+  context on the server-side, with access to the two stores mentioned above.
+- The ability to schedule hourly or daily actions to perform periodic tasks.
 
-When you need *custom code*, you can bundle javascript code that will be
-executed in secured context on server side with access to this two stores.
+To use Ricochet.js you need a running instance of the server. You have two
+options:
 
-Finally you can *schedule* hourly or daily actions.
-
-To use Ricochet.js you need a running instance of the server. You have two option:
-
-- Using an hosted version (jump to [project initialization](#⚡-initialize-your-project) section)
+- Using an hosted version (jump to
+  [project initialization](#⚡-initialize-your-project) section)
 - Running your own instance, continue with the next section
 
 ## 💫 Start your own local instance of Ricochet.js
@@ -170,16 +181,16 @@ You can freely modify `src/index.js` file to declare your store, hooks,
 custom functions, ...
 
 Remember that the server bundle will be encrypted and should be used by
-ricochet server with corresponding *site* configuration.
+ricochet server with related *site* configuration.
 
-Remember to also define a `SECRET` environment variable for the server
+Also remember to define a `SECRET` environment variable for the server
 (Can be defined in same `.env` file if you start the server from here).
 
 The server should be listening on `http://localhost:4000`.
 
 ### Deploy your project
 
-Since you finish your code, you must bundle it to prepare deployment:
+Since you finish your code, you must bundle it to prepare the deployment:
 
 ```sh
 npm run build
@@ -205,18 +216,19 @@ This is the encrypted server side bundle that configure Ricochet.js for this *si
 
 This file MUST exists before being able to call any Rest API.
 
-The script must define and export a main function that has access to
-Ricochet.js server context. The main function is called with an object as
-parameters that contains the following properties:
+The script must define and export a main function that will be executed (and cached)
+on the very first query for this site.
+The main function is called with an object as parameters that contains the following 
+properties:
 
 - **store**: Allow to access the JSON store.
-- **hooks**: Add some hooks to the store.
+- **hooks**: Add some hooks to the store to modify the queries and the response.
 - **functions**: Add arbitrary custom function to the API.
 - **schedules**: Schedules hourly or daily function calls.
 
 All this parameters are explained in next sections.
 
-This script is executed on *Ricochet.js* server so don't rely on browser
+This script is executed on *Ricochet.js* server so it can't rely on browser
 capabilities.
 
 This script allow you to configure the ricochet server for your *siteId* in a
@@ -257,6 +269,10 @@ following methods:
 **store.update(boxId, id, data)**: Update the resource. Fails if not existing.
 
 **store.delete(boxId, id)** try to delete the corresponding resource.
+
+### Files
+
+
 
 ### Hooks
 
@@ -315,23 +331,24 @@ To add a file to this resource.
 
 **Returns** the file Path for later uses.
 
-### GET on /:siteId/store/:oxId/:resourceId/file
+### GET on /:siteId/store/:boxId/:resourceId/file
 
-List the files associated to this ressource.
+List URL of the files associated to the given ressource Id.
 
 ### ANY on /:siteId/execute/:functionName/:id?
 
-Execute a previously defined in *setup* custom function and return
-the result to caller.
+Executes a previously defined custom function in the *setup* and returns
+the result to the client.
 
-The functions have access to some globally defined variables receives an object with following properties:
+The functions receive an object with following properties:
 
 - `store` the very same store API used for JSON store API. Allow you to do some
   protected operation
 - `method` the http verb used
 - `query` a dict of query parameters
 - `body` the request payload
-- `id` the optionnal `id` if providen
+- `userId` the id of the current user if one is logged in
+- `id` the optional `id` if provided
 
 ### POST on /:siteId/auth/
 
@@ -345,9 +362,10 @@ an email will be sent to this address containing a link to authenticate to the p
 
 This link is: `<ricochetOrigin>/login/:userId/:token`
 
-You frontend should handle this url and extract the `userId` and the `token` to authentify the user.
+You frontend should handle this url and extract the `userId` and the `token` to
+authenticate the user.
 
-`userId` is the unique user identifier corresponding to the used email adress.
+`userId` is the unique user identifier corresponding to the given email address.
 
 The `token` is valid during 1 hour.
 
