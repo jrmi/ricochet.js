@@ -18,7 +18,8 @@ const {
 const { getSignedUrl } = s3RequestPresigner;
 
 const autoContentType = (req, file, cb) => {
-  file.stream.once('data', async (firstChunk) => {
+  cb(null, file.mimetype);
+  /*file.stream.once('data', async (firstChunk) => {
     const mimetype = await guessContentType(firstChunk, file.mimetype);
 
     const outStream = new stream.PassThrough();
@@ -27,7 +28,7 @@ const autoContentType = (req, file, cb) => {
     file.stream.pipe(outStream);
 
     cb(null, mimetype, outStream);
-  });
+  });*/
 };
 
 const getKey = (req, file, cb) => {
