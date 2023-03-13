@@ -1,6 +1,6 @@
 export const DEFAULT_BOX_OPTIONS = { security: 'private', personal: false };
 
-export const wrapBackend = (backend, siteId) => {
+export const wrapBackend = (backend, siteId, fileBackend) => {
   const getBoxId = (userBoxId) => {
     return `_${siteId}__${userBoxId}`;
   };
@@ -81,7 +81,12 @@ export const wrapBackend = (backend, siteId) => {
       return await backend.update(getBoxId(boxId), id, data);
     },
     async delete(boxId, id) {
-      return await backend.delete(getBoxId(boxId), id);
+      const result = await backend.delete(getBoxId(boxId), id);
+      if (result === 1) {
+        // Also delete the files related to this store
+        fileBackend.clearAll(boxId, id);
+      }
+      return result;
     },
   };
 };
