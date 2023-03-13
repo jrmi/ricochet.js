@@ -31,14 +31,14 @@ jest.spyOn(global.Date, 'now').mockImplementation(() => {
 
 const backends = [
   ['memory', MemoryBackend()],
-  //['NeDb', NeDBBackend({ filename: null, inMemoryOnly: true })],
+  ['NeDb', NeDBBackend({ filename: null, inMemoryOnly: true })],
 ];
 
 if (MONGODB_DATABASE_TEST) {
-  /*backends.push([
+  backends.push([
     'MongoDB',
     MongoDBBackend({ uri: MONGODB_URI, database: MONGODB_DATABASE_TEST }),
-  ]);*/
+  ]);
 }
 
 describe.each(backends)(
@@ -47,7 +47,12 @@ describe.each(backends)(
     let backend;
 
     beforeAll(async () => {
-      backend = wrapBackend(rawBackend, 'siteid', 'userid');
+      backend = wrapBackend(
+        rawBackend,
+        'siteid',
+        { clearAll: jest.fn() },
+        'userid'
+      );
 
       if (backendName === 'MongoDB') {
         const { MongoClient, ServerApiVersion } = await import('mongodb');

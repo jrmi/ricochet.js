@@ -34,5 +34,12 @@ export const wrapBackend = (backend, siteId) => {
     async delete(boxId, resourceId, filename) {
       return await backend.delete(siteId, boxId, resourceId, filename);
     },
+    async clearAll(boxId, id) {
+      return await Promise.all(
+        (await this.list(boxId, id)).map((filename) => {
+          return this.delete(boxId, id, filename);
+        })
+      );
+    },
   };
 };

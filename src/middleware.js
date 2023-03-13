@@ -69,14 +69,15 @@ export const ricochetMiddleware = ({
     remote({
       context: (req) => {
         const { siteId, authenticatedUser } = req;
-        const wrappedBackend = wrapBackend(
-          storeBackend,
-          siteId,
-          authenticatedUser
-        );
         const wrappedFileBackend = wrapFileBackend(
           fileStoreBackend,
           siteId,
+          authenticatedUser
+        );
+        const wrappedBackend = wrapBackend(
+          storeBackend,
+          siteId,
+          wrappedFileBackend,
           authenticatedUser
         );
         if (!functionsBySite[siteId]) {
@@ -201,14 +202,15 @@ export const ricochetMiddleware = ({
     execute({
       context: (req) => {
         const { siteId, authenticatedUser } = req;
-        const wrappedBackend = wrapBackend(
-          storeBackend,
-          siteId,
-          authenticatedUser
-        );
         const wrappedFileBackend = wrapFileBackend(
           fileStoreBackend,
           siteId,
+          authenticatedUser
+        );
+        const wrappedBackend = wrapBackend(
+          storeBackend,
+          siteId,
+          wrappedFileBackend,
           authenticatedUser
         );
         return { store: wrappedBackend, fileStore: wrappedFileBackend };

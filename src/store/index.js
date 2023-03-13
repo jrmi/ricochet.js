@@ -81,10 +81,15 @@ export const store = ({
       const { boxId } = req.params;
       const { siteId, authenticatedUser } = req;
 
-      const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
       const wrappedFileBackend = wrapFileBackend(
         fileBackend,
         siteId,
+        authenticatedUser
+      );
+      const wrappedBackend = wrapBackend(
+        backend,
+        siteId,
+        wrappedFileBackend,
         authenticatedUser
       );
 
@@ -151,10 +156,15 @@ export const store = ({
 
       const { siteId, authenticatedUser } = req;
 
-      const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
       const wrappedFileBackend = wrapFileBackend(
         fileBackend,
         siteId,
+        authenticatedUser
+      );
+      const wrappedBackend = wrapBackend(
+        backend,
+        siteId,
+        wrappedFileBackend,
         authenticatedUser
       );
 
@@ -200,10 +210,15 @@ export const store = ({
         authenticatedUser,
       } = req;
 
-      const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
-      const wrappedFileBackend = wrapBackend(
+      const wrappedFileBackend = wrapFileBackend(
         fileBackend,
         siteId,
+        authenticatedUser
+      );
+      const wrappedBackend = wrapBackend(
+        backend,
+        siteId,
+        wrappedFileBackend,
         authenticatedUser
       );
 
@@ -243,10 +258,15 @@ export const store = ({
 
       const { siteId, authenticatedUser } = req;
 
-      const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
       const wrappedFileBackend = wrapFileBackend(
         fileBackend,
         siteId,
+        authenticatedUser
+      );
+      const wrappedBackend = wrapBackend(
+        backend,
+        siteId,
+        wrappedFileBackend,
         authenticatedUser
       );
 
@@ -286,10 +306,15 @@ export const store = ({
 
       const { siteId, authenticatedUser } = req;
 
-      const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
       const wrappedFileBackend = wrapFileBackend(
         fileBackend,
         siteId,
+        authenticatedUser
+      );
+      const wrappedBackend = wrapBackend(
+        backend,
+        siteId,
+        wrappedFileBackend,
         authenticatedUser
       );
 
@@ -314,15 +339,6 @@ export const store = ({
 
       const result = await wrappedBackend.delete(boxId, resourceId);
 
-      if (result === 1) {
-        // Also delete the files
-        await Promise.all(
-          (await wrappedFileBackend.list(boxId, resourceId)).map((filename) => {
-            return wrappedFileBackend.delete(boxId, resourceId, filename);
-          })
-        );
-      }
-
       await applyHooks('after', req, {
         store: wrappedBackend,
         fileStore: wrappedFileBackend,
@@ -344,10 +360,15 @@ export const store = ({
 
       const { siteId, authenticatedUser } = req;
 
-      const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
       const wrappedFileBackend = wrapFileBackend(
         fileBackend,
         siteId,
+        authenticatedUser
+      );
+      const wrappedBackend = wrapBackend(
+        backend,
+        siteId,
+        wrappedFileBackend,
         authenticatedUser
       );
 
@@ -377,10 +398,16 @@ export const store = ({
     fileStore(fileBackend, { prefix }),
     errorGuard(async (req, _, next) => {
       const { siteId, authenticatedUser } = req;
-      const wrappedBackend = wrapBackend(backend, siteId, authenticatedUser);
+
       const wrappedFileBackend = wrapFileBackend(
         fileBackend,
         siteId,
+        authenticatedUser
+      );
+      const wrappedBackend = wrapBackend(
+        backend,
+        siteId,
+        wrappedFileBackend,
         authenticatedUser
       );
 
